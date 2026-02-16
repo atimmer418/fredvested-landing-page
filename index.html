@@ -1,76 +1,487 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FredVested - Coming Soon</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --background-color: #ecf0f1;
-            --text-color: #34495e;
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FRED: Freedom Landing Page</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#135bec",
+              "primary-dark": "#0e4ac5",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+              "navy": "#0F172A",
+              "slate-text": "#64748B",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"],
+              "montserrat": ["Montserrat", "sans-serif"],
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+            boxShadow: {
+                "soft": "0 4px 20px -2px rgba(19, 91, 236, 0.08)",
+                "card": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+                "card-hover": "0 10px 30px -5px rgba(0, 0, 0, 0.08)",
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
         }
-
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #135bec;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 6px rgba(19, 91, 236, 0.4);
         }
-
-        .container {
-            text-align: center;
-            padding: 2rem;
-            border-radius: 10px;
-            background-color: white;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
         }
-
-        h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin: 0;
-        }
-
-        p {
-            font-size: 1rem;
-            margin-top: 0.5rem;
-            max-width: 400px;
-        }
-
-        .highlight {
-            color: var(--secondary-color);
-            font-weight: bold;
+        input[type=range]:focus {
+            outline: none;
         }
         
-        footer {
-            position: absolute;
-            bottom: 1rem;
-            font-size: 0.8rem;
-            color: #7f8c8d;
+        .donut-segment {
+            transition: all 0.3s ease;
+        }
+        .donut-segment:hover {
+            opacity: 0.8;
+            cursor: pointer;
         }
     </style>
 </head>
-<body>
-
-    <div class="container">
-        <h1>Fredvested</h1>
-        <h3>Get Fredvested with Fred</h3>
-        <p>Smarter, automated investing is just around the corner. We're working hard to bring you an experience that simplifies your financial future.</p>
-        <p class="highlight">Coming Soon</p>
-    </div>
-
-    <footer>
-        © 2025 FredVested. All rights reserved.
-    </footer>
-
-</body>
-</html>
+<body class="bg-background-light dark:bg-background-dark font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
+<!-- Navbar -->
+<nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16 items-center">
+<div class="flex-shrink-0 flex items-center gap-2">
+<span class="
+  font-montserrat
+  text-[48px]
+  font-black
+  italic
+  text-primary
+  tracking-[0px]
+  leading-none
+">
+  FRED
+</span></div>
+<div class="hidden md:flex space-x-8 text-sm font-medium text-slate-text">
+    <a class="hover:text-primary transition-colors" href="#calculator">Calculator</a>
+<a class="hover:text-primary transition-colors" href="#methodology">How FRED Works</a>
+<a class="hover:text-primary transition-colors" href="#pricing">Pricing</a>
+</div>
+<div class="flex items-center space-x-4">
+<a class="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-lg shadow-primary/20" href="#join">
+                        Join Private Beta
+                    </a>
+</div>
+</div>
+</div>
+</nav>
+<!-- Hero Section -->
+<section class="relative pt-20 pb-32 overflow-hidden bg-white">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
+<div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+<div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-6">
+<span class="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
+                        NEW Beta Slots Open
+                    </div>
+<h1 class="text-4xl tracking-tight font-extrabold text-navy sm:text-5xl md:text-6xl lg:text-6xl mb-6">
+                        Automatically Invest.<br><span class="text-primary">Retire Years Earlier.</span>
+</h1>
+<p class="mt-4 text-md text-slate-text sm:mt-5 sm:max-w-xl sm:mx-auto md:mt-5 lg:mx-0 leading-relaxed">
+                        FRED builds and maintains your long-term investing system — so your money compounds toward early corporate freedom, automatically.
+                    </p>
+<div class="mt-8 sm:mt-12 sm:flex sm:justify-center lg:justify-start gap-4">
+<a class="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-primary hover:bg-primary-dark md:py-4 md:text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]" href="#calculator">
+                            See My Freedom Date
+                        </a>
+<a class="flex items-center justify-center px-8 py-3 border border-gray-200 text-base font-medium rounded-xl text-navy bg-white hover:bg-gray-50 md:py-4 md:text-lg transition-all hover:border-gray-300" href="#methodology">
+                            How it works
+                        </a>
+</div>
+<div class="mt-6 text-sm text-slate-text flex items-center gap-2 justify-center lg:justify-start">
+  <span class="material-icons-outlined text-green-500 text-base">verified</span>
+  Trusted by 180+ founding members<span class="text-yellow-500">★</span>
+  Avg freedom date: 6.2 years earlier
+</div>
+</div>
+<div class="mt-16 sm:mt-24 lg:mt-0 lg:col-span-6">
+<div class="relative rounded-2xl overflow-hidden shadow-soft bg-gradient-to-br from-blue-50 to-white border border-gray-100 p-8 min-h-[400px] flex items-center justify-center">
+<img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
+<div class="relative z-10 bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs transform rotate-2 hover:rotate-0 transition-transform duration-500">
+<div class="flex items-center justify-between mb-4">
+<div class="text-sm font-medium text-slate-text">Total Freedom Fund</div>
+<span class="material-icons-outlined text-green-500">trending_up</span>
+</div>
+<div class="text-3xl font-bold text-navy mb-2">$1,482,902.14</div>
+<div class="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+<div class="bg-green-500 h-1.5 rounded-full" style="width: 78%"></div>
+</div>
+<div class="text-xs text-slate-text text-right">Target: $1.85m by age 45</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Trust Bar & Value Props -->
+<section class="bg-[#F9FAFB] py-16 border-y border-transparent">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+<p class="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">Secured by industry leaders</p>
+<div class="flex justify-center gap-12 md:gap-20 items-center opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+<div class="h-8 flex items-center font-bold text-xl text-gray-600"><span class="material-icons-outlined mr-2">security</span> SIPC</div>
+<div class="h-8 flex items-center font-bold text-xl text-gray-600"><span class="material-icons-outlined mr-2">account_balance</span> Alpaca</div>
+<div class="h-8 flex items-center font-bold text-xl text-gray-600"><span class="material-icons-outlined mr-2">lock</span> Plaid</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid md:grid-cols-3 gap-8">
+<div class="group p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+<div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-icons-outlined text-primary text-2xl">tune</span>
+</div>
+<h3 class="text-xl font-bold text-navy mb-3">Flexible Portfolios</h3>
+<p class="text-slate-text leading-relaxed">
+                        Use our default portfolio optimized for maxmium growth or build your own. Stay disciplined while keeping full control.
+                    </p>
+</div>
+<div class="group p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+<div class="w-12 h-12 bg-blue-50/50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-icons-outlined text-primary text-2xl">account_balance_wallet</span>
+</div>
+<h3 class="text-xl font-bold text-navy mb-3">Your Assets, Your Name</h3>
+<p class="text-slate-text leading-relaxed">
+                    Your money is held in a segregated account at our partner brokerage. Liquid and withdrawable at any time.
+                </p>
+</div>
+<div class="group p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+<div class="w-12 h-12 bg-blue-50/50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-icons-outlined text-primary text-2xl">vpn_key</span>
+</div>
+<h3 class="text-xl font-bold text-navy mb-3">Passkey Security</h3>
+<p class="text-slate-text leading-relaxed">
+                    Bank-grade encryption and biometric authentication. We use the latest standards to keep your future safe.
+                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Quiz/Calculator Section -->
+<section class="py-24 bg-[#EFF6FF] relative overflow-hidden border-y border-gray-200" id="calculator">
+<div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+<div class="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+<div class="absolute top-1/2 right-0 w-64 h-64 bg-blue-300/20 rounded-full blur-3xl"></div>
+</div>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<div class="text-center mb-12">
+<h2 class="text-3xl font-bold text-navy sm:text-4xl">How Soon Could You Be Free?</h2>
+<p class="mt-4 text-lg text-slate-text">Adjust the sliders to see your accelerated timeline.</p>
+</div>
+<div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 md:p-12 border border-blue-100">
+<div class="grid md:grid-cols-2 gap-12">
+<div class="space-y-8">
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="text-sm font-medium text-navy">Current Age</label>
+<span class="text-lg font-bold text-primary">32</span>
+</div>
+<input class="w-full accent-primary" max="65" min="18" type="range" value="32"/>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="text-sm font-medium text-navy">Annual Income</label>
+<span class="text-lg font-bold text-primary">$120,000</span>
+</div>
+<input class="w-full accent-primary" max="500000" min="30000" step="5000" type="range" value="120000"/>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="text-sm font-medium text-navy">Savings Rate</label>
+<span class="text-lg font-bold text-primary">25%</span>
+</div>
+<input class="w-full accent-primary" max="80" min="5" type="range" value="25"/>
+<div class="flex justify-between text-xs text-gray-400 mt-2">
+<span>Standard (10%)</span>
+<span>Aggressive (50%)</span>
+</div>
+</div>
+</div>
+<div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl p-8 flex flex-col justify-center items-center text-center border border-blue-100">
+<p class="text-sm text-slate-text uppercase tracking-wide font-semibold mb-2">Your Year to be Free</p>
+<div class="text-7xl font-bold text-navy mb-2 tracking-tighter">49</div>
+<p class="text-green-600 font-medium flex items-center gap-1 mb-8 bg-green-50 px-3 py-1 rounded-full text-sm">
+<span class="material-icons-outlined text-sm">bolt</span> 16 years earlier than average
+                        </p>
+<button class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-primary/20">
+                            Start My Automated Plan
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- How It Works -->
+<section class="py-24 bg-background-light border-y border-transparent" id="methodology">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+<h2 class="text-3xl font-bold text-navy sm:text-4xl mb-16">The Path to Freedom</h2>
+<div class="grid md:grid-cols-3 gap-12 relative">
+<!-- Connecting Line -->
+<div class="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-gray-200 -z-0"></div>
+<!-- Step 1 -->
+<div class="relative z-10">
+<div class="w-24 h-24 bg-white rounded-full border-8 border-blue-50 shadow-lg flex items-center justify-center mx-auto mb-6">
+<span class="material-icons-outlined text-4xl text-primary">settings_input_component</span>
+</div>
+<h3 class="text-lg font-bold text-navy mb-2">1. Set Your Goals</h3>
+<p class="text-slate-text text-sm max-w-xs mx-auto">Define your monthly contribution and desired retirement income.</p>
+</div>
+<!-- Step 2 -->
+<div class="relative z-10">
+<div class="w-24 h-24 bg-white rounded-full border-8 border-blue-50 shadow-lg flex items-center justify-center mx-auto mb-6">
+<span class="material-icons-outlined text-4xl text-primary">autorenew</span>
+</div>
+<h3 class="text-lg font-bold text-navy mb-2">2. We Automate It</h3>
+<p class="text-slate-text text-sm max-w-xs mx-auto">FRED invests every dollar automatically into a diversified portfolio.</p>
+</div>
+<!-- Step 3 -->
+<div class="relative z-10">
+<div class="w-24 h-24 bg-white rounded-full border-8 border-blue-50 shadow-lg flex items-center justify-center mx-auto mb-6">
+<span class="material-icons-outlined text-4xl text-primary">beach_access</span>
+</div>
+<h3 class="text-lg font-bold text-navy mb-2">3. Relax &amp; Retire</h3>
+<p class="text-slate-text text-sm max-w-xs mx-auto">Watch your freedom date move closer as compound interest works.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Investment Strategy & Donut Chart -->
+<section class="py-24 bg-white">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid lg:grid-cols-2 gap-16 items-center">
+<div class="relative flex justify-center">
+<div class="w-80 h-80 relative">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+<circle class="donut-segment text-primary" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="188.5 251.327" stroke-dashoffset="0" stroke-width="12"></circle>
+<circle class="donut-segment text-blue-400" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="50.265 251.327" stroke-dashoffset="-188.5" stroke-width="12"></circle>
+<circle class="donut-segment text-navy" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="12.566 251.327" stroke-dashoffset="-238.765" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="text-sm font-medium text-slate-text uppercase">Portfolio</span>
+<span class="text-3xl font-bold text-navy">100%</span>
+</div>
+</div>
+<div class="absolute top-0 right-0 lg:-right-8 mr-8 bg-white shadow-md p-3 rounded-lg border border-gray-100 text-sm">
+<div class="font-bold text-primary">VTI (75%)</div>
+<div class="text-xs text-gray-500">Total US Stock Market</div>
+</div>
+<div class="absolute bottom-60 left-0 lg:-left-4 bg-white shadow-md p-3 rounded-lg border border-gray-100 text-sm">
+<div class="font-bold text-blue-400">VXUS (20%)</div>
+<div class="text-xs text-gray-500">Total Intl Stock Market</div>
+</div>
+<div class="absolute -top-16 left-1/2 transform -translate-x-[95%] -ml-8 bg-white shadow-md p-3 rounded-lg border border-gray-100 text-sm">
+<div class="font-bold text-navy">VBR (5%)</div>
+<div class="text-xs text-gray-500">Small Cap Value</div>
+</div>
+</div>
+<div>
+<h2 class="text-3xl font-bold text-navy mb-6">The "Boglehead" Philosophy</h2>
+<p class="text-lg text-slate-text mb-8">
+                        We subscribe to the Nobel Prize-winning strategy of modern portfolio theory. Maximum diversification, minimal fees.
+                    </p>
+<ul class="space-y-6">
+<li class="flex items-start">
+<span class="material-icons-outlined text-green-500 mr-3 mt-1">check_circle</span>
+<div>
+<strong class="block text-navy font-semibold">Total Market Exposure</strong>
+<span class="text-slate-text text-sm">You own thousands of companies across the globe.</span>
+</div>
+</li>
+<li class="flex items-start">
+<span class="material-icons-outlined text-green-500 mr-3 mt-1">check_circle</span>
+<div>
+<strong class="block text-navy font-semibold">Small Cap Value Tilt</strong>
+<span class="text-slate-text text-sm">Slight overweighting in small value stocks for historically higher returns.</span>
+</div>
+</li>
+<li class="flex items-start">
+<span class="material-icons-outlined text-green-500 mr-3 mt-1">check_circle</span>
+<div>
+<strong class="block text-navy font-semibold">Maximum Growth, Minimal Risk</strong>
+<span class="text-slate-text text-sm">Built from decades of data to pursue high returns without reckless bets.</span>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- Comparison Table -->
+<section class="py-24 bg-gray-50">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+<h2 class="text-3xl font-bold text-navy text-center mb-16">Stop Overpaying for Underperformance</h2>
+<div class="overflow-x-auto rounded-2xl shadow-soft border border-gray-200 bg-white">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-white border-b border-gray-100">
+<th class="p-6 text-sm font-semibold text-gray-400 uppercase tracking-wider w-1/3">Feature</th>
+<th class="p-6 min-w-[140px] text-lg font-bold text-primary bg-primary/5 w-1/4 text-center border-t-4 border-t-primary">FRED</th>
+<th class="p-6 min-w-[140px] text-base font-semibold text-navy text-center w-1/4 opacity-60">Alinea</th>
+<th class="p-6 min-w-[200px] text-base font-semibold text-navy text-center w-1/4 opacity-60">Robo-Advisors</th>
+<th class="p-6 min-w-[200px] text-base font-semibold text-navy text-center w-1/4 opacity-60">Financial Advisors</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100">
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="p-6 font-medium text-navy">Annual Fee</td>
+<td class="p-6 text-center bg-primary/5 font-bold text-navy">$8/mo flat</td>
+<td class="p-6 text-center text-slate-text">$10/mo flat</td>
+<td class="p-6 text-center text-slate-text">0.25% of assets</td>
+<td class="p-6 text-center text-slate-text">1.0% of assets</td>
+</tr>
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="p-6 font-medium text-navy">Incentive Alignment</td>
+<td class="p-6 text-center bg-primary/5"><span class="material-icons-outlined text-green-500">check_circle</span><br/><span class="text-xs text-green-600 font-medium">Retire Early</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-yellow-500">warning</span><br/><span class="text-xs text-slate-text">Engagement-Focused</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-yellow-500">warning</span><br/><span class="text-xs text-slate-text">Asset Growth</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-red-500">cancel</span><br/><span class="text-xs text-slate-text">Sales Driven</span></td>
+</td>
+</tr>
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="p-6 font-medium text-navy">Paycheck-Based Investing</td>
+<td class="p-6 text-center bg-primary/5"><span class="material-icons-outlined text-green-500">check_circle</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-red-500">cancel</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-red-500">cancel</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-gray-300">remove_circle</span></td>
+</tr>
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="p-6 font-medium text-navy">Set &amp; Forget</td>
+<td class="p-6 text-center bg-primary/5"><span class="material-icons-outlined text-green-500">check_circle</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-gray-300">remove_circle</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-green-500">check_circle</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-red-500">cancel</span></td>
+</tr>
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="p-6 font-medium text-navy">Built for Long-Term Focus</td>
+<td class="p-6 text-center bg-primary/5"><span class="material-icons-outlined text-green-500">check_circle</span><br/><span class="text-xs text-green-600 font-medium">Anti-Casino</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-yellow-500">warning</span><br/><span class="text-xs text-slate-text">Gamified</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-yellow-500">warning</span><br/><span class="text-xs text-slate-text">Performance Chasing</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-red-500">cancel</span><br/><span class="text-xs text-slate-text">Sales Pressure</span></td>
+</tr>
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="p-6 font-medium text-navy">Defined End Game</td>
+<td class="p-6 text-center bg-primary/5"><span class="material-icons-outlined text-green-500">check_circle</span><br/><span class="text-xs text-green-600 font-medium">Freedom Date</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-gray-300">remove_circle</span><br/><span class="text-xs text-slate-text">None</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-gray-300">remove_circle</span><br/><span class="text-xs text-slate-text">Generic</span></td>
+<td class="p-6 text-center"><span class="material-icons-outlined text-yellow-500">warning</span><br/><span class="text-xs text-slate-text">Depends</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Pricing -->
+<section class="py-24 bg-white relative" id="pricing">
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+<h2 class="text-3xl font-bold text-navy mb-4">Simple, Transparent Pricing</h2>
+<p class="text-slate-text mb-12">We don't take a percentage of your future. Just a small fee for the service.</p>
+<div class="bg-navy text-white rounded-3xl p-1 relative overflow-hidden shadow-2xl max-w-sm mx-auto">
+<div class="bg-gray-900 rounded-[20px] p-8 relative z-10 h-full flex flex-col">
+<div class="absolute -top-1 -right-1 bg-primary text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-[20px] text-white tracking-wide shadow-lg">Limited Time</div>
+<h3 class="text-xl font-medium text-gray-300 mb-2">Founder Access</h3>
+<p class="text-sm text-gray-400 mb-3">
+  Normally $8/month • Save $800+ over 10 yrs
+</p>
+<div class="flex items-baseline justify-center my-6">
+<span class="text-5xl font-bold tracking-tight">$99</span>
+<span class="text-xl text-gray-400 ml-2">Lifetime</span>
+</div>
+<ul class="space-y-4 mb-8 text-left text-gray-300 text-sm">
+<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Lifetime access for all features</li>
+<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> One-time founder price (no monthly fee)</li>
+<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Priority beta access + early features</li>
+<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Founder badge + community status</li>
+</ul>
+<a class="block w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-xl transition-colors mt-auto" href="#join">
+                        Reserve Your Founder Spot
+                    </a>
+<p class="text-[9px] text-gray-500 mt-2">
+No payment today. If invited, you can choose to claim Founder Access.
+Founder spots are limited. Once full, pricing switches to $8/month.<br>
+60-day money-back guarantee.
+</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer & Scarcity -->
+<section class="bg-background-light py-16 border-t border-gray-200" id="join">
+<div class="max-w-md mx-auto px-4 text-center">
+<h3 class="text-2xl font-bold text-navy mb-1">Join Private Beta</h3>
+<div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary mb-6">
+  <span class="material-icons-outlined text-base">lock</span>
+  Limited to 300 founding members
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-4">
+<div class="flex justify-between text-sm font-medium mb-2">
+<span class="text-navy">Spots Filled</span>
+<span class="text-primary">187 / 300</span>
+</div>
+<div class="w-full bg-gray-100 rounded-full h-3 mb-4">
+<div class="bg-primary h-3 rounded-full relative" style="width: 62%">
+<div class="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow"></div>
+</div>
+</div>
+<p class="text-xs text-slate-text text-left">We limit beta spots to ensure high-touch support for every founding member.</p>
+</div>
+<form class="flex gap-2">
+<input class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm" placeholder="Enter your email" type="email"/>
+<button class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-colors whitespace-nowrap shadow-lg">
+                    Reserve Spot
+                </button>
+</form>
+<p class="text-sm text-slate-text mt-4">
+  If invited, you’ll have the option to claim Founder Access.
+</p>
+<p class="text-sm text-slate-text">
+  No payment today.
+</p>
+<div class="mt-6 pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
+<div class="flex justify-center space-x-6 mb-4">
+<a class="hover:text-primary" href="#">Privacy</a>
+<a class="hover:text-primary" href="#">Terms</a>
+<a class="hover:text-primary" href="#">Contact</a>
+</div>
+<p>© 2026 FREDvested LLC</p>
+</div>
+</div>
+</section>
+</body></html>
