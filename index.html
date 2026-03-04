@@ -671,8 +671,8 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
       // Safety check to prevent math errors if investment is 0
       if (investIncome <= 0) return;
 
-      // A. Calculate Target Portfolio Value (4.5% Rule)
-      const targetPortfolio = desiredIncome / 0.045;
+      // A. Calculate Target Portfolio Value w/ 4% Rule(4.49% rounded)
+      const targetPortfolio = desiredIncome / 0.0449;
 
       // B. Calculate Time to Goal
       const annualRate = 0.1049; // 10% (10.49% rounded) average annual return
