@@ -3,7 +3,7 @@
 <html class="scroll-smooth" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>FRED: Freedom Landing Page</title>
+<title>FRED</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,41 +39,50 @@
       }
     </script>
 <style>
-        /* Custom range slider styling */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            background: #135bec;
-            cursor: pointer;
-            margin-top: -8px;
-            box-shadow: 0 2px 6px rgba(19, 91, 236, 0.4);
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: #e2e8f0;
-            border-radius: 2px;
-        }
-        input[type=range]:focus {
-            outline: none;
-        }
-        
-        .donut-segment {
-            transition: all 0.3s ease;
-        }
-        .donut-segment:hover {
-            opacity: 0.8;
-            cursor: pointer;
-        }
-    </style>
+  /* Force the slider thumb to stay blue and the track to stay light gray */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none; 
+    background: transparent !important;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    background: #e2e8f0 !important; /* light gray */
+    border-radius: 2px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #135bec !important; /* primary blue */
+    cursor: pointer;
+    margin-top: -8px; /* Centers thumb on track */
+    box-shadow: 0 2px 6px rgba(19, 91, 236, 0.4);
+    border: none;
+}
+
+/* Firefox */
+input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 4px;
+    background: #e2e8f0 !important;
+    border-radius: 2px;
+}
+
+input[type=range]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #135bec !important;
+    cursor: pointer;
+    border: none;
+}
+</style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
 <!-- Navbar -->
@@ -209,43 +218,46 @@
 <div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 md:p-12 border border-blue-100">
 <div class="grid md:grid-cols-2 gap-12">
 <div class="space-y-8">
+  
 <div>
 <div class="flex justify-between items-center mb-2">
 <label class="text-sm font-medium text-navy">Current Age</label>
-<span class="text-lg font-bold text-primary">32</span>
+<span id="age-display" class="text-lg font-bold text-primary">26</span>
 </div>
-<input class="w-full accent-primary" max="65" min="18" type="range" value="32"/>
+<input id="age-input" class="w-full accent-primary" max="45" min="18" type="range" value="26"/>
 </div>
+
 <div>
 <div class="flex justify-between items-center mb-2">
-<label class="text-sm font-medium text-navy">Annual Income</label>
-<span class="text-lg font-bold text-primary">$120,000</span>
+<label class="text-sm font-medium text-navy">Desired Freedom Income</label>
+<span id="freedom-income-display" class="text-lg font-bold text-primary">$100,000</span>
 </div>
-<input class="w-full accent-primary" max="500000" min="30000" step="5000" type="range" value="120000"/>
+<input id="freedom-income-input" class="w-full accent-primary" max="200000" min="40000" step="5000" type="range" value="100000"/>
 </div>
+
 <div>
 <div class="flex justify-between items-center mb-2">
-<label class="text-sm font-medium text-navy">Savings Rate</label>
-<span class="text-lg font-bold text-primary">25%</span>
+<label class="text-sm font-medium text-navy">I Can Invest...</label>
+<span id="invest-display" class="text-lg font-bold text-primary">$2,000/mo</span>
 </div>
-<input class="w-full accent-primary" max="80" min="5" type="range" value="25"/>
+<input id="invest-input" class="w-full accent-primary" max="5000" min="250" step="250" type="range" value="2000"/>
 <div class="flex justify-between text-xs text-gray-400 mt-2">
-<span>Standard (10%)</span>
-<span>Aggressive (50%)</span>
+<span>Steady</span>
+<span>Hyperdrive<span>
 </div>
 </div>
 </div>
 <div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl pt-8 px-8 pb-4 flex flex-col justify-center items-center text-center border border-blue-100">
 <p class="text-sm text-slate-text uppercase tracking-wide font-semibold mb-2">Your Year to be Free</p>
-<div class="text-7xl font-bold text-navy mb-2 tracking-tighter">49</div>
-<p class="text-green-600 font-medium flex items-center gap-1 mb-4 bg-green-50 px-3 py-1 rounded-full text-sm">
-<span class="material-icons-outlined text-sm">bolt</span> 16 years earlier than average
-                        </p>
-<button class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-primary/20">
+<div id="freedom-age-display" class="text-7xl font-bold text-navy mb-2 tracking-tighter">49</div>
+<p id="years-earlier-text" class="text-green-600 font-medium flex items-center gap-1 mb-4 bg-green-50 px-3 py-1 rounded-full text-sm">
+  <span class="material-icons-outlined text-sm">bolt</span> 16 years earlier than average
+</p>
+<a class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-primary/20" href="#join">
                             Start My Automated Plan
-                        </button>
-<p class="mt-4 text-[10px] text-gray-400 leading-relaxed max-w-xs">
-    Projections are illustrative and based on a 10% average annual return assumption.
+                        </a>
+<p class="mt-4 text-[8px] text-gray-400 leading-relaxed max-w-xs">
+    Projections are illustrative and based on a 10% average annual return assumption, adjusted for inflation and dividend reinvestment.
   </p>
 </div>
 </div>
@@ -596,4 +608,132 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 </div>
 </div>
 </section>
+<script>
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. Grab all the input elements
+    const ageInput = document.getElementById('age-input');
+    const ageDisplay = document.getElementById('age-display');
+
+    const freedomInput = document.getElementById('freedom-income-input');
+    const freedomDisplay = document.getElementById('freedom-income-display');
+    
+    const investInput = document.getElementById('invest-input');
+    const investDisplay = document.getElementById('invest-display');
+
+    // Grab the output display elements
+    const freedomAgeDisplay = document.getElementById('freedom-age-display');
+    const earlierTextDisplay = document.getElementById('years-earlier-text');
+
+    // 2. Helper function to format currency
+    const formatCurrency = (value) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+      }).format(value);
+    };
+
+    // 3. Listen for the 'input' event on all sliders
+    ageInput.addEventListener('input', (e) => {
+      ageDisplay.textContent = e.target.value;
+      updateCalculations();
+    });
+
+    freedomInput.addEventListener('input', (e) => {
+      freedomDisplay.textContent = formatCurrency(e.target.value);
+      updateCalculations();
+    });
+    
+    investInput.addEventListener('input', (e) => {
+      investDisplay.textContent = formatCurrency(e.target.value) + "/mo";
+      updateCalculations();
+    });
+
+    // 4. The core calculation logic
+    function updateCalculations() {
+      const currentAge = parseInt(ageInput.value);
+      const desiredIncome = parseInt(freedomInput.value);
+      const investIncome = parseInt(investInput.value);
+      
+      // Safety check to prevent math errors if investment is 0
+      if (investIncome <= 0) return;
+
+      // A. Calculate Target Portfolio Value (4.5% Rule)
+      const targetPortfolio = desiredIncome / 0.045;
+
+      // B. Calculate Time to Goal
+      const annualRate = 0.1049; // 10% (10.49% rounded) average annual return
+      const monthlyRate = annualRate / 12; // Compounded monthly
+      
+      // Calculate total months needed using the annuity formula
+      const numerator = Math.log(1 + (targetPortfolio * monthlyRate) / investIncome);
+      const denominator = Math.log(1 + monthlyRate);
+      const monthsToGoal = numerator / denominator;
+      
+      // Convert to years
+      const yearsToGoal = monthsToGoal / 12;
+
+      // C. Calculate Freedom Age
+      // Use Math.ceil to round up to the nearest full year ensuring they hit the goal
+      let freedomAge = Math.ceil(currentAge + yearsToGoal);
+      
+      // Sanity cap just in case the numbers get astronomically high
+      if (freedomAge > 120) freedomAge = 120;
+
+      // D. Update the big age number
+      freedomAgeDisplay.textContent = freedomAge;
+
+      // E. Update the "Years earlier than average" text (assuming 65 is average)
+      const averageRetirement = 65;
+      const yearsEarlier = averageRetirement - freedomAge;
+
+      // Dynamic styling based on whether they beat the average or not
+      if (yearsEarlier > 0) {
+        earlierTextDisplay.innerHTML = `<span class="material-icons-outlined text-sm">bolt</span> ${yearsEarlier} years earlier than average`;
+        earlierTextDisplay.className = "text-green-600 font-medium flex items-center gap-1 mb-4 bg-green-50 px-3 py-1 rounded-full text-sm";
+      } else if (yearsEarlier === 0) {
+        earlierTextDisplay.innerHTML = `Right on average retirement age`;
+        earlierTextDisplay.className = "text-gray-600 font-medium flex justify-center items-center gap-1 mb-4 bg-gray-100 px-3 py-1 rounded-full text-sm";
+      } else {
+        // If they are retiring later than 65
+        earlierTextDisplay.innerHTML = `${Math.abs(yearsEarlier)} years later than average`;
+        earlierTextDisplay.className = "text-orange-600 font-medium flex justify-center items-center gap-1 mb-4 bg-orange-50 px-3 py-1 rounded-full text-sm";
+      }
+    }
+
+    // 5. Run once on load to sync initial math with the starting slider values
+    updateCalculations();
+  });
+</script>
+<script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script> 
+
+<script>
+  // Initialize Lenis
+  const lenis = new Lenis({
+    duration: 1,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // standard "out-expo" easing
+    smoothWheel: true,
+  });
+
+  // Use requestAnimationFrame to force smooth movement
+  function raf(time) {
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+
+  requestAnimationFrame(raf);
+</script>
 </body></html>
