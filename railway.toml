@@ -1,0 +1,3 @@
+[build]
+workingDirectory = "backend"
+buildCommand = "./gradlew clean build -x test"
