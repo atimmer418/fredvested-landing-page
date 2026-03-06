@@ -1,0 +1,5 @@
+{ 
+  "$schema": "https://schema.railpack.com", 
+  "packages": { "java": "17" }, 
+  "deploy": { "startCommand": "java $JAVA_OPTS -Dserver.port=$PORT -jar $(ls -1 build/libs/*.jar | grep -v plain | head -n 1)" } 
+}
