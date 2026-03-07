@@ -137,9 +137,10 @@ input[type=range]::-moz-range-thumb {
                             How it works
                         </a>
 </div>
-<div class="mt-6 text-sm text-slate-text flex items-center gap-2 justify-center lg:justify-start">
+<div class="mt-6 text-sm text-slate-text flex items-center gap-2 justify-center lg:justify-start" id="hero-stats-text">
   <span class="material-icons-outlined text-green-500 text-base">verified</span>
-  Trusted by 180+ founding members<span class="text-yellow-500">★</span>
+  Trusted by 180+ founding members
+  <span class="text-yellow-500">★</span>
   Avg freedom date: 6.2 years earlier
 </div>
 </div>
@@ -222,25 +223,25 @@ input[type=range]::-moz-range-thumb {
 <div>
 <div class="flex justify-between items-center mb-2">
 <label class="text-sm font-medium text-navy">Current Age</label>
-<span id="age-display" class="text-lg font-bold text-primary">26</span>
+<span id="age-display" class="text-lg font-bold text-primary">24</span>
 </div>
-<input id="age-input" class="w-full accent-primary" max="45" min="18" type="range" value="26"/>
+<input id="age-input" class="w-full accent-primary" max="45" min="18" type="range" value="24"/>
 </div>
 
 <div>
 <div class="flex justify-between items-center mb-2">
 <label class="text-sm font-medium text-navy">Desired Freedom Income</label>
-<span id="freedom-income-display" class="text-lg font-bold text-primary">$100,000</span>
+<span id="freedom-income-display" class="text-lg font-bold text-primary">$80,000</span>
 </div>
-<input id="freedom-income-input" class="w-full accent-primary" max="200000" min="40000" step="5000" type="range" value="100000"/>
+<input id="freedom-income-input" class="w-full accent-primary" max="200000" min="40000" step="5000" type="range" value="80000"/>
 </div>
 
 <div>
 <div class="flex justify-between items-center mb-2">
 <label class="text-sm font-medium text-navy">I Can Invest...</label>
-<span id="invest-display" class="text-lg font-bold text-primary">$2,000/mo</span>
+<span id="invest-display" class="text-lg font-bold text-primary">$1,250/mo</span>
 </div>
-<input id="invest-input" class="w-full accent-primary" max="5000" min="250" step="250" type="range" value="2000"/>
+<input id="invest-input" class="w-full accent-primary" max="5000" min="250" step="250" type="range" value="1250"/>
 <div class="flex justify-between text-xs text-gray-400 mt-2">
 <span>Steady</span>
 <span>Hyperdrive<span>
@@ -740,15 +741,17 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 
 <script>
   // Replace with your actual Railway Spring Boot API URL
-  const API_BASE = "https://your-railway-api.up.railway.app/api/waitlist";
+  const API_BASE = "https://lpapi-dev.fredvested.com/api/waitlist";
 
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("waitlist-form");
     const emailInput = document.getElementById("email-input");
-    const ageInput = document.getElementById("age-input");
+    const ageInput = document.getElementById("freedom-age-display");
     const msg = document.getElementById("waitlist-msg");
+
     const countEl = document.querySelector("[data-waitlist-count]");
     const ageEl = document.querySelector("[data-waitlist-age]");
+    const heroStatsEl = document.getElementById("hero-stats-text");
 
     // 1. Check LocalStorage First
     const savedStatus = localStorage.getItem("waitlist_status");
@@ -764,8 +767,37 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
       try {
         const res = await fetch(`${API_BASE}/stats`);
         const data = await res.json();
-        if (countEl) countEl.textContent = data.count;
-        if (ageEl) ageEl.textContent = data.avgFreedomAge ? Math.round(data.avgFreedomAge) : "--";
+        
+        // Format count with special rounding logic
+        const formatCount = (count) => {
+          if (count < 10) return count.toString();
+          
+          let rounded, step;
+          if (count >= 1000) {
+            step = 100;
+            rounded = Math.floor(count / step) * step;
+            if (rounded % (step * 10) === 0) rounded -= step; // 1100 -> 1000
+          } else {
+            step = 10;  
+            rounded = Math.floor(count / step) * step;
+            if (rounded % (step * 10) === 0 && rounded > 0) rounded -= step; // 50 -> 40, 110 -> 100
+          }
+          return `${rounded}+`;
+        };
+        
+        const formattedCount = formatCount(data.count || 151);
+        if (countEl) countEl.textContent = formattedCount;
+        
+        const yearsEarlier = data.avgFreedomAge ? (65 - Math.round(data.avgFreedomAge)) : 6.2;
+        if (ageEl) ageEl.textContent = yearsEarlier;
+        
+        // Update hero text by replacing both count and years
+        if (heroStatsEl) {
+          let currentText = heroStatsEl.innerHTML;
+          currentText = currentText.replace(/Trusted by \d+\+? founding members/, `Trusted by ${formattedCount} founding members`);
+          currentText = currentText.replace(/Avg freedom date: [\d\.]+/, `Avg freedom date: ${yearsEarlier}`);
+          heroStatsEl.innerHTML = currentText;
+        }
       } catch (err) {
         console.error("Failed to load stats", err);
       }
@@ -832,23 +864,5 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
       }
     });
   });
-</script>
-<script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script> 
-
-<script>
-  // Initialize Lenis
-  const lenis = new Lenis({
-    duration: 1,
-    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // standard "out-expo" easing
-    smoothWheel: true,
-  });
-
-  // Use requestAnimationFrame to force smooth movement
-  function raf(time) {
-    lenis.raf(time);
-    requestAnimationFrame(raf);
-  }
-
-  requestAnimationFrame(raf);
 </script>
 </body></html>
