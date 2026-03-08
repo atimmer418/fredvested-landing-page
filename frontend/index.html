@@ -107,7 +107,7 @@ input[type=range]::-moz-range-thumb {
 <a class="hover:text-primary transition-colors" href="#pricing">Pricing</a>
 </div>
 <div class="flex items-center space-x-4">
-<a class="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-lg shadow-primary/20" href="#join">
+<a id="nav-join-button" class="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-lg shadow-primary/20 opacity-0 transition-opacity duration-300" href="#join">
                         Join Private Beta
                     </a>
 </div>
@@ -137,7 +137,7 @@ input[type=range]::-moz-range-thumb {
                             How it works
                         </a>
 </div>
-<div class="mt-6 text-sm text-slate-text flex items-center gap-2 justify-center lg:justify-start" id="hero-stats-text">
+<div class="mt-6 text-sm text-slate-text flex items-center gap-2 justify-center lg:justify-start opacity-0 transition-opacity duration-300" id="hero-stats-text">
   <span class="material-icons-outlined text-green-500 text-base">verified</span>
   Trusted by 180+ founding members
   <span class="text-yellow-500">★</span>
@@ -565,7 +565,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 <!-- Footer & Scarcity -->
 <section class="bg-background-light py-16 border-t border-gray-200" id="join">
 <div class="max-w-md mx-auto px-4 text-center">
-<h3 class="text-2xl font-bold text-navy mb-1">Join Private Beta</h3>
+<h3 id="join-header" class="text-2xl font-bold text-navy mb-1">Join Private Beta</h3>
 <div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary mb-6">
   <span class="material-icons-outlined text-base">lock</span>
   Limited to 300 founding members
@@ -573,21 +573,24 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-4">
 <div class="flex justify-between text-sm font-medium mb-2">
 <span class="text-navy">Spots Filled</span>
-<span class="text-primary">187 / 300</span>
+<span class="text-primary" id="progress-count">187 / 300</span>
 </div>
 <div class="w-full bg-gray-100 rounded-full h-3 mb-4">
-<div class="bg-primary h-3 rounded-full relative" style="width: 62%">
+<div class="bg-primary h-3 rounded-full relative" id="progress-bar" style="width: 62%">
 <div class="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow"></div>
 </div>
 </div>
-<p class="text-xs text-slate-text text-left">We limit beta spots to ensure high-touch support for every founding member.</p>
+<p id="waitlist-note" class="text-xs text-slate-text text-left">We limit beta spots to ensure high-touch support for every founding member.</p>
 </div>
-<form class="flex gap-2">
-<input class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm" placeholder="Enter your email" type="email"/>
-<button class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-colors whitespace-nowrap shadow-lg">
+<div class="relative min-h-[52px]">
+<form id="waitlist-form" class="flex gap-2 transition-all duration-300">
+<input id="email-input" class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm" placeholder="Enter your email" type="email" required/>
+<button id="footer-join-button" type="submit" class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-colors whitespace-nowrap shadow-lg">
                     Reserve Spot
                 </button>
 </form>
+<div id="waitlist-msg" class="hidden mt-2"></div>
+</div>
 <p class="text-sm text-slate-text mt-4">
   If invited, you’ll have the option to claim Founder Access.
 </p>
@@ -720,25 +723,6 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
   });
 </script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
-<div id="waitlist-container">
-  <div class="stats">
-    <p>Founders: <span data-waitlist-count>0</span> / 300</p>
-    <p>Average Freedom Age: <span data-waitlist-age>...</span></p>
-  </div>
-
-  <form id="waitlist-form" class="flex gap-2">
-    <input type="email" id="email-input" placeholder="you@email.com" required />
-    <input type="number" id="age-input" placeholder="Your target freedom age" required />
-   
-    <div class="cf-turnstile" data-sitekey="YOUR_CLOUDFLARE_SITE_KEY"></div>
-   
-    <button type="submit">Reserve Spot</button>
-  </form>
- 
-  <p id="waitlist-msg" style="margin-top: 10px;"></p>
-</div>
-
 <script>
   // Replace with your actual Railway Spring Boot API URL
   const API_BASE = "https://lpapi-dev.fredvested.com/api/waitlist";
@@ -746,20 +730,127 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("waitlist-form");
     const emailInput = document.getElementById("email-input");
-    const ageInput = document.getElementById("freedom-age-display");
+    const freedomAgeDisplay = document.getElementById("freedom-age-display");
     const msg = document.getElementById("waitlist-msg");
-
-    const countEl = document.querySelector("[data-waitlist-count]");
-    const ageEl = document.querySelector("[data-waitlist-age]");
     const heroStatsEl = document.getElementById("hero-stats-text");
+    const progressCountEl = document.getElementById("progress-count");
+    const progressBarEl = document.getElementById("progress-bar");
+    const navJoinButton = document.getElementById("nav-join-button");
+    const footerJoinButton = document.getElementById("footer-join-button");
+    const waitlistNote = document.getElementById("waitlist-note");
+    const joinHeader = document.getElementById("join-header");
+
+    // --- Status message card builder ---
+    function showStatusCard(status) {
+      const cards = {
+        WAITLISTFOUNDER: {
+          bg: "bg-green-50 border-green-200",
+          text: "text-green-700",
+          icon: "check_circle",
+          iconColor: "text-green-500",
+          message: "You're in! You secured a founder spot. We'll email you soon."
+        },
+        WAITLISTNORMAL: {
+          bg: "bg-blue-50 border-blue-200",
+          text: "text-blue-700",
+          icon: "schedule",
+          iconColor: "text-blue-500",
+          message: "Founder spots are full — you're on the priority waitlist for the next batch."
+        },
+        already_joined: {
+          bg: "bg-gray-50 border-gray-200",
+          text: "text-gray-600",
+          icon: "info",
+          iconColor: "text-gray-400",
+          message: "You're already on the list! We'll be in touch."
+        }
+      };
+      const card = cards[status] || cards.already_joined;
+      msg.innerHTML = `
+        <div class="${card.bg} border rounded-xl px-4 py-3 flex items-center gap-3 ${card.text}">
+          <span class="material-icons-outlined ${card.iconColor} text-xl">${card.icon}</span>
+          <span class="text-sm font-medium">${card.message}</span>
+        </div>
+      `;
+      msg.classList.remove("hidden");
+    }
+
+    function showLoading() {
+      form.style.opacity = "0";
+      form.style.pointerEvents = "none";
+      setTimeout(() => {
+        form.style.display = "none";
+        msg.innerHTML = `
+          <div class="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-primary">
+            <span class="material-icons-outlined text-xl animate-spin">sync</span>
+            <span class="text-sm font-medium">Reserving your spot...</span>
+          </div>
+        `;
+        msg.classList.remove("hidden");
+      }, 300);
+    }
 
     // 1. Check LocalStorage First
     const savedStatus = localStorage.getItem("waitlist_status");
     if (savedStatus) {
       form.style.display = "none";
-      msg.textContent = savedStatus === "WAITLISTFOUNDER"
-        ? "You're already in line as a Founder! We'll email you soon."
-        : "You're on the waitlist for the next batch!";
+      showStatusCard(savedStatus);
+    }
+
+    // --- Shared UI update logic ---
+    const formatCount = (count) => {
+      if (count < 10) return count.toString();
+      let step = count >= 1000 ? 100 : 10;
+      let rounded = Math.floor(count / step) * step;
+      if (count % step === 0 && count > 0) rounded -= step;
+      return `${rounded}+`;
+    };
+
+    function updateUI(data) {
+      const formattedCount = formatCount(data.count || 181);
+      const yearsEarlier = data.avgFreedomAge ? (65 - Math.round(data.avgFreedomAge)) : 6.2;
+
+      const actualCount = data.count || 0;
+      const maxCount = 300;
+      const percentage = Math.min((actualCount / maxCount) * 100, 100);
+      const isFull = actualCount >= maxCount;
+
+      if (progressCountEl) {
+        progressCountEl.textContent = `${actualCount} / ${maxCount}`;
+      }
+
+      if (progressBarEl) {
+        progressBarEl.style.width = `${percentage}%`;
+      }
+
+      if (waitlistNote) {
+        waitlistNote.textContent = isFull
+          ? "Private beta is currently full. Join the priority waitlist and you could receive a founder invitation if spots open."
+          : "We limit beta spots to ensure high-touch support for every founding member.";
+      }
+
+      if (joinHeader) {
+        joinHeader.textContent = isFull ? "Join Priority Waitlist" : "Join Private Beta";
+      }
+
+      if (navJoinButton) {
+        navJoinButton.textContent = isFull ? "Join Priority Waitlist" : "Join Private Beta";
+        navJoinButton.classList.remove('opacity-0');
+        navJoinButton.classList.add('opacity-100');
+      }
+
+      if (footerJoinButton) {
+        footerJoinButton.textContent = isFull ? "Join Waitlist" : "Reserve Spot";
+      }
+
+      if (heroStatsEl) {
+        let currentHTML = heroStatsEl.innerHTML;
+        currentHTML = currentHTML.replace(/Trusted by \d+\+? founding members/g, `Trusted by ${formattedCount} founding members`);
+        currentHTML = currentHTML.replace(/Avg freedom date: [\d\.]+/g, `Avg freedom date: ${yearsEarlier}`);
+        heroStatsEl.innerHTML = currentHTML;
+        heroStatsEl.classList.remove('opacity-0');
+        heroStatsEl.classList.add('opacity-100');
+      }
     }
 
     // 2. Fetch Stats on Load (GET)
@@ -767,39 +858,14 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
       try {
         const res = await fetch(`${API_BASE}/stats`);
         const data = await res.json();
-        
-        // Format count with special rounding logic
-        const formatCount = (count) => {
-          if (count < 10) return count.toString();
-          
-          let rounded, step;
-          if (count >= 1000) {
-            step = 100;
-            rounded = Math.floor(count / step) * step;
-            if (rounded % (step * 10) === 0) rounded -= step; // 1100 -> 1000
-          } else {
-            step = 10;  
-            rounded = Math.floor(count / step) * step;
-            if (rounded % (step * 10) === 0 && rounded > 0) rounded -= step; // 50 -> 40, 110 -> 100
-          }
-          return `${rounded}+`;
-        };
-        
-        const formattedCount = formatCount(data.count || 151);
-        if (countEl) countEl.textContent = formattedCount;
-        
-        const yearsEarlier = data.avgFreedomAge ? (65 - Math.round(data.avgFreedomAge)) : 6.2;
-        if (ageEl) ageEl.textContent = yearsEarlier;
-        
-        // Update hero text by replacing both count and years
-        if (heroStatsEl) {
-          let currentText = heroStatsEl.innerHTML;
-          currentText = currentText.replace(/Trusted by \d+\+? founding members/, `Trusted by ${formattedCount} founding members`);
-          currentText = currentText.replace(/Avg freedom date: [\d\.]+/, `Avg freedom date: ${yearsEarlier}`);
-          heroStatsEl.innerHTML = currentText;
-        }
+        updateUI(data);
       } catch (err) {
         console.error("Failed to load stats", err);
+        // Show nav button even if fetch fails
+        if (navJoinButton) {
+          navJoinButton.classList.remove('opacity-0');
+          navJoinButton.classList.add('opacity-100');
+        }
       }
     }
     fetchStats();
@@ -807,26 +873,42 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
     // 3. Handle Form Submission (POST)
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-     
+
       const email = emailInput.value.trim().toLowerCase();
-      const freedomAge = parseInt(ageInput.value, 10);
-     
+
       // Frontend Email Validation
-      if (!email.includes("@") || !email.includes(".")) {
-        msg.textContent = "Please enter a valid email address.";
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        msg.innerHTML = `
+          <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 text-red-600">
+            <span class="material-icons-outlined text-xl">error_outline</span>
+            <span class="text-sm font-medium">Please enter a valid email address.</span>
+          </div>
+        `;
+        msg.classList.remove("hidden");
         return;
       }
+
+      // Get the freedom age from the calculator display
+      const freedomAge = parseInt(freedomAgeDisplay.textContent, 10);
 
       // Grab the Turnstile token generated by the widget
       const formData = new FormData(form);
       const turnstileToken = formData.get("cf-turnstile-response");
-     
+
       if (!turnstileToken) {
-        msg.textContent = "Please complete the security check.";
+        msg.innerHTML = `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 flex items-center gap-3 text-yellow-700">
+            <span class="material-icons-outlined text-xl">warning</span>
+            <span class="text-sm font-medium">Please complete the security check.</span>
+          </div>
+        `;
+        msg.classList.remove("hidden");
         return;
       }
 
-      msg.textContent = "Reserving your spot...";
+      // Show loading state with fade transition
+      showLoading();
 
       try {
         const res = await fetch(API_BASE, {
@@ -841,26 +923,26 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
           throw new Error(data.message || "Something went wrong.");
         }
 
-        // Handle Success or Duplicate
+        // Save status to localStorage and show styled card
         localStorage.setItem("waitlist_status", data.status);
-        form.style.display = "none";
-       
-        if (data.status === "WAITLISTFOUNDER") {
-          msg.textContent = "You're in! You secured a founder spot.";
-        } else if (data.status === "WAITLISTNORMAL") {
-          msg.textContent = "Founder spots filled! You're on the waitlist for the next batch.";
-        } else {
-          msg.textContent = "You are already on the list!";
-        }
+        showStatusCard(data.status);
 
-        // Update UI Stats instantly
-        if (countEl) countEl.textContent = data.count;
-        if (ageEl) ageEl.textContent = data.avgFreedomAge ? Math.round(data.avgFreedomAge) : "--";
+        // Update all UI stats with the fresh data from the POST response
+        updateUI(data);
 
       } catch (err) {
-        msg.textContent = err.message;
-        // Reset Turnstile so they can try again
-        turnstile.reset();
+        // Show error and restore form
+        form.style.display = "flex";
+        form.style.opacity = "1";
+        form.style.pointerEvents = "auto";
+        msg.innerHTML = `
+          <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 text-red-600">
+            <span class="material-icons-outlined text-xl">error_outline</span>
+            <span class="text-sm font-medium">${err.message}</span>
+          </div>
+        `;
+        msg.classList.remove("hidden");
+        if (typeof turnstile !== "undefined") turnstile.reset();
       }
     });
   });

@@ -2,6 +2,7 @@ package com.fredvested.web.controller;
 
 import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.WaitlistRepository;
+import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.TurnstileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
@@ -22,6 +23,9 @@ public class WaitlistController {
     @Autowired
     private TurnstileService turnstileService;
 
+    @Autowired
+    private RateLimiterService rateLimiterService;
+
     // --- DTOs for Request/Response ---
     @Data
     public static class WaitlistRequest {
@@ -40,6 +44,16 @@ public class WaitlistController {
     @PostMapping
     public ResponseEntity<?> joinWaitlist(@RequestBody WaitlistRequest request, HttpServletRequest httpRequest) {
        
+        // 0. Rate limit by IP
+        String rawIp = httpRequest.getHeader("CF-Connecting-IP");
+        if (rawIp == null) rawIp = httpRequest.getRemoteAddr();
+        String hashedIp = hashIp(rawIp);
+
+        if (!rateLimiterService.isAllowed(hashedIp)) {
+            return ResponseEntity.status(429)
+                .body(Map.of("message", "Too many requests. Please try again in a minute."));
+        }
+
         // 1. Verify Cloudflare Turnstile
         if (!turnstileService.verifyToken(request.getTurnstileToken())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Security check failed."));
@@ -59,12 +73,7 @@ public class WaitlistController {
             ? WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER
             : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL;
 
-        // 4. Extract and Hash IP (Cloudflare passes actual IP in CF-Connecting-IP)
-        String rawIp = httpRequest.getHeader("CF-Connecting-IP");
-        if (rawIp == null) rawIp = httpRequest.getRemoteAddr();
-        String hashedIp = hashIp(rawIp);
-
-        // 5. Save Entry
+        // 4. Save Entry
         WaitlistEntry entry = new WaitlistEntry();
         entry.setEmail(email);
         entry.setFreedomAge(request.getFreedomAge());
@@ -72,7 +81,7 @@ public class WaitlistController {
         entry.setIpHash(hashedIp);
         repository.save(entry);
 
-        // 6. Return updated stats and status
+        // 5. Return updated stats and status
         return ResponseEntity.ok(buildStatsMap(newStatus.name()));
     }
 
@@ -80,7 +89,7 @@ public class WaitlistController {
     private Map<String, Object> buildStatsMap(String status) {
         Map<String, Object> map = new HashMap<>();
         map.put("status", status);
-        map.put("count", repository.countByStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
+        map.put("count", repository.count()); // Total rows in the table
         Double avg = repository.getAverageFreedomAge();
         map.put("avgFreedomAge", avg != null ? avg : 0.0);
         return map;
