@@ -1,7 +1,12 @@
 package com.fredvested.web.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 
@@ -16,15 +21,20 @@ public class TurnstileService {
 
         RestTemplate restTemplate = new RestTemplate();
         String url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-       
-        // Cloudflare expects form data, but handles POST parameters easily
-        String requestBody = "secret=" + turnstileSecret + "&response=" + token;
+
+        // Cloudflare expects application/x-www-form-urlencoded POST body
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("secret", turnstileSecret);
+        body.add("response", token);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
         try {
             @SuppressWarnings("unchecked")
-            Map<String, Object> response = (Map<String, Object>) restTemplate.postForObject(
-                url + "?" + requestBody, null, Map.class
-            );
+            Map<String, Object> response = restTemplate.postForObject(url, request, Map.class);
             return response != null && (Boolean) response.getOrDefault("success", false);
         } catch (Exception e) {
             return false;
