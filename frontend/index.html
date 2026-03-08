@@ -584,9 +584,13 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 </div>
 <div class="relative min-h-[52px]">
 <form id="waitlist-form" class="flex gap-2 transition-all duration-300">
-<input id="email-input" class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm" placeholder="Enter your email" type="email" required/>
-<button id="footer-join-button" type="submit" class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-colors whitespace-nowrap shadow-lg">
-                    Reserve Spot
+<input id="email-input" class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm transition-all duration-500" placeholder="Enter your email" type="email" required/>
+<button id="footer-join-button" type="submit" class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-all duration-[600ms] whitespace-nowrap shadow-lg overflow-hidden">
+<span id="btn-text">Reserve Spot</span>
+<span id="btn-loading" class="hidden items-center justify-center gap-2">
+<span class="material-icons-outlined text-lg animate-spin">sync</span>
+<span class="text-sm">Reserving your spot...</span>
+</span>
                 </button>
 </form>
 <div id="waitlist-msg" class="hidden mt-2"></div>
@@ -744,6 +748,8 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
     const progressBarEl = document.getElementById("progress-bar");
     const navJoinButton = document.getElementById("nav-join-button");
     const footerJoinButton = document.getElementById("footer-join-button");
+    const btnText = document.getElementById("btn-text");
+    const btnLoading = document.getElementById("btn-loading");
     const waitlistNote = document.getElementById("waitlist-note");
     const joinHeader = document.getElementById("join-header");
 
@@ -759,7 +765,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
       }
       turnstileWidgetId = turnstile.render(form, {
         sitekey: TURNSTILE_SITEKEY,
-        size: 'invisible',
+        appearance: 'interaction-only',
         callback: (token) => { turnstileToken = token; },
         'expired-callback': () => { turnstileToken = null; },
         'error-callback': () => { turnstileToken = null; },
@@ -768,7 +774,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
     initTurnstile();
 
     // --- Status message card builder ---
-    function showStatusCard(status) {
+    function showStatusCard(status, fadeIn = false) {
       const cards = {
         WAITLISTFOUNDER: {
           bg: "bg-green-50 border-green-200",
@@ -794,31 +800,68 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
       };
       const card = cards[status] || cards.already_joined;
       msg.innerHTML = `
-        <div class="${card.bg} border rounded-xl px-4 py-3 flex items-center gap-3 ${card.text}">
+        <div class="${card.bg} border rounded-xl px-4 py-3 flex items-center gap-3 ${card.text} transition-opacity duration-300" style="opacity: ${fadeIn ? '0' : '1'}">
           <span class="material-icons-outlined ${card.iconColor} text-xl">${card.icon}</span>
           <span class="text-sm font-medium">${card.message}</span>
         </div>
       `;
       msg.classList.remove("hidden");
+      if (fadeIn) {
+        // Trigger reflow then fade in
+        requestAnimationFrame(() => {
+          msg.querySelector('div').style.opacity = '1';
+        });
+      }
     }
 
     let loadingAborted = false;
 
     function showLoading() {
       loadingAborted = false;
-      form.style.opacity = "0";
-      form.style.pointerEvents = "none";
+
+      // Step 1: Fade out input and button text
+      emailInput.style.opacity = "0";
+      btnText.style.opacity = "0";
+      footerJoinButton.disabled = true;
+
+      // Step 2: After text fades, collapse input, expand button, swap to loading text
       setTimeout(() => {
         if (loadingAborted) return;
-        form.style.display = "none";
-        msg.innerHTML = `
-          <div class="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-primary">
-            <span class="material-icons-outlined text-xl animate-spin">sync</span>
-            <span class="text-sm font-medium">Reserving your spot...</span>
-          </div>
-        `;
-        msg.classList.remove("hidden");
+        emailInput.style.width = "0";
+        emailInput.style.padding = "0";
+        emailInput.style.border = "none";
+        emailInput.style.margin = "0";
+        emailInput.style.flex = "0";
+        emailInput.style.overflow = "hidden";
+        form.style.gap = "0";
+        footerJoinButton.style.width = "100%";
+        footerJoinButton.style.flex = "1";
+
+        // Swap text immediately so it's ready when button finishes expanding
+        btnText.classList.add("hidden");
+        btnLoading.classList.remove("hidden");
+        btnLoading.classList.add("flex");
       }, 300);
+    }
+
+    function resetForm() {
+      loadingAborted = true;
+      emailInput.style.opacity = "";
+      emailInput.style.width = "";
+      emailInput.style.padding = "";
+      emailInput.style.border = "";
+      emailInput.style.margin = "";
+      emailInput.style.flex = "";
+      emailInput.style.overflow = "";
+      form.style.gap = "";
+      footerJoinButton.style.width = "";
+      footerJoinButton.style.flex = "";
+      footerJoinButton.disabled = false;
+      btnText.style.opacity = "";
+      btnText.classList.remove("hidden");
+      btnLoading.classList.add("hidden");
+      btnLoading.classList.remove("flex");
+      form.style.display = "flex";
     }
 
     // 1. Check LocalStorage First
@@ -870,8 +913,8 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
         navJoinButton.classList.add('opacity-100');
       }
 
-      if (footerJoinButton) {
-        footerJoinButton.textContent = isFull ? "Join Waitlist" : "Reserve Spot";
+      if (btnText) {
+        btnText.textContent = isFull ? "Join Waitlist" : "Reserve Spot";
       }
 
       if (heroStatsEl) {
@@ -937,6 +980,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 
       // Show loading state with fade transition
       showLoading();
+      const loadingStartedAt = Date.now();
 
       try {
         const res = await fetch(API_BASE, {
@@ -951,20 +995,29 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
           throw new Error(data.message || "Something went wrong.");
         }
 
-        // Save status to localStorage and show styled card
-        localStorage.setItem("waitlist_status", data.status);
-        showStatusCard(data.status);
+        // Wait for minimum 3s of loading animation before showing result
+        const elapsed = Date.now() - loadingStartedAt;
+        const remaining = Math.max(0, 3000 - elapsed);
+        await new Promise(resolve => setTimeout(resolve, remaining));
+
+        // For already_joined, save the real status so refresh shows the correct card
+        const displayStatus = data.status;
+        const realStatus = data.realStatus || data.status;
+        localStorage.setItem("waitlist_status", realStatus);
+
+        // Fade out the loading button over 300ms, then fade in the status card
+        footerJoinButton.style.opacity = "0";
+        footerJoinButton.style.transition = "opacity 300ms ease";
+        await new Promise(resolve => setTimeout(resolve, 300));
+        form.style.display = "none";
+        showStatusCard(displayStatus, true);
 
         // Update all UI stats with the fresh data from the POST response
         updateUI(data);
 
       } catch (err) {
         // Abort the delayed loading transition so it doesn't overwrite us
-        loadingAborted = true;
-        // Show error and restore form
-        form.style.display = "flex";
-        form.style.opacity = "1";
-        form.style.pointerEvents = "auto";
+        resetForm();
         msg.innerHTML = `
           <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 text-red-600">
             <span class="material-icons-outlined text-xl">error_outline</span>

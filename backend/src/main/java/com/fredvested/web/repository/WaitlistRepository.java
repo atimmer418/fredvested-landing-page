@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 public interface WaitlistRepository extends JpaRepository<WaitlistEntry, Long> {
    
     boolean existsByEmail(String email);
+
+    WaitlistEntry findByEmail(String email);
    
     long countByStatus(WaitlistEntry.WaitlistStatus status);
 

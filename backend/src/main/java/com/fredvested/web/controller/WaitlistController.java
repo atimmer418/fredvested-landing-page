@@ -61,9 +61,11 @@ public class WaitlistController {
 
         String email = request.getEmail().trim().toLowerCase();
 
-        // 2. Check if already joined
+        // 2. Check if already joined — return their real status so the frontend can store it
         if (repository.existsByEmail(email)) {
+            WaitlistEntry existing = repository.findByEmail(email);
             Map<String, Object> response = buildStatsMap("already_joined");
+            response.put("realStatus", existing.getStatus().name());
             return ResponseEntity.ok(response);
         }
 
