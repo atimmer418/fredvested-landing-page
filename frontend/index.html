@@ -4,85 +4,13 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>FRED</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="dist/output.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              "primary": "#135bec",
-              "primary-dark": "#0e4ac5",
-              "background-light": "#f6f6f8",
-              "background-dark": "#101622",
-              "navy": "#0F172A",
-              "slate-text": "#64748B",
-            },
-            fontFamily: {
-              "display": ["Inter", "sans-serif"],
-              "montserrat": ["Montserrat", "sans-serif"],
-            },
-            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
-            boxShadow: {
-                "soft": "0 4px 20px -2px rgba(19, 91, 236, 0.08)",
-                "card": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
-                "card-hover": "0 10px 30px -5px rgba(0, 0, 0, 0.08)",
-            }
-          },
-        },
-      }
-    </script>
-<style>
-  /* Force the slider thumb to stay blue and the track to stay light gray */
-input[type=range] {
-    -webkit-appearance: none;
-    appearance: none; 
-    background: transparent !important;
-}
-
-/* Chrome, Safari, Edge, Opera */
-input[type=range]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    background: #e2e8f0 !important; /* light gray */
-    border-radius: 2px;
-}
-
-input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #135bec !important; /* primary blue */
-    cursor: pointer;
-    margin-top: -8px; /* Centers thumb on track */
-    box-shadow: 0 2px 6px rgba(19, 91, 236, 0.4);
-    border: none;
-}
-
-/* Firefox */
-input[type=range]::-moz-range-track {
-    width: 100%;
-    height: 4px;
-    background: #e2e8f0 !important;
-    border-radius: 2px;
-}
-
-input[type=range]::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #135bec !important;
-    cursor: pointer;
-    border: none;
-}
-</style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
 <!-- Navbar -->
@@ -585,7 +513,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 <div class="relative min-h-[52px]">
 <form id="waitlist-form" class="flex gap-2 transition-all duration-300">
 <input id="email-input" class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm transition-all duration-500" placeholder="Enter your email" type="email" required/>
-<button id="footer-join-button" type="submit" class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-all duration-[600ms] whitespace-nowrap shadow-lg overflow-hidden">
+<button id="footer-join-button" type="submit" class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-all duration-[600ms] whitespace-nowrap shadow-lg overflow-hidden cursor-pointer disabled:cursor-default">
 <span id="btn-text">Reserve Spot</span>
 <span id="btn-loading" class="hidden items-center justify-center gap-2">
 <span class="material-icons-outlined text-lg animate-spin">sync</span>
@@ -781,7 +709,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
           text: "text-green-700",
           icon: "check_circle",
           iconColor: "text-green-500",
-          message: "You're in! You secured a founder spot. We'll email you soon."
+          message: "You secured a founder spot. We'll email you soon."
         },
         WAITLISTNORMAL: {
           bg: "bg-blue-50 border-blue-200",
@@ -882,7 +810,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 
     function updateUI(data) {
       const formattedCount = formatCount(data.count || 181);
-      const yearsEarlier = data.avgFreedomAge ? (65 - Math.round(data.avgFreedomAge)) : 6.2;
+      const yearsEarlier = data.avgFreedomAge ? Math.round((65 - data.avgFreedomAge) * 10) / 10 : 6.2;
 
       const actualCount = data.count || 0;
       const maxCount = 300;
