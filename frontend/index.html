@@ -13,6 +13,14 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
+<style>
+  img.no-save {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none;
+  }
+</style>
 </head>
 <body class="bg-background-light font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
 <!-- Navbar -->
@@ -45,12 +53,12 @@
 </div>
 </nav>
 <!-- Hero Section -->
-<section class="relative pt-8 pb-16 lg:pt-20 lg:pb-32 overflow-hidden bg-white">
+<section class="relative pt-6 pb-16 lg:pt-20 lg:pb-32 overflow-hidden bg-white">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 <div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
 <!-- Text column -->
 <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
-<div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-4 lg:mb-6">
+<div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-2 lg:mb-6">
 <span class="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
                         NEW Beta Slots Open
                     </div>
@@ -60,7 +68,7 @@
 <!-- Mobile-only image (between heading and description) -->
 <div class="lg:hidden mb-6">
 <div class="relative rounded-2xl overflow-hidden shadow-soft bg-gradient-to-br from-blue-50 to-white border border-gray-100 p-6 min-h-[250px] flex items-center justify-center">
-<img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
+<img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="no-save object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
 <div class="relative z-10 bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs transform rotate-2 transition-transform duration-500">
 <div class="flex items-center justify-between mb-4">
 <div class="text-sm font-medium text-slate-text">Total Freedom Fund</div>
@@ -85,17 +93,17 @@
                             How it works
                         </a>
 </div>
-<div class="mt-6 text-sm text-slate-text flex items-center gap-2 justify-center lg:justify-start opacity-0 transition-opacity duration-300" id="hero-stats-text">
-  <span class="material-icons-outlined text-green-500 text-base">verified</span>
-  Trusted by 180+ founding members
-  <span class="text-yellow-500">★</span>
-  Avg freedom date: 6.2 years earlier
+<div class="mt-6 text-sm text-slate-text flex flex-col-reverse sm:flex-row items-center gap-1 sm:gap-2 justify-center lg:justify-start opacity-0 transition-opacity duration-300" id="hero-stats-text">
+  <span class="flex items-center gap-1"><span class="material-icons-outlined text-green-500 text-base">verified</span>
+  Trusted by 180+ founding members</span>
+  <span class="flex items-center gap-1"><span class="text-yellow-500 text-lg leading-none">★</span>
+  Avg freedom date: 6.2 years earlier</span>
 </div>
 </div>
 <!-- Desktop-only image (right column) -->
 <div class="hidden lg:block lg:col-span-6">
 <div class="relative rounded-2xl overflow-hidden shadow-soft bg-gradient-to-br from-blue-50 to-white border border-gray-100 p-8 min-h-[400px] flex items-center justify-center">
-<img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
+<img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="no-save object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
 <div class="relative z-10 bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs transform rotate-2 hover:rotate-0 transition-transform duration-500">
 <div class="flex items-center justify-between mb-4">
 <div class="text-sm font-medium text-slate-text">Total Freedom Fund</div>
