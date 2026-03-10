@@ -53,7 +53,7 @@
 </div>
 </nav>
 <!-- Hero Section -->
-<section class="relative pt-6 pb-16 lg:pt-20 lg:pb-32 overflow-hidden bg-white">
+<section class="relative pt-4 pb-8 lg:pt-20 lg:pb-32 overflow-hidden bg-white">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 <div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
 <!-- Text column -->
@@ -62,12 +62,17 @@
 <span class="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
                         NEW Beta Slots Open
                     </div>
-<h1 class="text-3xl tracking-tight font-extrabold text-navy sm:text-5xl md:text-6xl lg:text-6xl mb-4 lg:mb-6">
+<h1 class="text-3xl tracking-tight font-extrabold text-navy sm:text-5xl md:text-6xl lg:text-6xl mb-1 lg:mb-6">
                         Automatically Invest.<br><span class="text-primary">Retire Years Earlier.</span>
 </h1>
+<!-- Mobile-only: Trusted by (above image) -->
+<div class="lg:hidden text-sm text-slate-text flex items-center gap-1 mb-2 opacity-0 transition-opacity duration-300" id="hero-trusted-mobile">
+  <span class="material-icons-outlined text-green-500 text-base">verified</span>
+  Trusted by 180+ founding members
+</div>
 <!-- Mobile-only image (between heading and description) -->
-<div class="lg:hidden mb-6">
-<div class="relative rounded-2xl overflow-hidden shadow-soft bg-gradient-to-br from-blue-50 to-white border border-gray-100 p-6 min-h-[250px] flex items-center justify-center">
+<div class="lg:hidden mb-3">
+<div class="relative rounded-2xl overflow-hidden shadow-soft bg-gradient-to-br from-blue-50 to-white border border-gray-100 p-6 min-h-[240px] flex items-center justify-center">
 <img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="no-save object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
 <div class="relative z-10 bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs transform rotate-2 transition-transform duration-500">
 <div class="flex items-center justify-between mb-4">
@@ -82,10 +87,15 @@
 </div>
 </div>
 </div>
-<p class="mt-3 text-sm text-slate-text sm:text-base sm:mt-5 sm:max-w-xl sm:mx-auto md:mt-5 lg:mx-0 leading-relaxed">
+<p class="mt-2 text-sm text-slate-text sm:text-base sm:mt-5 sm:max-w-xl sm:mx-auto md:mt-5 lg:mx-0 leading-relaxed">
                         FRED builds and maintains your long-term investing system — so your money compounds toward early corporate freedom, automatically.
                     </p>
-<div class="mt-6 sm:mt-12 flex flex-col sm:flex-row sm:justify-center lg:justify-start gap-3 sm:gap-4">
+<!-- Mobile-only: Avg freedom date (above buttons, centered) -->
+<div class="lg:hidden text-sm text-slate-text flex items-center gap-1 justify-center mt-3 opacity-0 transition-opacity duration-300" id="hero-avg-mobile">
+  <span class="text-yellow-500 text-lg leading-none">★</span>
+  <i>Average Freedom Date: 6.2 years earlier</i>
+</div>
+<div class="mt-3 sm:mt-12 flex flex-col sm:flex-row sm:justify-center lg:justify-start gap-3 sm:gap-4">
 <a class="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-primary hover:bg-primary-dark md:py-4 md:text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]" href="#calculator">
                             See My Freedom Date
                         </a>
@@ -93,7 +103,8 @@
                             How it works
                         </a>
 </div>
-<div class="mt-6 text-sm text-slate-text flex flex-col-reverse sm:flex-row items-center gap-1 sm:gap-2 justify-center lg:justify-start opacity-0 transition-opacity duration-300" id="hero-stats-text">
+<!-- Desktop-only combined stats -->
+<div class="mt-6 text-sm text-slate-text hidden lg:flex items-center gap-2 justify-start opacity-0 transition-opacity duration-300" id="hero-stats-text">
   <span class="flex items-center gap-1"><span class="material-icons-outlined text-green-500 text-base">verified</span>
   Trusted by 180+ founding members</span>
   <span class="flex items-center gap-1"><span class="text-yellow-500 text-lg leading-none">★</span>
@@ -867,6 +878,8 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
     const freedomAgeDisplay = document.getElementById("freedom-age-display");
     const msg = document.getElementById("waitlist-msg");
     const heroStatsEl = document.getElementById("hero-stats-text");
+    const heroTrustedMobile = document.getElementById("hero-trusted-mobile");
+    const heroAvgMobile = document.getElementById("hero-avg-mobile");
     const progressCountEl = document.getElementById("progress-count");
     const progressBarEl = document.getElementById("progress-bar");
     const navJoinButton = document.getElementById("nav-join-button");
@@ -1043,10 +1056,22 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       if (heroStatsEl) {
         let currentHTML = heroStatsEl.innerHTML;
         currentHTML = currentHTML.replace(/Trusted by \d+\+? founding members/g, `Trusted by ${formattedCount} founding members`);
-        currentHTML = currentHTML.replace(/Avg freedom date: [\d\.]+/g, `Avg freedom date: ${yearsEarlier}`);
+        currentHTML = currentHTML.replace(/Average Freedom Date: [\d\.]+/g, `Average Freedom Date: ${yearsEarlier}`);
         heroStatsEl.innerHTML = currentHTML;
         heroStatsEl.classList.remove('opacity-0');
         heroStatsEl.classList.add('opacity-100');
+      }
+
+      if (heroTrustedMobile) {
+        heroTrustedMobile.innerHTML = heroTrustedMobile.innerHTML.replace(/Trusted by \d+\+? founding members/g, `Trusted by ${formattedCount} founding members`);
+        heroTrustedMobile.classList.remove('opacity-0');
+        heroTrustedMobile.classList.add('opacity-100');
+      }
+
+      if (heroAvgMobile) {
+        heroAvgMobile.innerHTML = heroAvgMobile.innerHTML.replace(/Average Freedom Date: [\d\.]+/g, `Average Freedom Date: ${yearsEarlier}`);
+        heroAvgMobile.classList.remove('opacity-0');
+        heroAvgMobile.classList.add('opacity-100');
       }
     }
 
