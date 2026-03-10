@@ -2,7 +2,9 @@
 
 <html class="scroll-smooth" lang="en"><head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"/>
+<meta name="theme-color" content="#ffffff"/>
+<meta name="color-scheme" content="light"/>
 <title>FRED</title>
 <link rel="stylesheet" href="dist/output.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,9 +14,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
+<body class="bg-background-light font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
 <!-- Navbar -->
-<nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100">
+<nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100 before:absolute before:bottom-full before:left-0 before:w-full before:h-20 before:bg-white">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="flex justify-between h-16 items-center">
 <div class="flex-shrink-0 flex items-center gap-2">
@@ -165,7 +167,7 @@
 </div>
 <div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 md:p-12 border border-blue-100">
 <div class="grid md:grid-cols-2 gap-12">
-<div class="space-y-8">
+<div class="space-y-8 overflow-hidden">
   
 <div>
 <div class="flex justify-between items-center mb-2">
@@ -637,12 +639,12 @@
 <section class="py-12 lg:py-24 bg-white relative" id="pricing">
 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 <h2 class="text-3xl font-bold text-navy mb-4">Simple, Transparent Pricing</h2>
-<p class="text-slate-text mb-12">We don't take a percentage of your future. Just a small fee for the service.</p>
+<p class="text-slate-text mb-12">We don't take a percentage of your future. <span class="block sm:inline">Just a small fee for the service.</span></p>
 <div class="bg-navy text-white rounded-3xl p-1 relative overflow-hidden shadow-2xl max-w-sm mx-auto">
 <div class="bg-gray-900 rounded-[20px] p-8 relative z-10 h-full flex flex-col">
 <div class="absolute -top-1 -right-1 bg-primary text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-[20px] text-white tracking-wide shadow-lg">Limited Time</div>
 <h3 class="text-xl font-medium text-gray-300 mb-2">Founder Access</h3>
-<p class="text-sm text-gray-400 mb-3">
+<p class="text-sm text-gray-400 mb-3 whitespace-nowrap">
   Normally $8/month • Save $800+ over 10 yrs
 </p>
 <div class="flex items-baseline justify-center my-6">
@@ -651,17 +653,17 @@
 </div>
 <ul class="space-y-4 mb-8 text-left text-gray-300 text-sm">
 <li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Lifetime access for all features</li>
-<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> One-time founder price (no monthly fee)</li>
+<li class="flex items-center whitespace-nowrap"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> One-time founder price (no monthly fee)</li>
 <li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Priority beta access + early features</li>
 <li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Founder badge + community status</li>
 </ul>
 <a class="block w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-xl transition-colors mt-auto" href="#join">
                         Reserve Your Founder Spot
                     </a>
-<p class="text-[9px] text-gray-500 mt-2">
-No payment today. If invited, you can choose to claim Founder Access.
-Founder spots are limited. Once full, pricing switches to $8/month.<br>
-60-day money-back guarantee.
+<p class="text-[9px] text-gray-500 mt-2 whitespace-nowrap">
+Don't feel more confident in your financial future with FRED? Full Refund.<br>
+No payment today. If invited, you can choose to claim Founder Access.<br>
+Founder spots are limited. Once full, pricing switches to $8/month.
 </p>
 </div>
 </div>
@@ -689,7 +691,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 </div>
 <div class="relative min-h-[52px]">
 <form id="waitlist-form" class="flex gap-2 transition-all duration-300">
-<input id="email-input" class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm transition-all duration-500 text-sm sm:text-base" placeholder="Enter your email" type="email" required/>
+<input id="email-input" class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm transition-all duration-500 text-[12.5px] sm:text-base" placeholder="Enter your email" type="email" required/>
 <button id="footer-join-button" type="submit" class="bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-all duration-[600ms] whitespace-nowrap shadow-lg overflow-hidden cursor-pointer disabled:cursor-default">
 <span id="btn-text">Reserve Spot</span>
 <span id="btn-loading" class="hidden items-center justify-center gap-2">
@@ -701,10 +703,10 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 <div id="waitlist-msg" class="hidden mt-2"></div>
 </div>
 <p class="text-sm text-slate-text mt-4">
-  If invited, you’ll have the option to claim Founder Access.
+<span class="sm:hidden">If invited, you have the option to claim Founder Access.</span><span class="hidden sm:inline">If invited, you'll have the option to claim Founder Access.</span>
 </p>
 <p class="text-sm text-slate-text">
-  No payment today.
+No payment today.
 </p>
 <div class="mt-6 pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
 <div class="flex justify-center space-x-6 mb-4">
@@ -713,9 +715,9 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
 <a class="hover:text-primary" href="#">Contact</a>
 </div>
 <p>© 2026 FREDvested LLC</p>
-<div class="mt-4 text-[10px] leading-relaxed text-gray-400 max-w-xl mx-auto">
-  Brokerage services provided by Alpaca Securities LLC, member FINRA/SIPC.
-  FREDvested LLC is not a broker-dealer and does not provide investment advice.
+<div class="mt-4 text-[10px] leading-relaxed text-gray-400 max-w-xl mx-auto whitespace-nowrap">
+FREDvested LLC is not a broker-dealer and does not provide investment advice.<br>
+  Brokerage services provided by Alpaca Securities LLC, member FINRA/SIPC.<br>
   Investing involves risk, including possible loss of principal.
 </div>
 </div>
@@ -915,7 +917,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.<br>
       msg.innerHTML = `
         <div class="${card.bg} border rounded-xl px-4 py-3 flex items-center gap-3 ${card.text} transition-opacity duration-300" style="opacity: ${fadeIn ? '0' : '1'}">
           <span class="material-icons-outlined ${card.iconColor} text-xl">${card.icon}</span>
-          <span class="text-sm font-medium">${card.message}</span>
+          <span class="text-[12px] sm:text-sm font-medium">${card.message}</span>
         </div>
       `;
       msg.classList.remove("hidden");
