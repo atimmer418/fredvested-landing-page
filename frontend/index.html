@@ -105,10 +105,10 @@
 </div>
 <!-- Desktop-only combined stats -->
 <div class="mt-6 text-sm text-slate-text hidden lg:flex items-center gap-2 justify-start opacity-0 transition-opacity duration-300" id="hero-stats-text">
+  <span class="flex items-center gap-1"><span class="text-yellow-500 text-lg leading-none">★</span>
+  Avg Freedom Date: 6.2 years earlier</span>
   <span class="flex items-center gap-1"><span class="material-icons-outlined text-green-500 text-base">verified</span>
   Trusted by 180+ founding members</span>
-  <span class="flex items-center gap-1"><span class="text-yellow-500 text-lg leading-none">★</span>
-  Avg freedom date: 6.2 years earlier</span>
 </div>
 </div>
 <!-- Desktop-only image (right column) -->
@@ -691,7 +691,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.
 <!-- Footer & Scarcity -->
 <section class="bg-background-light py-16 border-t border-gray-200 scroll-mt-16 lg:scroll-mt-0" id="join">
 <div class="max-w-md mx-auto px-4 text-center">
-<h3 id="join-header" class="text-2xl font-bold text-navy mb-1">Join Private Beta</h3>
+<h3 class="text-2xl font-bold text-navy mb-1">Join Private Beta</h3>
 <div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary mb-6">
   <span class="material-icons-outlined text-base">lock</span>
   Limited to 300 founding members
@@ -706,7 +706,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.
 <div class="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow"></div>
 </div>
 </div>
-<p id="waitlist-note" class="text-xs text-slate-text text-left">We limit beta spots to ensure high-touch support for every founding member.</p>
+<p id="waitlist-note" class="text-xs text-slate-text text-left">We limit beta spots to ensure high-touch support for every founding member. The beta is currently <b>iOS only</b>.</p>
 </div>
 <div class="relative min-h-[52px]">
 <form id="waitlist-form" class="flex gap-2 transition-all duration-300">
@@ -887,7 +887,6 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
     const btnText = document.getElementById("btn-text");
     const btnLoading = document.getElementById("btn-loading");
     const waitlistNote = document.getElementById("waitlist-note");
-    const joinHeader = document.getElementById("join-header");
 
     // --- Invisible Turnstile ---
     let turnstileToken = null;
@@ -917,14 +916,14 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
           text: "text-green-700",
           icon: "check_circle",
           iconColor: "text-green-500",
-          message: "You secured a founder spot. We'll email you soon."
+          message: window.innerWidth > 640 ? "You secured a founder spot. We'll email you soon." : "Founder spot secured. We'll email you soon."
         },
         WAITLISTNORMAL: {
           bg: "bg-blue-50 border-blue-200",
           text: "text-blue-700",
           icon: "schedule",
           iconColor: "text-blue-500",
-          message: "Founder spots are full — you're on the priority waitlist for the next batch."
+          message: window.innerWidth > 640 ? "Founder spots full — you're on the priority waitlist." : "Founder spots full; you're on the priority list."
         },
         already_joined: {
           bg: "bg-gray-50 border-gray-200",
@@ -938,7 +937,7 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       msg.innerHTML = `
         <div class="${card.bg} border rounded-xl px-4 py-3 flex items-center gap-3 ${card.text} transition-opacity duration-300" style="opacity: ${fadeIn ? '0' : '1'}">
           <span class="material-icons-outlined ${card.iconColor} text-xl">${card.icon}</span>
-          <span class="text-[12px] sm:text-sm font-medium">${card.message}</span>
+          <span class="text-sm sm:text-sm font-medium">${card.message}</span>
         </div>
       `;
       msg.classList.remove("hidden");
@@ -1009,10 +1008,9 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
 
     // --- Shared UI update logic ---
     const formatCount = (count) => {
-      if (count < 10) return count.toString();
+      if (count <= 10) return count.toString();
       let step = count >= 1000 ? 100 : 10;
-      let rounded = Math.floor(count / step) * step;
-      if (count % step === 0 && count > 0) rounded -= step;
+      let rounded = Math.floor((count - 1) / step) * step;
       return `${rounded}+`;
     };
 
@@ -1026,7 +1024,9 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       const isFull = actualCount >= maxCount;
 
       if (progressCountEl) {
-        progressCountEl.textContent = `${actualCount} / ${maxCount}`;
+        progressCountEl.textContent = isFull 
+        ? `${maxCount} / ${maxCount} (Full)` 
+        : `${actualCount} / ${maxCount}`;
       }
 
       if (progressBarEl) {
@@ -1034,13 +1034,9 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       }
 
       if (waitlistNote) {
-        waitlistNote.textContent = isFull
-          ? "Private beta is currently full. Join the priority waitlist and you could receive a founder invitation if spots open."
-          : "We limit beta spots to ensure high-touch support for every founding member.";
-      }
-
-      if (joinHeader) {
-        joinHeader.textContent = isFull ? "Join Priority Waitlist" : "Join Private Beta";
+        waitlistNote.innerHTML = isFull
+          ? "Private beta is currently full. Join the priority waitlist to receive a founder invitation if spots open - <b>iOS only</b>."
+          : "We limit beta spots to ensure high-touch support for every founding member. The beta is currently <b>iOS only</b>.";
       }
 
       if (navJoinButton) {
@@ -1056,7 +1052,7 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       if (heroStatsEl) {
         let currentHTML = heroStatsEl.innerHTML;
         currentHTML = currentHTML.replace(/Trusted by \d+\+? founding members/g, `Trusted by ${formattedCount} founding members`);
-        currentHTML = currentHTML.replace(/Average Freedom Date: [\d\.]+/g, `Average Freedom Date: ${yearsEarlier}`);
+        currentHTML = currentHTML.replace(/Avg Freedom Date: [\d\.]+/g, `Avg Freedom Date: ${yearsEarlier}`);
         heroStatsEl.innerHTML = currentHTML;
         heroStatsEl.classList.remove('opacity-0');
         heroStatsEl.classList.add('opacity-100');
