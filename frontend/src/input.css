@@ -2,7 +2,7 @@
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/container-queries";
 
-@source "../index.html";
+@source "../*.html";
 
 @theme {
   --color-primary: #135bec;
@@ -31,6 +31,7 @@ input[type=range] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent !important;
+  touch-action: none;
 }
 
 /* Chrome, Safari, Edge, Opera */

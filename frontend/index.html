@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
+<script defer data-domain="fredvested.com" src="https://plausible.io/js/script.js"></script>
 <style>
   img.no-save {
     -webkit-touch-callout: none;
@@ -53,7 +54,7 @@
 </div>
 </nav>
 <!-- Hero Section -->
-<section class="relative pt-4 pb-8 lg:pt-20 lg:pb-32 overflow-hidden bg-white">
+<section class="relative pt-5 pb-8 lg:pt-20 lg:pb-32 overflow-hidden bg-white">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 <div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
 <!-- Text column -->
@@ -184,42 +185,42 @@
 <h2 class="text-3xl font-bold text-navy sm:text-4xl"><span class="sm:hidden">How Soon Is Freedom?</span><span class="hidden sm:inline">How Soon Could You Be Free?</span></h2>
 <p class="mt-4 text-lg text-slate-text"><span class="sm:hidden">Adjust the sliders to see your timeline.</span><span class="hidden sm:inline">Adjust the sliders to see your accelerated timeline.</span></p>
 </div>
-<div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 md:p-12 border border-blue-100">
+<div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 md:p-12 border border-blue-100 overflow-clip max-w-full">
 <div class="grid md:grid-cols-2 gap-12">
-<div class="space-y-8 overflow-hidden">
+<div class="space-y-8 overflow-clip min-w-0">
   
 <div>
-<div class="flex justify-between items-center mb-2">
-<label class="text-sm font-medium text-navy">Current Age</label>
-<span id="age-display" class="text-lg font-bold text-primary">24</span>
+<div class="flex justify-between items-center mb-2 overflow-hidden">
+<label class="text-sm font-medium text-navy min-w-0 truncate">Current Age</label>
+<span id="age-display" class="text-lg font-bold text-primary whitespace-nowrap flex-shrink-0">24</span>
 </div>
 <input id="age-input" class="w-full accent-primary" max="45" min="18" type="range" value="24"/>
 </div>
 
 <div>
-<div class="flex justify-between items-center mb-2">
-<label class="text-sm font-medium text-navy">Desired Freedom Income</label>
-<span id="freedom-income-display" class="text-lg font-bold text-primary">$80,000</span>
+<div class="flex justify-between items-center mb-2 overflow-hidden">
+<label class="text-sm font-medium text-navy min-w-0 truncate">Desired Freedom Income</label>
+<span id="freedom-income-display" class="text-lg font-bold text-primary whitespace-nowrap flex-shrink-0">$80,000</span>
 </div>
 <input id="freedom-income-input" class="w-full accent-primary" max="200000" min="40000" step="5000" type="range" value="80000"/>
 </div>
 
 <div>
-<div class="flex justify-between items-center mb-2">
-<label class="text-sm font-medium text-navy">I Can Invest...</label>
-<span id="invest-display" class="text-lg font-bold text-primary">$1,250/mo</span>
+<div class="flex justify-between items-center mb-2 overflow-hidden">
+<label class="text-sm font-medium text-navy min-w-0 truncate">I Can Invest...</label>
+<span id="invest-display" class="text-lg font-bold text-primary whitespace-nowrap flex-shrink-0">$1,250/mo</span>
 </div>
 <input id="invest-input" class="w-full accent-primary" max="5000" min="250" step="250" type="range" value="1250"/>
 <div class="flex justify-between text-xs text-gray-400 mt-2">
 <span>Steady</span>
-<span>Hyperdrive<span>
+<span>Hyperdrive</span>
 </div>
 </div>
 </div>
-<div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl pt-8 px-8 pb-4 flex flex-col justify-center items-center text-center border border-blue-100">
+<div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl pt-8 px-4 sm:px-8 pb-4 flex flex-col justify-center items-center text-center border border-blue-100 min-w-0">
 <p class="text-sm text-slate-text uppercase tracking-wide font-semibold mb-2">Your Year to be Free</p>
 <div id="freedom-age-display" class="text-7xl font-bold text-navy mb-2 tracking-tighter">49</div>
-<p id="years-earlier-text" class="text-green-600 font-medium flex items-center gap-1 mb-4 bg-green-50 px-3 py-1 rounded-full text-sm whitespace-nowrap">
+<p id="years-earlier-text" class="text-green-600 font-medium flex items-center gap-1 mb-4 bg-green-50 px-3 py-1 rounded-full text-sm">
   <span class="material-icons-outlined text-sm">bolt</span> 16 yrs earlier than average
 </p>
 <a class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-primary/20" href="#join">
@@ -663,14 +664,14 @@
 <div class="bg-gray-900 rounded-[20px] p-8 relative z-10 h-full flex flex-col">
 <div class="absolute -top-1 -right-1 bg-primary text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-[20px] text-white tracking-wide shadow-lg">Limited Time</div>
 <h3 class="text-xl font-medium text-gray-300 mb-2">Founder Access</h3>
-<p class="text-sm text-gray-400 mb-3 whitespace-nowrap">
+<p class="text-sm text-gray-400 mb-3 -mx-4 sm:mx-0">
   Normally $8/month • Save $800+ over 10 yrs
 </p>
 <div class="flex items-baseline justify-center my-6">
 <span class="text-5xl font-bold tracking-tight">$99</span>
 <span class="text-xl text-gray-400 ml-2">Lifetime</span>
 </div>
-<ul class="space-y-4 mb-8 text-left text-gray-300 text-sm">
+<ul class="space-y-4 mb-8 text-left text-gray-300 text-sm -mx-2 sm:mx-0">
 <li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Lifetime access for all features</li>
 <li class="flex items-center whitespace-nowrap"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> One-time founder price (no monthly fee)</li>
 <li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Priority beta access + early features</li>
@@ -679,7 +680,7 @@
 <a class="block w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-xl transition-colors mt-auto" href="#join">
                         Reserve Your Founder Spot
                     </a>
-<p class="text-[9px] text-gray-500 mt-2 whitespace-nowrap">
+<p class="text-[9px] text-gray-500 mt-2 -mx-6 sm:mx-0">
 Not feeling more confident in your financial future with FRED? Full refund.<br>
 No payment today. If invited, you can choose to claim Founder Access.<br>
 Founder spots are limited. Once full, pricing switches to $8/month.
@@ -706,7 +707,7 @@ Founder spots are limited. Once full, pricing switches to $8/month.
 <div class="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow"></div>
 </div>
 </div>
-<p id="waitlist-note" class="text-xs text-slate-text text-left">We limit beta spots to ensure high-touch support for every founding member. The beta is currently <b>iOS only</b>.</p>
+<p id="waitlist-note" class="text-xs text-slate-text text-left -mx-1 min-[400px]:mx-0">We limit beta spots to ensure high-touch support for every founding member. The beta is currently <b>iOS only</b>.</p>
 </div>
 <div class="relative min-h-[52px]">
 <form id="waitlist-form" class="flex gap-2 transition-all duration-300">
@@ -722,19 +723,19 @@ Founder spots are limited. Once full, pricing switches to $8/month.
 <div id="waitlist-msg" class="hidden mt-2"></div>
 </div>
 <p class="text-sm text-slate-text mt-4">
-<span class="sm:hidden">If invited, you have the option to claim Founder Access.</span><span class="hidden sm:inline">If invited, you'll have the option to claim Founder Access.</span>
+<span class="sm:hidden -mx-2 sm:mx-0">If invited, you have the option to claim Founder Access.</span><span class="hidden sm:inline">If invited, you'll have the option to claim Founder Access.</span>
 </p>
 <p class="text-sm text-slate-text">
 No payment today.
 </p>
 <div class="mt-6 pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
 <div class="flex justify-center space-x-6 mb-4">
-<a class="hover:text-primary" href="#">Privacy</a>
-<a class="hover:text-primary" href="#">Terms</a>
-<a class="hover:text-primary" href="#">Contact</a>
+<a class="hover:text-primary" href="/privacy">Privacy</a>
+<a class="hover:text-primary" href="/terms">Terms</a>
+<a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
 </div>
 <p>© 2026 FREDvested LLC</p>
-<div class="mt-4 text-[10px] leading-relaxed text-gray-400 max-w-xl mx-auto whitespace-nowrap">
+<div class="mt-4 text-[10px] leading-relaxed text-gray-400 -mx-4 sm:mx-auto sm:max-w-xl">
 FREDvested LLC is not a broker-dealer and does not provide investment advice.<br>
   Brokerage services provided by Alpaca Securities LLC, member FINRA/SIPC.<br>
   Investing involves risk, including possible loss of principal.
@@ -746,7 +747,9 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
+        const href = this.getAttribute('href');
+        if (href === '#') return;
+        const target = document.querySelector(href);
         if (target) {
             target.scrollIntoView({
                 behavior: 'smooth',
@@ -837,7 +840,7 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       // Dynamic styling based on whether they beat the average or not
       const isMobile = window.innerWidth < 640;
       const yrsWord = isMobile ? 'yrs' : 'years';
-      const pillBase = 'font-medium flex items-center gap-1 mb-4 px-3 py-1 rounded-full text-sm whitespace-nowrap';
+      const pillBase = 'font-medium flex items-center justify-center gap-1 mb-4 px-3 py-1 rounded-full text-sm text-center';
       if (yearsEarlier > 0) {
         earlierTextDisplay.innerHTML = `<span class="material-icons-outlined text-sm">bolt</span> ${yearsEarlier} ${yrsWord} earlier than average`;
         earlierTextDisplay.className = `text-green-600 bg-green-50 ${pillBase}`;
@@ -1176,5 +1179,15 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       }
     });
   });
+</script>
+<script>
+  (function() {
+    var isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('ngrok');
+    if (!isDev) return;
+    var map = { '/privacy': 'privacy.html', '/terms': 'terms.html' };
+    document.querySelectorAll('a[href]').forEach(function(a) {
+      if (map[a.getAttribute('href')]) a.href = map[a.getAttribute('href')];
+    });
+  })();
 </script>
 </body></html>
