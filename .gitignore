@@ -1,0 +1,44 @@
+# Gradle
+backend/.gradle/
+backend/build/
+backend/.gradletasknamecache
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.tmp
+*.temp
+
+# Spring Boot
+backend/target/
+
+# IDE
+.idea/
+*.iml
+*.iws
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node.js (frontend)
+frontend/node_modules/
+frontend/.next/
+frontend/.nuxt/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs
+*.log
+logs/
