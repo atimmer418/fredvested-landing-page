@@ -940,7 +940,7 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
           text: "text-green-700",
           icon: "check_circle",
           iconColor: "text-green-500",
-          message: window.innerWidth > 640 ? "You secured a founder spot. We'll email you soon." : "Founder spot secured. We'll email you soon."
+          message: window.innerWidth > 640 ? "You secured a founder spot. We'll email you soon." : window.innerWidth < 400 ? "Founder spot secured. Email coming soon." : "Founder spot secured. We'll email you soon."
         },
         WAITLISTNORMAL: {
           bg: "bg-blue-50 border-blue-200",
