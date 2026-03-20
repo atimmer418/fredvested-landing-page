@@ -2,8 +2,8 @@ package com.fredvested.web.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "waitlist_signups")
@@ -27,9 +27,13 @@ public class WaitlistEntry {
     @Column(name = "ip_hash")
     private String ipHash;
 
-    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    }
 
     public enum WaitlistStatus {
         WAITLISTFOUNDER, WAITLISTNORMAL, INVITED, CLAIMED, DECLINED
