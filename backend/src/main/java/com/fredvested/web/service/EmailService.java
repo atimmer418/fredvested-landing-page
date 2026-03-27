@@ -123,7 +123,7 @@ public class EmailService {
 
         <!-- Below-card note -->
         <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
-          You&#39;re receiving this because you signed up at fredvested.com
+          You&#39;re receiving this because you signed up for FRED at fredvested.com
         </p>
       </td>
     </tr>
