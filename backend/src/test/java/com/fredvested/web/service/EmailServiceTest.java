@@ -10,7 +10,7 @@ class EmailServiceTest {
         EmailService service = new EmailService("test-key");
         String html = service.buildHtmlEmail();
 
-        assertThat(html).contains("You&#39;re on the <strong>FRED private beta waitlist</strong>");
+        assertThat(html).contains("FRED's private beta waitlist");
         assertThat(html).contains("clock out early");
         assertThat(html).contains("48 hours to claim your spot");
         assertThat(html).contains("Signups are being reviewed in waves");
