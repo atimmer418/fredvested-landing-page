@@ -36,11 +36,8 @@ public class EmailService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <meta name="supported-color-schemes" content="light">
   <title>You&#39;re in</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
-  <style>:root { color-scheme: light; }</style>
 </head>
 <body style="margin:0;padding:0;background-color:#ffffff;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;padding:40px 16px;">
@@ -50,7 +47,7 @@ public class EmailService {
 
           <!-- Header -->
           <tr>
-            <td style="background-color:#0F172A;padding:32px 40px;text-align:center;border-bottom:3px solid #135bec;">
+            <td style="background-color:#ffffff;padding:32px 40px;text-align:center;border-bottom:3px solid #135bec;">
               <span style="font-family:'Montserrat','Arial Black',Arial,sans-serif;font-size:42px;font-weight:900;font-style:italic;color:#135bec;letter-spacing:-1px;line-height:1;">FRED</span>
             </td>
           </tr>
