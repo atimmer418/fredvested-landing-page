@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -71,5 +72,7 @@ class WaitlistControllerEmailTest {
                         "turnstileToken", "token"
                 ))))
                 .andExpect(status().isOk());
+
+        verify(repository, times(1)).save(any(WaitlistEntry.class));
     }
 }
