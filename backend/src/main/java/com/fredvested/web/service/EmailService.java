@@ -9,18 +9,29 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailService {
 
-    @Value("${resend.api-key}")
-    private String apiKey;
+    private final Resend resend;
 
-    public void sendConfirmationEmail(String toEmail) throws ResendException {
-        Resend resend = new Resend(apiKey);
-        CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("FRED <fred@fredvested.com>")
-                .to(toEmail)
-                .subject("You're in")
-                .html(buildHtmlEmail())
-                .build();
-        resend.emails().send(params);
+    public EmailService(@Value("${resend.api-key}") String apiKey) {
+        this.resend = new Resend(apiKey);
+    }
+
+    // Test constructor - resend is null but buildHtmlEmail() doesn't need it
+    EmailService() {
+        this.resend = null;
+    }
+
+    public void sendConfirmationEmail(String toEmail) {
+        try {
+            CreateEmailOptions params = CreateEmailOptions.builder()
+                    .from("FRED <fred@fredvested.com>")
+                    .to(toEmail)
+                    .subject("You're in")
+                    .html(buildHtmlEmail())
+                    .build();
+            resend.emails().send(params);
+        } catch (ResendException e) {
+            throw new RuntimeException("Failed to send confirmation email to " + toEmail, e);
+        }
     }
 
     String buildHtmlEmail() {
