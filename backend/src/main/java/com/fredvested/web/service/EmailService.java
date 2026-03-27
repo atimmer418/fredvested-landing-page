@@ -15,11 +15,6 @@ public class EmailService {
         this.resend = new Resend(apiKey);
     }
 
-    // Test constructor - resend is null but buildHtmlEmail() doesn't need it
-    EmailService() {
-        this.resend = null;
-    }
-
     public void sendConfirmationEmail(String toEmail) {
         try {
             CreateEmailOptions params = CreateEmailOptions.builder()

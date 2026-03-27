@@ -7,7 +7,7 @@ class EmailServiceTest {
 
     @Test
     void buildHtmlEmail_containsExpectedCopyAndBranding() {
-        EmailService service = new EmailService();
+        EmailService service = new EmailService("test-key");
         String html = service.buildHtmlEmail();
 
         assertThat(html).contains("You&#39;re on the <strong>FRED private beta waitlist</strong>");
