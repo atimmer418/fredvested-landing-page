@@ -22,11 +22,35 @@ public class EmailService {
                     .to(toEmail)
                     .subject("You're in")
                     .html(buildHtmlEmail())
+                    .text(buildPlainTextEmail())
                     .build();
             resend.emails().send(params);
         } catch (ResendException e) {
             throw new RuntimeException("Failed to send confirmation email to " + toEmail, e);
         }
+    }
+
+    String buildPlainTextEmail() {
+        return """
+You're on FRED's private beta waitlist.
+
+A few early signups may not have received a confirmation email, so I wanted to make sure you got one now.
+
+FRED is built to help you automatically invest part of every paycheck so you can clock out early — for good.
+
+WHAT HAPPENS NEXT
+
+— Signups are being reviewed in waves
+— If invited, you'll get an email with next steps to claim access
+— Access is limited — you'll have 48 hours to claim your spot when invited
+
+You don't need to do anything else right now — you're in line.
+
+The FRED Team
+fred@fredvested.com
+
+You're receiving this because you signed up at fredvested.com
+""";
     }
 
     String buildHtmlEmail() {
