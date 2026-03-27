@@ -36,14 +36,11 @@ public class EmailService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <meta name="supported-color-schemes" content="light">
   <title>You&#39;re in</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
-  <style>:root { color-scheme: light; }</style>
 </head>
-<body style="margin:0;padding:0;background-color:#ffffff;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#0F172A;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0F172A;padding:40px 16px;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
@@ -123,7 +120,7 @@ public class EmailService {
 
         <!-- Below-card note -->
         <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
-          You&#39;re receiving this because you signed up for FRED at fredvested.com
+          You&#39;re receiving this because you signed up at fredvested.com
         </p>
       </td>
     </tr>
