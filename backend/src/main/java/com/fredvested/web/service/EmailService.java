@@ -86,7 +86,7 @@ You're receiving this because you signed up at fredvested.com
                 A few early signups may not have received a confirmation email, so I wanted to make sure you got one now.
               </p>
               <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#334155;">
-                FRED is built to help you automatically invest part of every paycheck so you can clock out early &#8212; for good.
+                FRED is built to help you automatically invest part of every paycheck so you can clock out early. For good.
               </p>
 
               <!-- Divider -->
@@ -118,7 +118,7 @@ You're receiving this because you signed up at fredvested.com
                     <span style="color:#135bec;font-weight:700;">&#8212;</span>
                   </td>
                   <td style="padding:6px 0 6px 8px;font-size:15px;line-height:1.6;color:#334155;">
-                    Access is limited &#8212; you&#39;ll have 48 hours to claim your spot when invited
+                    Access is limited; you&#39;ll have 48 hours to claim your spot when invited
                   </td>
                 </tr>
               </table>
