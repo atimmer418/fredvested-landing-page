@@ -831,11 +831,11 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
       // Safety check to prevent math errors if investment is 0
       if (investIncome <= 0) return;
 
-      // A. Calculate Target Portfolio Value w/ 4% Rule(4.49% rounded)
-      const targetPortfolio = desiredIncome / 0.0449;
+      // A. Calculate Target Portfolio Value w/ 4% Rule
+      const targetPortfolio = desiredIncome / 0.04;
 
       // B. Calculate Time to Goal
-      const annualRate = 0.1049; // 10% (10.49% rounded) average annual return
+      const annualRate = 0.10; // 10% average annual return
       const monthlyRate = annualRate / 12; // Compounded monthly
       
       // Calculate total months needed using the annuity formula
