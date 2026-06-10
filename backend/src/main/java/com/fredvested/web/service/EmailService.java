@@ -64,7 +64,7 @@ You're receiving this because you signed up at fredvested.com
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
 </head>
 <body style="margin:0;padding:0;background-color:#ffffff;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;padding:40px 16px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;padding:20px 16px;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
