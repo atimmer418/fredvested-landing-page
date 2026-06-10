@@ -956,7 +956,7 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
           text: "text-gray-600",
           icon: "info",
           iconColor: "text-gray-400",
-          message: "You're already on the list! We'll be in touch."
+          message: window.innerWidth < 400 ? "You're on the list! We'll be in touch." : "You're already on the list! We'll be in touch."
         }
       };
       const card = cards[status] || cards.already_joined;

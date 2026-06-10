@@ -2,9 +2,12 @@ package com.fredvested.web.controller;
 
 import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.WaitlistRepository;
+import com.fredvested.web.service.EmailService;
 import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.TurnstileService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,11 @@ public class WaitlistController {
 
     @Autowired
     private RateLimiterService rateLimiterService;
+
+    @Autowired
+    private EmailService emailService;
+
+    private static final Logger log = LoggerFactory.getLogger(WaitlistController.class);
 
     // --- DTOs for Request/Response ---
     @Data
@@ -83,7 +91,14 @@ public class WaitlistController {
         entry.setIpHash(hashedIp);
         repository.save(entry);
 
-        // 5. Return updated stats and status
+        // 5. Send confirmation email (failure must not affect signup response)
+        try {
+            emailService.sendConfirmationEmail(email);
+        } catch (Exception e) {
+            log.error("Failed to send confirmation email to {}: {}", email, e.getMessage());
+        }
+
+        // 6. Return updated stats and status
         return ResponseEntity.ok(buildStatsMap(newStatus.name()));
     }
 
