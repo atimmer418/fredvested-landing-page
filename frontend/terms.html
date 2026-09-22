@@ -15,12 +15,8 @@
   <meta property="og:site_name" content="FRED">
   <meta property="og:title" content="Terms of Service — FRED">
   <meta property="og:description" content="Read FREDvested LLC's Terms of Service governing your use of the FRED waitlist.">
+  <!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
   <link rel="stylesheet" href="dist/output.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
   <!-- Privacy-friendly analytics by Plausible, proxied through our own domain -->
   <script defer data-domain="fredvested.com" src="/js/script.js"></script>
   <script>
@@ -30,6 +26,17 @@
 </head>
 <body class="bg-background-light font-display text-navy antialiased">
 
+  <!-- Inline icon sprite (Material Icons Outlined, Apache 2.0 -- the same glyphs the Google-hosted icon
+       font served). Replaces that stylesheet + font so no request leaves our origin for icons. -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-account_balance" viewBox="0 0 24 24"><path d="M6.5 10h-2v7h2v-7zm6 0h-2v7h2v-7zm8.5 9H2v2h19v-2zm-2.5-9h-2v7h2v-7zm-7-6.74L16.71 6H6.29l5.21-2.74m0-2.26L2 6v2h19V6l-9.5-5z"/></symbol>
+    <symbol id="i-arrow_back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></symbol>
+    <symbol id="i-cancel" viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.59-13L12 10.59 8.41 7 7 8.41 10.59 12 7 15.59 8.41 17 12 13.41 15.59 17 17 15.59 13.41 12 17 8.41z"/></symbol>
+    <symbol id="i-check_circle" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/></symbol>
+    <symbol id="i-gavel" viewBox="0 0 24 24"><path d="M1 21h12v2H1v-2zM5.24 8.07l2.83-2.83 14.14 14.14-2.83 2.83L5.24 8.07zM12.32 1l5.66 5.66-2.83 2.83-5.66-5.66L12.32 1zM3.83 9.48l5.66 5.66-2.83 2.83L1 12.31l2.83-2.83z"/></symbol>
+    <symbol id="i-warning" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></symbol>
+  </svg>
+
   <!-- Navbar -->
   <nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,7 +45,7 @@
           <span class="font-montserrat text-[48px] font-black italic text-primary tracking-[0px] leading-none">FRED</span>
         </a>
         <a href="index.html#join" class="flex items-center gap-1 text-sm font-medium text-slate-text hover:text-primary transition-colors">
-          <span class="material-icons-outlined text-base">arrow_back</span>
+          <svg class="text-base" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-arrow_back"/></svg>
           Back to Home
         </a>
       </div>
@@ -49,7 +56,7 @@
   <section class="bg-white border-b border-gray-100 pb-12 pt-8 sm:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-4">
-        <span class="material-icons-outlined text-base mr-1">gavel</span>
+        <svg class="text-base mr-1" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-gavel"/></svg>
         Legal
       </div>
       <h1 class="text-4xl font-extrabold text-navy mb-3">Terms of Service</h1>
@@ -77,19 +84,19 @@
       <p class="text-slate-text leading-relaxed">To use FRED's services, you must:</p>
       <ul class="space-y-3 mt-4 text-slate-text">
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
+          <svg class="text-primary text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg>
           <span>Be at least <strong class="text-navy">18 years of age</strong>;</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
+          <svg class="text-primary text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg>
           <span>Be a <strong class="text-navy">resident of the United States</strong>;</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
+          <svg class="text-primary text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg>
           <span>Have the legal capacity to enter into a binding agreement; and</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
+          <svg class="text-primary text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg>
           <span>Not be prohibited from using financial services under any applicable law.</span>
         </li>
       </ul>
@@ -114,7 +121,7 @@
       <h2 class="text-xl font-bold text-navy mb-4">4. No Investment Advice</h2>
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
         <div class="flex items-start gap-2">
-          <span class="material-icons-outlined text-amber-500 text-base mt-0.5">warning</span>
+          <svg class="text-amber-500 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-warning"/></svg>
           <p class="text-sm text-amber-800 font-medium leading-relaxed">
             FRED does not provide personalized investment advice. Nothing on this website or within the FRED platform constitutes a recommendation to buy or sell any security.
           </p>
@@ -147,7 +154,7 @@
       <h2 class="text-xl font-bold text-navy mb-4">6. Brokerage Services — Alpaca Securities LLC</h2>
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
         <div class="flex items-start gap-2">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">account_balance</span>
+          <svg class="text-primary text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-account_balance"/></svg>
           <p class="text-sm text-blue-800 font-medium leading-relaxed">
             Brokerage services on the FRED platform are provided by <strong>Alpaca Securities LLC</strong>, a registered broker-dealer and member of FINRA and SIPC. FREDvested LLC is not a broker-dealer.
           </p>
@@ -172,27 +179,27 @@
       </p>
       <ul class="space-y-4 text-slate-text">
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-amber-500 text-base mt-0.5">warning</span>
+          <svg class="text-amber-500 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-warning"/></svg>
           <span><strong class="text-navy">Loss of principal:</strong> The value of investments can go down as well as up. You may receive back less than you invest. There is no guarantee that your Freedom Date target will be achieved.</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-amber-500 text-base mt-0.5">warning</span>
+          <svg class="text-amber-500 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-warning"/></svg>
           <span><strong class="text-navy">Market volatility:</strong> Financial markets are subject to unpredictable fluctuations. Periods of significant loss can occur and may persist for extended durations.</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-amber-500 text-base mt-0.5">warning</span>
+          <svg class="text-amber-500 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-warning"/></svg>
           <span><strong class="text-navy">Projection assumptions:</strong> All Freedom Date calculations and portfolio projections are based on assumed rates of return and user-provided inputs. These projections are not guarantees. Actual results may differ materially from illustrated outcomes.</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-amber-500 text-base mt-0.5">warning</span>
+          <svg class="text-amber-500 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-warning"/></svg>
           <span><strong class="text-navy">Inflation and tax risk:</strong> Projections may not fully account for the effects of inflation, changing tax laws, or individual tax circumstances. Consult a tax professional regarding the tax implications of your investments.</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-amber-500 text-base mt-0.5">warning</span>
+          <svg class="text-amber-500 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-warning"/></svg>
           <span><strong class="text-navy">Technology risk:</strong> Automated investing relies on technology that may experience downtime, errors, or delays. FREDvested LLC is not liable for losses resulting from system outages or technical failures beyond our reasonable control.</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-amber-500 text-base mt-0.5">warning</span>
+          <svg class="text-amber-500 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-warning"/></svg>
           <span><strong class="text-navy">Liquidity:</strong> While your investments are held in a standard brokerage account and are generally liquid, market conditions may occasionally affect your ability to execute transactions at desired prices.</span>
         </li>
       </ul>
@@ -218,23 +225,23 @@
       <p class="text-slate-text leading-relaxed mb-4">You agree not to:</p>
       <ul class="space-y-3 text-slate-text">
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-red-400 text-base mt-0.5">cancel</span>
+          <svg class="text-red-400 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-cancel"/></svg>
           <span>Submit false, fraudulent, or misleading information to the waitlist or platform;</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-red-400 text-base mt-0.5">cancel</span>
+          <svg class="text-red-400 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-cancel"/></svg>
           <span>Use automated tools, bots, or scripts to submit multiple waitlist entries or interact with our services in a non-human manner;</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-red-400 text-base mt-0.5">cancel</span>
+          <svg class="text-red-400 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-cancel"/></svg>
           <span>Attempt to gain unauthorized access to our systems, servers, or databases;</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-red-400 text-base mt-0.5">cancel</span>
+          <svg class="text-red-400 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-cancel"/></svg>
           <span>Interfere with the proper operation of our website or services;</span>
         </li>
         <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-red-400 text-base mt-0.5">cancel</span>
+          <svg class="text-red-400 text-base mt-0.5" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-cancel"/></svg>
           <span>Use our services for any unlawful purpose or in violation of any applicable laws or regulations.</span>
         </li>
       </ul>
