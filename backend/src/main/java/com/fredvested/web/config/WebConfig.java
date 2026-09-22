@@ -13,8 +13,11 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // Patterns (not exact origins) so the local profile can allow any
+        // same-wifi device via e.g. http://192.168.*:5500; exact origins in
+        // dev/prod configs match identically under pattern semantics.
         registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins.split(","))
+                .allowedOriginPatterns(allowedOrigins.split(","))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(false);

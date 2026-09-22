@@ -4,13 +4,89 @@
 
 @source "../*.html";
 
+/* Self-hosted webfonts. Previously loaded from fonts.googleapis.com /
+   fonts.gstatic.com, which exposed every visitor's IP and User-Agent to
+   Google on page load. These are the exact same files Google serves, fetched
+   once and committed to /fonts, so no visitor data leaves our origin.
+
+   Both families ship as variable fonts: Google returns ONE woff2 per
+   family+style+subset and pins a weight per @font-face block, so the ranges
+   below cover exactly the weights the pages use (Inter 400-800,
+   Montserrat 700-900 upright, Montserrat 900 italic) from a single file each.
+
+   latin-ext is kept alongside latin with its original unicode-range, so it is
+   only downloaded if copy ever uses a character outside the latin subset --
+   zero extra bytes today, no fallback-font surprise later.
+
+   Inter is licensed under the SIL Open Font License 1.1; so is Montserrat. */
+
+/* Inter normal 400 800 -- latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/Inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Inter normal 400 800 -- latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/Inter-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Montserrat normal 700 900 -- latin */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('../fonts/Montserrat-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Montserrat normal 700 900 -- latin-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('../fonts/Montserrat-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Montserrat italic 900 -- latin */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+  src: url('../fonts/Montserrat-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Montserrat italic 900 -- latin-ext */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+  src: url('../fonts/Montserrat-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 @theme {
   --color-primary: #135bec;
   --color-primary-dark: #0e4ac5;
   --color-background-light: #f6f6f8;
   --color-background-dark: #101622;
   --color-navy: #0F172A;
-  --color-slate-text: #64748B;
+  --color-slate-text: #5B6B80; /* passes WCAG AA on both #fff and #f6f6f8 */
 
   --font-display: "Inter", sans-serif;
   --font-montserrat: "Montserrat", sans-serif;
@@ -31,7 +107,8 @@ input[type=range] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent !important;
-  touch-action: none;
+  /* pan-y keeps vertical page scrolling alive when a swipe starts on the slider */
+  touch-action: pan-y;
 }
 
 /* Chrome, Safari, Edge, Opera */

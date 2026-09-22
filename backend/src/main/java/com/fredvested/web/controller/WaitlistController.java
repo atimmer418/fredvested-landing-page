@@ -10,9 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,11 +36,21 @@ public class WaitlistController {
 
     private static final Logger log = LoggerFactory.getLogger(WaitlistController.class);
 
+    // US-residents-only gate driven by Cloudflare's CF-IPCountry header. Off by default
+    // so dev/local (no Cloudflare in front) keep working; prod turns it on.
+    @Value("${waitlist.us-only:false}")
+    private boolean usOnly;
+
     // --- DTOs for Request/Response ---
     @Data
     public static class WaitlistRequest {
         private String email;
         private Integer freedomAge;
+        private Integer age;
+        private Integer investMonthly;
+        private Integer retireMonthly;
+        private Boolean interacted;
+        private Integer returnAssumptionPct;
         private String turnstileToken;
     }
 
@@ -52,6 +64,13 @@ public class WaitlistController {
     @PostMapping
     public ResponseEntity<?> joinWaitlist(@RequestBody WaitlistRequest request, HttpServletRequest httpRequest) {
        
+        // -1. Geo gate: only an explicit "US" passes. Missing header, unknown (XX) and
+        // Tor (T1) are all rejected. Blocked attempts are not logged or stored.
+        if (usOnly && !"US".equalsIgnoreCase(httpRequest.getHeader("CF-IPCountry"))) {
+            return ResponseEntity.status(403)
+                .body(Map.of("message", "FRED is currently available to US residents only."));
+        }
+
         // 0. Rate limit by IP
         String rawIp = httpRequest.getHeader("CF-Connecting-IP");
         if (rawIp == null) rawIp = httpRequest.getRemoteAddr();
@@ -87,6 +106,12 @@ public class WaitlistController {
         WaitlistEntry entry = new WaitlistEntry();
         entry.setEmail(email);
         entry.setFreedomAge(request.getFreedomAge());
+        entry.setCurrentAge(clampOrNull(request.getAge(), 18, 60));
+        entry.setInvestMonthly(clampOrNull(request.getInvestMonthly(), 0, 10000));
+        entry.setRetireMonthly(clampOrNull(request.getRetireMonthly(), 1000, 30000));
+        entry.setInteracted(request.getInteracted());
+        // Range, not a fixed set, so retuning the frontend scenarios never silently nulls the data.
+        entry.setReturnAssumptionPct(clampOrNull(request.getReturnAssumptionPct(), 1, 30));
         entry.setStatus(newStatus);
         entry.setIpHash(hashedIp);
         repository.save(entry);
@@ -107,9 +132,27 @@ public class WaitlistController {
         Map<String, Object> map = new HashMap<>();
         map.put("status", status);
         map.put("count", repository.count()); // Total rows in the table
+        // Founder-cap occupancy: statuses like INVITED/CLAIMED leave the founder bucket
+        // without leaving the table, so the cap UI must not be driven by total count
+        map.put("founderCount", repository.countByStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
         Double avg = repository.getAverageFreedomAge();
         map.put("avgFreedomAge", avg != null ? avg : 0.0);
+        // How many members' projections are inside that average; the frontend
+        // discloses this sample size and gates the stat tile on it.
+        map.put("projectionCount", repository.countHeadStartProjections());
+        // Measurement period of those same rows (ISO yyyy-MM-dd, Eastern), disclosed with the stat.
+        // Null when no rows qualify; the frontend does not render the stat without both dates.
+        LocalDateTime firstProjection = repository.getFirstProjectionAt();
+        LocalDateTime lastProjection = repository.getLastProjectionAt();
+        map.put("projectionStartDate", firstProjection != null ? firstProjection.toLocalDate().toString() : null);
+        map.put("projectionEndDate", lastProjection != null ? lastProjection.toLocalDate().toString() : null);
         return map;
+    }
+
+    // Out-of-range values become null rather than clamped: a clamped value would
+    // fabricate a data point the user never chose. Bounds mirror the frontend sliders.
+    private static Integer clampOrNull(Integer v, int min, int max) {
+        return (v == null || v < min || v > max) ? null : v;
     }
 
     // Helper to Hash the IP Address (SHA-256)

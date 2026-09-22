@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta name="theme-color" content="#ffffff"/>
+<meta name="color-scheme" content="light"/>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<title>How FRED Works and Why You Can Trust It | FRED</title>
+<meta name="description" content="FRED moves a slice of every paycheck into diversified index funds, automatically. Your money stays in your name at a FINRA/SIPC-member brokerage. Here's exactly how it works.">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fredvested.com/about">
+<meta property="og:site_name" content="FRED">
+<meta property="og:title" content="How FRED works, and why you can trust it.">
+<meta property="og:description" content="FRED moves a slice of every paycheck into diversified index funds, automatically. Your money stays in your name at a FINRA/SIPC-member brokerage.">
+<meta property="og:image" content="https://fredvested.com/assets/og-image.png">
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How FRED works, and why you can trust it.">
+<meta name="twitter:description" content="FRED moves a slice of every paycheck into diversified index funds, automatically. Your money stays in your name at a FINRA/SIPC-member brokerage.">
+<meta name="twitter:image" content="https://fredvested.com/assets/og-image.png">
+<!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
+<link rel="stylesheet" href="dist/output.css">
+<!-- Privacy-friendly analytics by Plausible, proxied through our own domain -->
+<script defer data-domain="fredvested.com" src="/js/script.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+<style>
+  /* Same page-wash system as the calculator so the two pages read as one product */
+  .hero-wash {
+    background:
+      radial-gradient(1100px 520px at 70% -10%, rgba(19, 91, 236, 0.10), transparent 60%),
+      linear-gradient(180deg, #ffffff 0%, #f6f6f8 100%);
+  }
+
+  .spinner {
+    width: 18px; height: 18px; flex-shrink: 0;
+    border-radius: 9999px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* FAQ accordion: rotate the plus into a cross when open */
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details .faq-icon { transition: transform 0.25s ease; }
+  details[open] .faq-icon { transform: rotate(45deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition: none !important;
+      animation: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+</head>
+<body class="bg-background-light font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
+
+<!-- Nav: logo + one CTA. No section links: one page, one action. -->
+<nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16 items-center">
+  <a href="/" class="flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-md">
+    <span class="font-montserrat text-[32px] sm:text-[40px] font-black italic text-primary leading-none">FRED</span>
+    <img src="assets/logo.svg" alt="" class="h-9 w-9" draggable="false">
+  </a>
+  <a id="nav-cta" href="/" class="whitespace-nowrap bg-primary hover:bg-primary-dark text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg transition-colors shadow-lg shadow-primary/20">
+    Get my Freedom Date
+  </a>
+</div>
+</div>
+</nav>
+
+<!-- 1 · Hero -->
+<section class="hero-wash relative overflow-hidden">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16 lg:pt-24 lg:pb-28">
+<div class="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
+
+  <!-- Product mock: first in DOM so mobile leads with the image; lg:order-2 keeps it right on desktop -->
+  <div class="lg:col-span-6 lg:order-2 mb-10 lg:mb-0 mt-6 lg:mt-0">
+    <div class="relative max-w-[420px] mx-auto">
+      <!-- Pig peeking over the card -->
+      <img src="assets/logo.svg" alt="" draggable="false"
+        class="absolute -top-9 right-7 h-14 w-14 rotate-[8deg] z-20 drop-shadow-[0_6px_12px_rgba(19,91,236,0.25)]">
+      <!-- Back card: the paycheck automation -->
+      <div class="absolute -bottom-7 -left-3 sm:-left-7 z-0 bg-white rounded-2xl shadow-soft border border-blue-100 px-5 py-4 rotate-[-3deg]">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-600">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          <div class="text-left">
+            <div class="text-[13px] font-bold text-navy">Paycheck detected</div>
+            <div class="text-xs text-slate-text">$850 invested automatically</div>
+          </div>
+        </div>
+      </div>
+      <!-- Front card: the freedom fund -->
+      <div class="relative z-10 bg-white rounded-[22px] shadow-[0_24px_60px_-18px_rgba(14,58,150,0.35)] border border-blue-100 p-7 pb-3.5 text-left">
+        <div class="flex items-center justify-between mb-4 sm:mb-5">
+          <span class="text-sm font-semibold text-slate-text">Illustrative Freedom Fund</span>
+          <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">On track</span>
+        </div>
+        <div class="font-montserrat font-extrabold text-[40px] leading-none text-navy mb-4">$1,733,180</div>
+        <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+          <div class="bg-primary h-2 rounded-full" style="width: 77%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-slate-text mb-4 sm:mb-6">
+          <span>77% of your target</span>
+          <span>Target: $2,250,000</span>
+        </div>
+        <div class="rounded-xl bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 py-4 text-white">
+          <div class="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#e2ecff]">Freedom Date</div>
+          <div class="font-montserrat font-bold text-xl">February 2029</div>
+        </div>
+        <!-- ATTORNEY GUIDANCE 2026-09-15: methodology + limitations. Figures are internally consistent at 10%
+             (calculator's Moderate scenario), computed the same way as the earlier 8% version: 10% effective annual return
+             compounded per pay period, $850 every two weeks, $1,733,180 reaches the $2,250,000 target ($7,500/mo at a 4%
+             withdrawal rate) in 64 pay periods (about 29.4 months), so from September 2026 the Freedom Date lands in
+             February 2029. Note: index.html compute() uses a nominal 10%/12 monthly rate and Math.round, which gives about
+             28.3 months (January 2029). 77% = 1,733,180 / 2,250,000. Re-check if any figure changes. -->
+        <p class="mt-3 text-[10px] leading-snug text-slate-text">Hypothetical illustration, not a real account or a projection of your results.<sup><a href="#fn-1" id="fnref-1" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 1">1</a></sup></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lg:col-span-6 lg:order-1 text-center lg:text-left">
+    <h1 class="font-montserrat font-extrabold text-[clamp(32px,6vw,52px)] leading-[1.06] tracking-[-0.04em] text-pretty text-navy mb-5">
+      The boring, time-tested math built to <span class="text-primary">clock you out years early</span>, for good.
+    </h1>
+    <p class="text-[17px] leading-relaxed text-slate-text max-w-[46ch] mx-auto lg:mx-0 mb-7">
+      FRED moves a slice of every paycheck into diversified index funds, automatically.
+      No stock picking. No market timing. Just consistency, compounding, and time.
+    </p>
+    <div class="flex flex-col items-center lg:items-start gap-3">
+      <a id="hero-cta" href="/" class="group inline-flex items-center justify-center gap-1.5 rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-8 py-4 font-montserrat font-extrabold text-lg text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+        Get my Freedom Date <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
+      </a>
+      <p id="hero-cta-note" class="text-[13px] text-slate-text flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        3 sliders: takes 30 seconds
+      </p>
+
+      <!-- Shown instead of the CTA when this browser already signed up with a computed date -->
+      <div id="hero-freedom-display" class="hidden flex-col items-center lg:items-start gap-2.5">
+        <div class="inline-flex rounded-[14px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-7 py-4 text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] cursor-default select-none">
+          <div class="text-left">
+            <div class="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#e2ecff]">Your Freedom Date</div>
+            <div id="hero-freedom-value" class="font-montserrat font-extrabold text-xl"></div>
+          </div>
+        </div>
+        <a href="/" class="text-[13px] text-slate-text hover:text-primary underline decoration-slate-text/40 underline-offset-2">Recalculate anytime &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</section>
+
+<!-- 2 · Proof strip -->
+<section class="bg-white border-y border-gray-100">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <!-- Live tiles start hidden (display:none), not invisible: below STAT_TILE_MIN_N, on API
+       failure, or while loading they don't render at all and the flex row reflows around them. -->
+  <div class="flex flex-wrap justify-center gap-x-6 gap-y-8 text-center">
+    <!-- Live-count tile: no baked number. Renders only when the API reports count >= STAT_TILE_MIN_N. -->
+    <div id="stat-count-tile" class="hidden w-[calc(50%-0.75rem)] lg:flex-1">
+      <div class="font-montserrat font-extrabold text-3xl text-navy"><span id="stat-count"></span></div>
+      <div class="mt-1 text-[13px] font-medium text-slate-text">people on the waitlist</div>
+    </div>
+    <div class="w-[calc(50%-0.75rem)] lg:flex-1">
+      <div class="font-montserrat font-extrabold text-3xl text-navy">300</div>
+      <div class="mt-1 text-[13px] font-medium text-slate-text">founder spots, first come first served</div>
+    </div>
+    <div class="w-[calc(50%-0.75rem)] lg:flex-1">
+      <div class="font-montserrat font-extrabold text-3xl text-navy">0%</div>
+      <div class="mt-1 text-[13px] font-medium text-slate-text">of your assets taken in asset-based fees</div>
+    </div>
+    <!-- ATTORNEY FLAG: aggregating waitlist members' hypothetical projections into a promotional average may be
+         hypothetical-performance presentation under the Marketing Rule. Attorney to rule during screenshot review
+         before this can go live. Value, sample size, and date range are live-only (no baked numbers); the tile and
+         its disclosure render only when the API reports projectionCount >= STAT_TILE_MIN_N plus both period dates.
+         Attorney screenshot mode: ?previewStat=1 on localhost/127.0.0.1 only renders sample values. -->
+    <div id="stat-years-tile" class="hidden w-[calc(50%-0.75rem)] lg:flex-1">
+      <div class="font-montserrat font-extrabold text-3xl text-navy"><span id="stat-years"></span></div>
+      <div class="mt-1 text-[13px] font-medium text-slate-text">avg projected years ahead of a 65 retirement<sup><a href="#fn-2" class="text-primary hover:underline" aria-label="Disclosure 2">2</a></sup></div>
+    </div>
+  </div>
+  <!-- ATTORNEY GUIDANCE 2026-09-15: disclosure always renders with the stat. The short line here and the full
+       text in footnote 2 (#fn-2, Disclosures block above the footer) stay hidden until renderHeadStart shows
+       them together with the stat. The full text is set by JS so the disclosed sample size and measurement
+       period always come from the same API response as the stat. -->
+  <p id="stat-years-short" class="hidden mt-6 text-center text-[11px] text-slate-text">Aggregate of hypothetical calculator projections, not actual client results.<sup><a href="#fn-2" id="fnref-2" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 2">2</a></sup></p>
+</div>
+</section>
+
+<!-- 3 · How FRED works -->
+<section class="py-16 lg:py-24">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+  <h2 class="font-montserrat font-extrabold text-3xl sm:text-4xl text-navy mb-14">How FRED works</h2>
+  <div class="grid md:grid-cols-3 gap-10 lg:gap-14">
+    <div>
+      <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-blue-100 shadow-soft text-primary">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2.4" fill="white"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="16" r="2.4" fill="white"/></svg>
+      </div>
+      <h3 class="font-bold text-lg text-navy mb-2">1. Set your target</h3>
+      <p class="text-sm text-slate-text max-w-[32ch] mx-auto leading-relaxed">Tell FRED the monthly income you want to retire on and what you can invest.</p>
+    </div>
+    <div>
+      <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-blue-100 shadow-soft text-primary">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+      </div>
+      <h3 class="font-bold text-lg text-navy mb-2">2. Every paycheck, FRED invests</h3>
+      <p class="text-sm text-slate-text max-w-[32ch] mx-auto leading-relaxed">A slice of each paycheck goes straight into your diversified index portfolio. No willpower needed.</p>
+    </div>
+    <div>
+      <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-blue-100 shadow-soft text-primary">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="21" x2="5" y2="4"/><path d="M5 4h13l-2.5 4L18 12H5"/></svg>
+      </div>
+      <h3 class="font-bold text-lg text-navy mb-2">3. Watch your date get closer</h3>
+      <p class="text-sm text-slate-text max-w-[32ch] mx-auto leading-relaxed">Compounding does the heavy lifting while your Freedom Date moves toward you.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- 4 · Why you can trust FRED -->
+<!-- ATTORNEY: Alpaca references and pricing mentions pending contract signature and about-page attorney review -->
+<section class="bg-white border-y border-gray-100 py-16 lg:py-24">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+  <h2 class="font-montserrat font-extrabold text-3xl sm:text-4xl text-navy text-center mb-14">Can you trust FRED?</h2>
+
+  <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <!-- Trust points -->
+    <ul class="space-y-7">
+      <li class="flex gap-4">
+        <span class="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <div>
+          <h3 class="font-bold text-navy mb-1">Your money, your name</h3>
+          <p class="text-sm text-slate-text leading-relaxed">Your account will be held in <b>your name</b> at Alpaca Securities LLC, a FINRA/SIPC-member brokerage. If FRED were to shut down tomorrow, your money would still be yours. For more information, see the <a href="#faq" class="underline decoration-slate-text/40 underline-offset-2 hover:text-primary">&lsquo;Fair questions&rsquo;</a> below.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <span class="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M4 18V10M8 18V10M12 18V10M16 18V10M20 18V10"/><path d="m2 9 10-6 10 6"/></svg>
+        </span>
+        <div>
+          <h3 class="font-bold text-navy mb-1">Bank-grade connections</h3>
+          <p class="text-sm text-slate-text leading-relaxed">Your bank connection runs through Plaid, the same rails used by major banking apps. Your bank credentials never touch FRED&rsquo;s servers.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <span class="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="14" r="4.5"/><path d="M11.5 11.5 20 3"/><path d="m16.5 6.5 2.5 2.5M14 9l2 2"/></svg>
+        </span>
+        <div>
+          <h3 class="font-bold text-navy mb-1">Passkeys, not passwords</h3>
+          <p class="text-sm text-slate-text leading-relaxed">Sign in with Face&nbsp;ID or your fingerprint. There&rsquo;s no password to steal, phish, or reuse.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <span class="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
+        </span>
+        <div>
+          <h3 class="font-bold text-navy mb-1">Withdraw anytime</h3>
+          <p class="text-sm text-slate-text leading-relaxed">Liquid and portable. No lock-ins, no exit fees from FRED, no fine-print hostage-taking.</p>
+        </div>
+      </li>
+    </ul>
+
+    <!-- ATTORNEY FLAG: public display of specific tickers/allocations pending attorney sign-off -->
+    <!-- ATTORNEY FLAG: third-party book reference (The Simple Path to Wealth) credits the strategy's
+         popularizer only; no endorsement of FRED implied. Attorney to confirm during screenshot review. -->
+    <!-- Strategy card: donut + Boglehead summary -->
+    <div class="rounded-[22px] border border-blue-100 bg-gradient-to-b from-blue-50/60 to-white p-8 text-center shadow-soft">
+      <h3 class="font-montserrat font-extrabold text-xl text-navy mb-1.5">The &ldquo;Boglehead&rdquo; strategy</h3>
+      <p class="text-sm text-slate-text max-w-[40ch] mx-auto mb-7">Own the whole market. Keep fees near zero. Never chase trends. It&rsquo;s an approach grounded in Nobel Prize-winning research and taught in <i>The Simple Path to Wealth</i>, the million-copy classic of the financial independence movement. Deliberately boring, by design.</p>
+      <p class="text-xs font-semibold text-navy mb-3">FRED&rsquo;s default model portfolio</p>
+      <div class="w-52 h-52 mx-auto relative">
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="text-primary" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="188.5 251.327" stroke-dashoffset="0" stroke-width="12"></circle>
+          <circle class="text-blue-400" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="50.265 251.327" stroke-dashoffset="-188.5" stroke-width="12"></circle>
+          <circle class="text-navy" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="12.566 251.327" stroke-dashoffset="-238.765" stroke-width="12"></circle>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-xs font-semibold uppercase tracking-wide text-slate-text">Model portfolio</span>
+          <span class="font-montserrat font-extrabold text-2xl text-navy">100%</span>
+        </div>
+      </div>
+      <div class="flex justify-center gap-5 mt-6 text-xs font-semibold text-navy">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-primary"></span>VTI 75%</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>VXUS 20%</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-navy"></span>VBR 5%</span>
+      </div>
+      <div class="mt-4 flex flex-col gap-2">
+        <p class="order-2 sm:order-1 text-[11px] text-slate-text">Shown for transparency. Not a recommendation to buy any security.</p>
+        <p class="order-1 sm:order-2 text-xs text-slate-text">Thousands of companies across the global market, with<span class="sm:hidden"> extra weight on smaller, cheaper companies.</span><span class="hidden sm:inline"> a little extra weight on smaller, bargain-priced companies.</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Founder note -->
+  <div class="mt-14 max-w-3xl mx-auto rounded-[22px] border border-gray-200 bg-background-light p-7 sm:p-9">
+    <div class="flex flex-col sm:flex-row gap-6 items-start">
+      <!-- Drop a real photo at assets/founder.jpg (square, ≥400px); the pig stands in until then -->
+      <img src="assets/founder.jpg" alt="Andrew, founder of FRED"
+        class="h-20 w-20 rounded-2xl object-cover flex-shrink-0 border border-gray-200"
+        onerror="this.style.display='none'; document.getElementById('founder-fallback').style.display='flex';">
+      <span id="founder-fallback" style="display:none" class="h-20 w-20 rounded-2xl bg-blue-50 border border-blue-100 items-center justify-center flex-shrink-0">
+        <img src="assets/logo.svg" alt="" class="h-11 w-11" draggable="false">
+      </span>
+      <div>
+        <p class="text-[15px] leading-relaxed text-navy">
+          &ldquo;My father was diagnosed with lung cancer and told he didn't have long. He kept working, right up until the end, because he never believed he could afford to stop. He died at 69 and never got to retire. And he had saved. Decades of paychecks into his retirement account. What he never had was a plan to safely draw it down. FRED is built to teach the strategies he was never shown. You have the choice he never got.&rdquo;
+        </p>
+        <p class="mt-3 text-sm font-bold text-navy">Andrew <span class="font-medium text-slate-text">&middot; Founder, FRED</span></p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- 5 · Comparison -->
+<!-- ATTORNEY FLAG: comparative advertising pending Round 1 Group B6 answer -->
+<section class="py-16 lg:py-24">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+  <h2 class="font-montserrat font-extrabold text-3xl sm:text-4xl text-navy text-center mb-8 lg:mb-16">How FRED stacks up</h2>
+
+  <!-- Mobile stacked cards (visible below md) -->
+  <div class="md:hidden space-y-4">
+    <!-- Pricing -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
+        <h4 class="font-semibold text-navy text-sm">Pricing</h4>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">FRED</span>
+          <span class="text-sm text-slate-text">From $8/mo flat <span class="text-[10px] font-normal text-slate-text">(founders: $99 once)</span></span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Autopilot</span>
+          <span class="text-sm text-slate-text">$10/mo or $100/yr</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Alinea</span>
+          <span class="text-sm text-slate-text">$10/mo flat</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Advisors</span>
+          <span class="text-sm text-slate-text">0.25%&ndash;1.0%/yr</span>
+        </div>
+      </div>
+    </div>
+    <!-- Investment Approach -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
+        <h4 class="font-semibold text-navy text-sm">Investment Approach</h4>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">FRED</span>
+          <span class="text-sm text-slate-text text-right">Diversified index portfolio</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Autopilot</span>
+          <span class="text-sm text-slate-text text-right">Copy-trading disclosures</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Alinea</span>
+          <span class="text-sm text-slate-text text-right">Theme-based portfolios</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Advisors</span>
+          <span class="text-sm text-slate-text text-right">Advisor/algorithm-managed</span>
+        </div>
+      </div>
+    </div>
+    <!-- Neutral marks (attorney guidance 2026-09-15): one slate check icon means "feature available" for
+         every provider, FRED included; "Not offered" or a slate dash otherwise. No evaluative color, and the
+         FRED column/rows get the same colors and weights as every other provider (no highlight tint). -->
+    <!-- Rebalancing process -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
+        <h4 class="font-semibold text-navy text-sm">Rebalancing process</h4>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <div class="flex justify-between items-center gap-4 px-4 py-3">
+          <span class="text-sm text-slate-text">FRED</span>
+          <span class="text-xs text-slate-text text-right leading-snug"><svg class="inline w-4 h-4 mr-1 -mt-0.5 align-middle text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>Automatically on a set schedule (once launched)</span>
+        </div>
+        <div class="flex justify-between items-center gap-4 px-4 py-3">
+          <span class="text-sm text-slate-text">Autopilot</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 flex-shrink-0 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> 2-week delay</span>
+        </div>
+        <div class="flex justify-between items-center gap-4 px-4 py-3">
+          <span class="text-sm text-slate-text">Alinea</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 flex-shrink-0 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> Auto rebalance</span>
+        </div>
+        <div class="flex justify-between items-center gap-4 px-4 py-3">
+          <span class="text-sm text-slate-text">Advisors</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 flex-shrink-0 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> Managed by algorithm</span>
+        </div>
+      </div>
+    </div>
+    <!-- Paycheck-Based Investing -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
+        <h4 class="font-semibold text-navy text-sm">Paycheck-Based Investing</h4>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">FRED</span>
+          <span><svg class="w-4 h-4 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><span class="sr-only">Feature available</span></span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Autopilot</span>
+          <span class="text-xs text-slate-text">Not offered</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Alinea</span>
+          <span class="text-xs text-slate-text">Not offered</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Advisors</span>
+          <span class="text-xs text-slate-text">Varies</span>
+        </div>
+      </div>
+    </div>
+    <!-- Defined End Game -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
+        <h4 class="font-semibold text-navy text-sm">Defined End Game</h4>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">FRED</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> Freedom Date built in</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Autopilot</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg> None</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Alinea</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg> None</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Advisors</span>
+          <span class="text-xs text-slate-text">Varies</span>
+        </div>
+      </div>
+    </div>
+    <!-- Long-Term Focus -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
+        <h4 class="font-semibold text-navy text-sm">Long-Term Focus Design</h4>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">FRED</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> Set &amp; Forget</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Autopilot</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg> Trade-following</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Alinea</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg> Trend-driven</span>
+        </div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm text-slate-text">Advisors</span>
+          <span class="text-xs text-slate-text">Varies</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop table (visible at md+) -->
+  <div class="hidden md:block overflow-x-auto rounded-2xl shadow-soft border border-gray-200 bg-white">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-white border-b border-gray-100">
+          <th class="p-6 min-w-[255px] text-sm font-semibold text-gray-500 uppercase tracking-wider w-1/3">
+            Feature
+          </th>
+          <th class="p-6 min-w-[190px] text-base font-semibold text-navy text-center">
+            FRED
+          </th>
+          <th class="p-6 min-w-[190px] text-base font-semibold text-navy text-center">
+            Autopilot
+          </th>
+          <th class="p-6 min-w-[180px] text-base font-semibold text-navy text-center">
+            Alinea
+          </th>
+          <th class="p-6 min-w-[220px] text-base font-semibold text-navy text-center">
+            Financial / Robo Advisors
+          </th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-100">
+        <!-- Pricing -->
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4 font-medium text-navy">Pricing</td>
+          <td class="px-6 py-4 text-center text-slate-text">
+            From $8/mo flat<br>
+            <span class="text-xs text-slate-text">(founders: $99 once, lifetime)</span>
+          </td>
+          <td class="px-6 py-4 text-center text-slate-text">$10/mo or $100/yr</td>
+          <td class="px-6 py-4 text-center text-slate-text">$10/mo flat</td>
+          <td class="px-6 py-4 text-center text-slate-text">0.25%&ndash;1.0% of assets</td>
+        </tr>
+
+        <!-- Investment Approach -->
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4 font-medium text-navy">Investment Approach</td>
+          <td class="px-6 py-4 text-center text-slate-text">
+            Diversified<br>long-term index portfolio
+          </td>
+          <td class="px-6 py-4 text-center text-slate-text">
+            Copy-trading public political disclosures
+          </td>
+          <td class="px-6 py-4 text-center text-slate-text">
+            Theme-based investing portfolios
+          </td>
+          <td class="px-6 py-4 text-center text-slate-text">
+            Advisor-managed or algorithm-based portfolios
+          </td>
+        </tr>
+
+        <!-- Rebalancing process -->
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4 font-medium text-navy">Rebalancing process</td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><br>
+            <span class="text-xs text-slate-text">Automatically on a set schedule (once launched)</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><br>
+            <span class="text-xs text-slate-text">Based on public filings (2-week delay minimum)</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><br>
+            <span class="text-xs text-slate-text">Automated portfolio rebalancing trades</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><br>
+            <span class="text-xs text-slate-text">Managed by advisor or algorithm</span>
+          </td>
+        </tr>
+
+        <!-- Paycheck-Based Investing -->
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="p-6 font-medium text-navy">Paycheck-Based Investing</td>
+          <td class="p-6 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><span class="sr-only">Feature available</span>
+          </td>
+          <td class="p-6 text-center text-xs text-slate-text">
+            Not offered
+          </td>
+          <td class="p-6 text-center text-xs text-slate-text">
+            Not offered
+          </td>
+          <td class="p-6 text-center text-slate-text font-medium">
+            Varies by provider
+          </td>
+        </tr>
+
+        <!-- Defined End Game -->
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4 font-medium text-navy">Defined End Game</td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><br>
+            <span class="text-xs text-slate-text">Freedom Date built in</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><br>
+            <span class="text-xs text-slate-text">None</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><br>
+            <span class="text-xs text-slate-text">No defined projection</span>
+          </td>
+          <td class="px-6 py-4 text-center text-slate-text font-medium">
+            Varies by advisor
+          </td>
+        </tr>
+
+        <!-- Long-Term Focus Design -->
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4 font-medium text-navy">Long-Term Focus Design</td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg><br>
+            <span class="text-xs text-slate-text">Set It &amp; Forget It</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><br>
+            <span class="text-xs text-slate-text">Trade-following strategy</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <svg class="w-6 h-6 text-slate-text inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><br>
+            <span class="text-xs text-slate-text">Trend-driven strategy</span>
+          </td>
+          <td class="px-6 py-4 text-center text-slate-text font-medium">
+            Varies by strategy
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="mt-4 flex items-center justify-center gap-1 text-[11px] text-slate-text">
+    <svg class="w-3.5 h-3.5 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
+    Feature available
+  </p>
+  <p class="text-[10px] text-slate-text mt-2 text-center">
+    Comparisons are for general information only, based on publicly listed pricing as of July 2026, and may vary by plan/provider.
+  </p>
+</div>
+</section>
+
+<!-- 6 · Founder offer -->
+<!-- ATTORNEY: Alpaca references and pricing mentions pending contract signature and about-page attorney review -->
+<section class="bg-white border-y border-gray-100 py-16 lg:py-24">
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+  <h2 class="font-montserrat font-extrabold text-3xl sm:text-4xl text-navy mb-3">Founder Access</h2>
+  <p class="text-slate-text mb-10"><span class="sm:hidden">The first 300 members will never pay monthly.<br>We don&rsquo;t want a chunk of your future either.</span><span class="hidden sm:inline">The first 300 members will never pay a monthly subscription.<br>We don&rsquo;t want a percentage of your future either.</span></p>
+
+  <div class="bg-gray-900 text-white rounded-3xl p-8 sm:p-10 relative overflow-hidden shadow-2xl max-w-md mx-auto text-left">
+    <div class="absolute -top-1 -right-1 bg-primary text-xs font-bold pl-4 pb-1.5 pr-5.5 pt-2.5 rounded-bl-xl rounded-tr-3xl text-white tracking-wide shadow-lg">Limited to 300</div>
+    <h3 class="text-lg font-semibold text-gray-300">One-time founder price</h3>
+    <div class="flex items-baseline gap-2 my-4">
+      <span class="font-montserrat font-extrabold text-5xl tracking-tight">$99</span>
+      <span class="text-xl text-gray-400">lifetime</span>
+    </div>
+    <p class="text-sm text-gray-400 mb-6">FRED's tiers will run $8/mo to $40/mo</p>
+    <ul class="space-y-3.5 mb-7 text-sm text-gray-300">
+      <li class="flex items-center gap-2.5"><svg class="w-4 h-4 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Lifetime access to every feature</li>
+      <li class="flex items-center gap-2.5"><svg class="w-4 h-4 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>No monthly fee, ever</li>
+      <li class="flex items-center gap-2.5"><svg class="w-4 h-4 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Priority beta access + early features</li>
+      <li class="flex items-center gap-2.5"><svg class="w-4 h-4 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Founder badge + community status</li>
+    </ul>
+
+    <!-- The guarantee, out of the fine print and into the light -->
+    <div class="rounded-xl bg-green-500/10 border border-green-400/30 px-4 py-3.5 mb-6 flex items-start gap-3">
+      <svg class="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+      <p class="text-[13px] leading-snug text-green-100"><b class="text-green-300">Full refund</b> if you&rsquo;re not more confident in your financial future. No payment until launch, you only pay if invited and you choose to claim your spot.</p>
+    </div>
+
+    <a href="#join" id="founder-cta" class="block w-full text-center bg-primary hover:bg-primary-dark text-white font-montserrat font-extrabold py-3.5 rounded-xl transition-colors">
+      Reserve my Founder spot
+    </a>
+    <p class="text-[11px] text-gray-400 mt-3 text-center">Once 300 spots fill, new members pay monthly.</p>
+  </div>
+
+  <!-- ATTORNEY GUIDANCE 2026-09-15: short line; the attorney-drafted full disclosure is footnote 3 (#fn-3) -->
+  <p class="mt-6 max-w-md mx-auto text-center text-[11px] text-slate-text">$99 one-time. Lifetime of the account holder. Terms and exclusions apply.<sup><a href="#fn-3" id="fnref-3" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 3">3</a></sup></p>
+</div>
+</section>
+
+<!-- 7 · FAQ -->
+<section id="faq" class="py-16 lg:py-24 scroll-mt-16">
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+  <h2 class="font-montserrat font-extrabold text-3xl sm:text-4xl text-navy text-center mb-12">Fair questions</h2>
+  <div class="space-y-3">
+
+    <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <summary class="flex items-center justify-between gap-4 cursor-pointer px-6 py-5 font-semibold text-navy">
+        What happens after I join the waitlist?
+        <svg class="faq-icon w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </summary>
+      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">You&rsquo;ll get a confirmation email. When your invite is ready, you can claim one of the 300 Founder Access spots, or pass. Nothing is charged unless you claim.</p>
+    </details>
+
+    <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <summary class="flex items-center justify-between gap-4 cursor-pointer px-6 py-5 font-semibold text-navy">
+        When do I pay the $99?
+        <svg class="faq-icon w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </summary>
+      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">Only if you&rsquo;re invited <i>and</i> choose to claim Founder Access. Joining the waitlist costs nothing, today or ever.</p>
+    </details>
+
+    <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <summary class="flex items-center justify-between gap-4 cursor-pointer px-6 py-5 font-semibold text-navy">
+        Is my money safe if FRED shuts down?
+        <svg class="faq-icon w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </summary>
+      <!-- ATTORNEY GUIDANCE 2026-09-15: attorney-drafted answer, apply verbatim; JSON-LD FAQPage text must match -->
+      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">The digital advisory services provided by FRED may be discontinued in accordance with the advisory agreement. If the service ends, FRED will provide notice through the contact information associated with your account and will explain the effective date of termination, the status of pending transactions, the date automated portfolio-management features will stop, and available account-transition options. Your assets are held at Alpaca Securities LLC, subject to the custodian&rsquo;s terms and procedures. You may generally retain, transfer, or self-direct your custodial account, subject to applicable restrictions and costs. The discontinuation of FRED&rsquo;s service does not require you to liquidate investments or transfer assets to a successor adviser. Prior to the discontinuation of FRED&rsquo;s services, your investment will be subject to risks, including the risk that your investment will lose value because of overall changes in the financial markets.</p>
+    </details>
+
+    <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <summary class="flex items-center justify-between gap-4 cursor-pointer px-6 py-5 font-semibold text-navy">
+        Why not just buy index funds myself?
+        <svg class="faq-icon w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </summary>
+      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">You absolutely can. FRED uses plain index funds on purpose. What FRED adds is the automation: every paycheck invested on time, every month, for decades, without relying on willpower. Consistency is what the math rewards.</p>
+    </details>
+
+    <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <summary class="flex items-center justify-between gap-4 cursor-pointer px-6 py-5 font-semibold text-navy">
+        Why is the beta iOS only?
+        <svg class="faq-icon w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </summary>
+      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">We&rsquo;re a small team keeping the beta high-touch for every founding member. Starting iOS-only keeps quality high; Android is on the roadmap.</p>
+    </details>
+
+    <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <summary class="flex items-center justify-between gap-4 cursor-pointer px-6 py-5 font-semibold text-navy">
+        What does FRED cost after the founder offer?
+        <svg class="faq-icon w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </summary>
+      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">Flat monthly plans starting at $8 and ranging to $40. Never a percentage of your assets. However your portfolio performs, FRED&rsquo;s fee stays flat.</p>
+    </details>
+
+  </div>
+</div>
+</section>
+
+<!-- 8 · Join -->
+<section class="bg-white border-t border-gray-100 py-16 lg:py-24 scroll-mt-16" id="join">
+<div class="max-w-md mx-auto px-4 text-center">
+  <h2 class="font-montserrat font-extrabold text-2xl text-navy mb-2">Join the waitlist</h2>
+  <div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-semibold text-primary mb-6">
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    Limited to 300 founding members
+  </div>
+
+  <div class="bg-background-light p-4 rounded-2xl border border-gray-200 mb-5 text-left">
+    <!-- Spots-filled meter: no baked count or bar width. Renders only when the API reports
+         founderCount >= STAT_TILE_MIN_N; below that the card reflows to just the note. -->
+    <div id="progress-block" class="hidden">
+      <div class="flex justify-between text-sm font-semibold mb-2">
+        <span class="text-navy">Spots filled</span>
+        <span class="text-primary" id="progress-count"></span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-3 mb-3.5">
+        <div class="bg-primary h-3 rounded-full transition-all duration-700" id="progress-bar" style="width: 0%"></div>
+      </div>
+    </div>
+    <p id="waitlist-note" class="text-xs text-slate-text">We cap beta spots to keep support high-touch for every founding member. The beta is currently <b>iOS only</b>.</p>
+  </div>
+
+  <div class="relative min-h-[52px]">
+    <form id="waitlist-form" class="flex flex-col gap-2.5 sm:flex-row" novalidate>
+      <label class="sr-only" for="capture-email">Email address</label>
+      <input id="capture-email" type="email" placeholder="you@email.com" autocomplete="email" required
+        class="min-w-0 flex-1 rounded-xl border-gray-200 px-4 py-[14px] text-[15px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
+      <button type="submit" id="join-waitlist-btn"
+        class="rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+        <span id="btn-text">Join Waitlist</span>
+        <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
+          <span class="spinner" aria-hidden="true"></span>
+          <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
+        </span>
+      </button>
+    </form>
+
+    <div id="success-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300">
+      <div class="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-left flex items-start gap-3">
+        <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
+        <p class="text-sm font-medium text-green-700"><b>You&rsquo;re in!</b> <span id="success-note"></span></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
+
+  <p class="text-[13px] text-slate-text mt-4">If invited, you can choose <span class="hidden sm:inline">whether </span>to claim Founder Access.</p>
+</div>
+
+<!-- Disclosures: full text behind the short superscript lines above. Numbers are fixed (not list
+     auto-numbering) so footnote 3 keeps its number while footnote 2 is hidden with the stat. -->
+<div id="disclosures" class="max-w-2xl mx-auto px-4 mt-10 pt-8 border-t border-gray-200 text-left">
+  <h2 class="text-xs font-semibold uppercase tracking-wide text-navy mb-3">Disclosures</h2>
+  <ol class="space-y-3 text-[11px] leading-relaxed text-slate-text">
+    <!-- ATTORNEY GUIDANCE 2026-09-15: mockup methodology and limitations (first sentence stays on the card).
+         Figures behind it are documented in the comment above the mockup disclaimer. -->
+    <li id="fn-1" class="scroll-mt-20"><sup class="font-semibold text-navy">1</sup> Assumes a constant 10% annual return, $850 invested every two weeks, and a target based on a 4% withdrawal rate. Does not account for taxes, market movements, fees, or individual circumstances. <a href="#fnref-1" class="text-primary hover:underline" aria-label="Back to the illustration">&#8617;</a></li>
+    <!-- ATTORNEY GUIDANCE 2026-09-15: head-start stat disclosure. Hidden until renderHeadStart shows the stat;
+         text is set by JS from the same API response as the stat. -->
+    <li id="fn-2" class="hidden scroll-mt-20"><sup class="font-semibold text-navy">2</sup> <span id="stat-years-disclosure"></span> <a href="#fnref-2" class="text-primary hover:underline" aria-label="Back to the statistic">&#8617;</a></li>
+    <!-- ATTORNEY GUIDANCE 2026-09-15: attorney-drafted founding-member disclosure, apply verbatim -->
+    <li id="fn-3" class="scroll-mt-20"><sup class="font-semibold text-navy">3</sup> Founding-member offer: $99 one-time for the lifetime of the account holder while this service remains available, for the first 300 eligible members. The offer applies to lifetime Piggy Pro access. It does not include underlying investment expenses, custodian or third-party charges, taxes, or other costs described in the fee schedule. Eligibility is secured when your founding-member payment is completed after invitation. The offer is personal to the enrolled account holder and is subject to the advisory agreement and service-termination terms. The advisory service may be modified or discontinued as described in those terms. <a href="#fnref-3" class="text-primary hover:underline" aria-label="Back to Founder Access">&#8617;</a></li>
+  </ol>
+</div>
+
+<div class="max-w-md mx-auto px-4 text-center">
+  <div class="mt-10 pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
+    <div class="flex justify-center space-x-6 mb-4">
+      <a class="hover:text-primary" href="/">Calculator</a>
+      <a class="hover:text-primary" href="/privacy">Privacy</a>
+      <a class="hover:text-primary" href="/terms">Terms</a>
+      <a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
+    </div>
+    <p>&copy; 2026 FREDvested LLC</p>
+    <!-- ATTORNEY: status sentence pending final confirmation -->
+    <div class="mt-4 text-[10px] leading-relaxed text-gray-600 max-w-xl mx-auto">
+      FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br>
+      Investing involves risk, including possible loss of principal.
+    </div>
+  </div>
+</div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What happens after I join the waitlist?",
+      "acceptedAnswer": { "@type": "Answer", "text": "You’ll get a confirmation email. When your invite is ready, you can claim one of the 300 Founder Access spots, or pass. Nothing is charged unless you claim." }
+    },
+    {
+      "@type": "Question",
+      "name": "When do I pay the $99?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Only if you’re invited and choose to claim Founder Access. Joining the waitlist costs nothing, today or ever." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my money safe if FRED shuts down?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The digital advisory services provided by FRED may be discontinued in accordance with the advisory agreement. If the service ends, FRED will provide notice through the contact information associated with your account and will explain the effective date of termination, the status of pending transactions, the date automated portfolio-management features will stop, and available account-transition options. Your assets are held at Alpaca Securities LLC, subject to the custodian’s terms and procedures. You may generally retain, transfer, or self-direct your custodial account, subject to applicable restrictions and costs. The discontinuation of FRED’s service does not require you to liquidate investments or transfer assets to a successor adviser. Prior to the discontinuation of FRED’s services, your investment will be subject to risks, including the risk that your investment will lose value because of overall changes in the financial markets." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why not just buy index funds myself?",
+      "acceptedAnswer": { "@type": "Answer", "text": "You absolutely can. FRED uses plain index funds on purpose. What FRED adds is the automation: every paycheck invested on time, every month, for decades, without relying on willpower. Consistency is what the math rewards." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is the beta iOS only?",
+      "acceptedAnswer": { "@type": "Answer", "text": "We’re a small team keeping the beta high-touch for every founding member. Starting iOS-only keeps quality high; Android is on the roadmap." }
+    },
+    {
+      "@type": "Question",
+      "name": "What does FRED cost after the founder offer?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Flat monthly plans starting at $8 and ranging to $40. Never a percentage of your assets. However your portfolio performs, FRED’s fee stays flat." }
+    }
+  ]
+}
+</script>
+
+<script src="assets/waitlist.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script>
+(function () {
+  const { isValidEmail, getSavedStatus, saveStatus, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
+
+  const form = document.getElementById("waitlist-form");
+  const emailInput = document.getElementById("capture-email");
+  const joinBtn = document.getElementById("join-waitlist-btn");
+  const btnText = document.getElementById("btn-text");
+  const btnLoading = document.getElementById("btn-loading");
+  const successBlock = document.getElementById("success-block");
+  const successNote = document.getElementById("success-note");
+  const msg = document.getElementById("waitlist-msg");
+  const navCta = document.getElementById("nav-cta");
+
+  const STATUS_NOTES = {
+    WAITLISTFOUNDER: "You’re in line for a Founder invite.",
+    WAITLISTNORMAL: "You’re on the priority waitlist for a Founder spot.",
+    already_joined: "You’re already on the list.",
+  };
+
+  // --- Head-start stat + its disclosure ---
+  // Attorney screenshot mode: ?previewStat=1 renders the stat with sample values. Gated to this
+  // machine's hostnames, so on any deployed host the parameter does nothing and the stat renders
+  // only from a real API response.
+  const PREVIEW_STAT =
+    (location.hostname === "localhost" || location.hostname === "127.0.0.1") &&
+    new URLSearchParams(location.search).get("previewStat") === "1";
+
+  // "2026-09-03" -> "September 3, 2026". Built as a local calendar date so it never shifts a day in US timezones.
+  function formatStatDate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3])
+      .toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  }
+
+  // The stat, its short line, and footnote 2 only ever render together. Every claim here must describe
+  // the rows the backend averages (WaitlistRepository.HEAD_START_ROWS): adjusted inputs, the 8/10/12
+  // scenarios mirrored from RETURN_* in index.html, ages 18 to 100. Change them together.
+  function renderHeadStart(yearsText, sampleSize, startDate, endDate) {
+    document.getElementById("stat-years").textContent = yearsText;
+    document.getElementById("stat-years-disclosure").textContent =
+      "Average of hypothetical calculator results, compared with retiring at 65, from " + sampleSize +
+      " FRED waitlist members who used the fredvested.com calculator between " + startDate + " and " + endDate + ". " +
+      "Includes only members who adjusted the calculator inputs. Each result is an age, rounded to the whole year, based on the member’s inputs (current age, monthly investment, and desired monthly retirement income), " +
+      "no existing savings, the same monthly investment every month, a constant nominal annual return scenario compounded monthly (8%, 10%, or 12%), and a 4% withdrawal rate. " +
+      "Results that did not reach the target within 72 years or by age 100 are excluded. " +
+      "It is not a prediction or guarantee and does not reflect actual client performance, actual retirement ages, or actual financial-independence outcomes. " +
+      "Results vary based on user inputs, market performance, inflation, fees, taxes, volatility, spending, withdrawals, longevity, and personal circumstances. " +
+      "This statistic is not a testimonial, endorsement, or statement of any user’s experience with FRED.";
+    document.getElementById("stat-years-tile").classList.remove("hidden");
+    document.getElementById("stat-years-short").classList.remove("hidden");
+    document.getElementById("fn-2").classList.remove("hidden");
+  }
+
+  // --- Live stats: proof strip + progress bar ---
+  // Every number here is live-only: the HTML ships with no baked values, and each element
+  // stays hidden until the API returns a real value for it. Nothing renders on failure,
+  // and the proof tiles additionally stay hidden below the STAT_TILE_MIN_N sample size.
+  function updateStats(data) {
+    const count = Number(data.count) || 0;
+    if (count >= STAT_TILE_MIN_N) {
+      document.getElementById("stat-count").textContent = count.toLocaleString("en-US");
+      document.getElementById("stat-count-tile").classList.remove("hidden");
+    }
+    const projectionCount = Number(data.projectionCount) || 0;
+    const avgFreedomAge = Number(data.avgFreedomAge) || 0;
+    const startDate = formatStatDate(data.projectionStartDate);
+    const endDate = formatStatDate(data.projectionEndDate);
+    // No measurement period, no stat: the disclosure cannot be complete without it.
+    if (!PREVIEW_STAT && projectionCount >= STAT_TILE_MIN_N && avgFreedomAge > 0 && startDate && endDate) {
+      const years = Math.round((65 - avgFreedomAge) * 10) / 10;
+      if (years > 0) {
+        renderHeadStart(years + " yrs", projectionCount.toLocaleString("en-US"), startDate, endDate);
+      }
+    }
+    // Cap UI runs on founder-bucket occupancy, not total signups; statuses like
+    // INVITED/CLAIMED leave the founder bucket without leaving the table.
+    const max = 300;
+    const founderCount = data.founderCount != null ? Number(data.founderCount) : count;
+    const isFull = founderCount >= max;
+    if (founderCount >= STAT_TILE_MIN_N) {
+      document.getElementById("progress-count").textContent = isFull
+        ? max + " / " + max + " (Full)"
+        : founderCount + " / " + max;
+      document.getElementById("progress-bar").style.width = Math.min((founderCount / max) * 100, 100) + "%";
+      document.getElementById("progress-block").classList.remove("hidden");
+    }
+    if (isFull) {
+      document.getElementById("waitlist-note").innerHTML =
+        "The private beta is currently full. Join the priority waitlist to get a founder invitation if a spot opens. <b>iOS only</b>.";
+      btnText.textContent = "Join Priority Waitlist";
+    }
+  }
+  // Preview-only sample values for attorney screenshots. Never reached in production (see PREVIEW_STAT).
+  if (PREVIEW_STAT) renderHeadStart("10.5 yrs", "31", formatStatDate("2026-01-05"), formatStatDate("2026-09-14"));
+  fetchStats().then(updateStats).catch(() => {
+    /* No fallback by design: live-only elements simply stay invisible. */
+  });
+
+  // --- Signup flow (same motion system as the calculator page) ---
+  const ts = createTurnstile(form);
+
+  function showMsg(kind, text) {
+    const styles = kind === "error"
+      ? "bg-red-50 border-red-200 text-red-700"
+      : "bg-yellow-50 border-yellow-200 text-yellow-700";
+    msg.innerHTML =
+      '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium ' + styles + '">' + text + "</div>";
+  }
+
+  function showSuccess(displayStatus, fadeIn) {
+    form.style.display = "none";
+    successNote.textContent = STATUS_NOTES[displayStatus] || STATUS_NOTES.already_joined;
+    successBlock.classList.remove("hidden");
+    if (fadeIn) {
+      requestAnimationFrame(() => successBlock.classList.remove("opacity-0"));
+      // Restore keyboard/SR focus after the form disappears beneath the user.
+      successBlock.focus();
+    } else {
+      successBlock.classList.remove("opacity-0");
+    }
+    navCta.textContent = "You’re in ✓";
+    navCta.setAttribute("href", "#join");
+
+    // Price card CTA: they already reserved their place, so the action button
+    // becomes a status-worded confirmation. Still links to #join, where the
+    // success block spells out their status. WAITLISTNORMAL must not read as a
+    // reserved Founder spot; founder invites are spoken for at that point.
+    const founderCta = document.getElementById("founder-cta");
+    founderCta.className = "flex w-full items-center justify-center gap-2 bg-green-500/10 border border-green-400/30 text-green-300 font-montserrat font-extrabold py-3.5 rounded-xl";
+    founderCta.innerHTML =
+      '<svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' +
+      (displayStatus === "WAITLISTNORMAL" ? "You’re on the priority waitlist" : "Your spot in line is reserved");
+  }
+
+  const savedStatus = getSavedStatus();
+  if (savedStatus) {
+    showSuccess(savedStatus, false);
+    // If this browser computed a date before signing up, show it back in the hero
+    // instead of the calculator CTA.
+    const fd = getFreedomDate();
+    if (fd && fd.age) {
+      // style.display beats Tailwind display utilities regardless of CSS order
+      document.getElementById("hero-cta").style.display = "none";
+      document.getElementById("hero-cta-note").style.display = "none";
+      document.getElementById("hero-freedom-value").textContent =
+        "Free at " + fd.age + (fd.monthYear ? " · " + fd.monthYear : "");
+      const disp = document.getElementById("hero-freedom-display");
+      disp.classList.remove("hidden");
+      disp.classList.add("flex");
+    }
+  }
+
+  let loadingAborted = false;
+
+  function showLoading() {
+    loadingAborted = false;
+    emailInput.style.opacity = "0";
+    btnText.style.opacity = "0";
+    joinBtn.disabled = true;
+    setTimeout(() => {
+      if (loadingAborted) return;
+      emailInput.style.width = "0";
+      emailInput.style.height = "0";
+      emailInput.style.padding = "0";
+      emailInput.style.border = "none";
+      emailInput.style.margin = "0";
+      emailInput.style.flex = "0 1 auto";
+      emailInput.style.overflow = "hidden";
+      emailInput.disabled = true;
+      form.style.gap = "0";
+      joinBtn.style.width = "100%";
+      joinBtn.style.flex = "1";
+      btnText.classList.add("hidden");
+      btnLoading.classList.remove("hidden");
+      btnLoading.classList.add("flex");
+    }, 300);
+  }
+
+  function resetForm() {
+    loadingAborted = true;
+    emailInput.style.opacity = "";
+    emailInput.style.width = "";
+    emailInput.style.height = "";
+    emailInput.style.padding = "";
+    emailInput.style.border = "";
+    emailInput.style.margin = "";
+    emailInput.style.flex = "";
+    emailInput.style.overflow = "";
+    emailInput.disabled = false;
+    form.style.gap = "";
+    joinBtn.style.width = "";
+    joinBtn.style.flex = "";
+    joinBtn.style.opacity = "";
+    joinBtn.disabled = false;
+    btnText.style.opacity = "";
+    btnText.classList.remove("hidden");
+    btnLoading.classList.add("hidden");
+    btnLoading.classList.remove("flex");
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.innerHTML = "";
+
+    const email = emailInput.value.trim().toLowerCase();
+    if (!isValidEmail(email)) {
+      showMsg("error", "Please enter a valid email address.");
+      return;
+    }
+    const token = ts.getToken();
+    if (!token) {
+      showMsg("warn", "Security verification in progress. Please try again in a moment.");
+      return;
+    }
+
+    showLoading();
+    const loadingStartedAt = Date.now();
+
+    try {
+      const data = await submitWaitlist({ email, turnstileToken: token });
+
+      const elapsed = Date.now() - loadingStartedAt;
+      await new Promise((r) => setTimeout(r, Math.max(0, 3000 - elapsed)));
+
+      saveStatus(data.realStatus || data.status);
+      if (window.plausible) plausible("Waitlist Signup", { props: { page: "about" } });
+
+      joinBtn.style.opacity = "0";
+      joinBtn.style.transition = "opacity 300ms ease";
+      await new Promise((r) => setTimeout(r, 300));
+      showSuccess(data.status, true);
+      updateStats(data);
+    } catch (err) {
+      resetForm();
+      showMsg("error", err.message);
+      ts.reset();
+    }
+  });
+
+  devLinkMap({ "/": "index.html", "/privacy": "privacy.html", "/terms": "terms.html" });
+})();
+</script>
+</body>
+</html>

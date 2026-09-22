@@ -35,6 +35,7 @@ frontend/.nuxt/
 frontend/.wrangler/
 
 # Environment variables
+backend/src/main/resources/application-local.properties
 .env
 .env.local
 .env.production

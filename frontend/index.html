@@ -1,1216 +1,753 @@
 <!DOCTYPE html>
-
-<html class="scroll-smooth" lang="en"><head>
+<html lang="en">
+<head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta name="theme-color" content="#ffffff"/>
 <meta name="color-scheme" content="light"/>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<title>FRED</title>
-<meta name="description" content="FRED builds and maintains your long-term investing system — so your money compounds toward early corporate freedom, automatically.">
+<title>FRED: Find the age you could quit your job</title>
+<meta name="description" content="Move three sliders and get the year you could walk away from work for good, in under 30 seconds.">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fredvested.com">
 <meta property="og:site_name" content="FRED">
-<meta property="og:title" content="Built so you can clock out early. For good.">
-<meta property="og:description" content="FRED builds and maintains your long-term investing system — so your money compounds toward early corporate freedom, automatically.">
+<meta property="og:title" content="Find the age you could quit your job.">
+<meta property="og:description" content="Move three sliders and get the year you could walk away from work for good, in under 30 seconds.">
 <meta property="og:image" content="https://fredvested.com/assets/og-image.png">
 <!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Built so you can clock out early. For good.">
-<meta name="twitter:description" content="FRED builds and maintains your long-term investing system — so your money compounds toward early corporate freedom, automatically.">
+<meta name="twitter:title" content="Find the age you could quit your job.">
+<meta name="twitter:description" content="Move three sliders and get the year you could walk away from work for good, in under 30 seconds.">
 <meta name="twitter:image" content="https://fredvested.com/assets/og-image.png">
+<!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
 <link rel="stylesheet" href="dist/output.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
-<!-- Privacy-friendly analytics by Plausible -->
-<script async src="https://plausible.io/js/pa-hiK0VCN3k2FFZf1eqlrVf.js"></script>
+<!-- Privacy-friendly analytics by Plausible, proxied through our own domain -->
+<script defer data-domain="fredvested.com" src="/js/script.js"></script>
 <script>
   window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
   plausible.init()
 </script>
 <style>
-  img.no-save {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    pointer-events: none;
+  /* Page wash: soft FRED-blue radial fading into the light background */
+  body {
+    background:
+      radial-gradient(1100px 520px at 50% -8%, rgba(19, 91, 236, 0.10), transparent 60%),
+      linear-gradient(180deg, #ffffff 0%, var(--color-background-light, #f6f6f8) 55%);
+  }
+
+  /* Return-scenario segmented control (Marketing Rule: user selects the return assumption) */
+  .seg {
+    display: flex; gap: 4px; padding: 3px;
+    background: #eef2f7; border: 1px solid #e2e8f0; border-radius: 16px;
+  }
+  .seg-btn {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    padding: 6px 4px; border-radius: 12px; border: 0; background: transparent; cursor: pointer;
+    font: inherit; font-weight: 600; font-size: 13px; line-height: 1.2; color: #475569;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .seg-btn:hover { color: #0f172a; }
+  .seg-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(19, 91, 236, 0.5); }
+  .seg-pct { font-size: 11.5px; font-weight: 600; color: #64748b; }
+  .seg-btn.is-active {
+    background: linear-gradient(180deg, var(--color-primary, #135bec), var(--color-primary-dark, #0e4ac5));
+    color: #fff; box-shadow: 0 6px 14px -6px rgba(19, 91, 236, 0.55);
+  }
+  .seg-btn.is-active:hover { color: #fff; }
+  .seg-btn.is-active .seg-pct { color: rgba(255, 255, 255, 0.85); }
+  @media (min-width: 640px) {
+    /* Room for "Conservative (8%)" on one line; stacked layout is for narrow phones */
+    .seg-btn { flex-direction: row; gap: 4px; padding: 10px 6px; font-size: 13.5px; }
+    .seg-pct { font-size: inherit; color: inherit; }
+    .seg-pct::before { content: "("; }
+    .seg-pct::after { content: ")"; }
+  }
+
+  /* "How this calculation works" accordion */
+  .calc-method summary { list-style: none; }
+  .calc-method summary::-webkit-details-marker { display: none; }
+  .calc-method[open] .calc-chevron { transform: rotate(180deg); }
+
+  /* Hide native number-input spinners; the sliders are the primary control */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+  /* Extends the shared slider styles in src/input.css: white ring, active scale, focus ring */
+  input[type=range]::-webkit-slider-thumb {
+    border: 4px solid #ffffff;
+    box-shadow: 0 3px 10px rgba(19, 91, 236, 0.45);
+    transition: transform 0.12s ease;
+  }
+  input[type=range]:active::-webkit-slider-thumb { transform: scale(1.12); }
+  input[type=range]::-moz-range-thumb {
+    border: 4px solid #ffffff;
+    box-shadow: 0 3px 10px rgba(19, 91, 236, 0.45);
+    transition: transform 0.12s ease;
+  }
+  input[type=range]:active::-moz-range-thumb { transform: scale(1.12); }
+  input[type=range]:focus-visible { outline: none; }
+  input[type=range]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(19, 91, 236, 0.35), 0 3px 10px rgba(19, 91, 236, 0.45);
+  }
+  input[type=range]:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(19, 91, 236, 0.35), 0 3px 10px rgba(19, 91, 236, 0.45);
+  }
+
+  /* Result + capture stay collapsed until the reveal button is clicked */
+  .reveal-zone {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    /* Layout containment stops the collapsed zone's clipped content from propagating
+       scrollable overflow to the viewport (which otherwise adds phantom scroll space
+       below the footer). It does not contain size or paint, so the open state and its
+       shadows are unaffected. */
+    contain: layout;
+    transition: max-height 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.5s ease 0.1s;
+  }
+  .reveal-zone.open {
+    max-height: 1600px;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* CSS spinner for the submit button's loading state */
+  .spinner {
+    width: 18px; height: 18px; flex-shrink: 0;
+    border-radius: 9999px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition: none !important;
+      animation: none !important;
+      scroll-behavior: auto !important;
+    }
+    /* The universal selector does not reach vendor pseudo-elements; separate rules so
+       a browser dropping the unrecognized vendor selector keeps the other one. */
+    input[type=range]::-webkit-slider-thumb { transition: none !important; }
+    input[type=range]::-moz-range-thumb { transition: none !important; }
   }
 </style>
 </head>
-<body class="bg-background-light font-display text-navy antialiased selection:bg-primary/20 selection:text-primary">
-<!-- Navbar -->
-<nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100 before:absolute before:bottom-full before:left-0 before:w-full before:h-20 before:bg-white">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="flex justify-between h-16 items-center">
-<div class="flex-shrink-0 flex items-center gap-2 sm:gap-3">
-<span class="
-  font-montserrat
-  text-[48px]
-  font-black
-  italic
-  text-primary
-  tracking-[0px]
-  leading-none
-">
-  FRED
-</span>
-<img src="assets/logo.svg" alt="FRED piggy bank" class="h-10 w-10 no-save" draggable="false">
-</div>
-<div class="hidden md:flex space-x-8 text-sm font-medium text-slate-text">
-    <a class="hover:text-primary transition-colors" href="#calculator">Calculator</a>
-<a class="hover:text-primary transition-colors" href="#methodology">How FRED Works</a>
-<a class="hover:text-primary transition-colors" href="#pricing">Pricing</a>
-</div>
-<div class="flex items-center space-x-4">
-<a id="nav-join-button" class="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-lg shadow-primary/20 opacity-0 transition-opacity duration-300" href="#join">
-                        Join Private Beta
-                    </a>
-</div>
-</div>
-</div>
-</nav>
-<!-- Hero Section -->
-<section class="relative pt-5 pb-8 lg:pt-20 lg:pb-32 overflow-hidden bg-white">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-<div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
-<!-- Text column -->
-<div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
-<div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-2 lg:mb-6">
-<span class="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
-                        NEW Beta Slots Open
-                    </div>
-<h1 class="text-3xl tracking-tight font-extrabold text-navy sm:text-5xl md:text-6xl lg:text-6xl mb-1 lg:mb-6">
-                        Automatically Invest.<br><span class="text-primary">Retire Years Earlier.</span>
-</h1>
-<!-- Mobile-only: Trusted by (above image) -->
-<div class="lg:hidden text-sm text-slate-text flex items-center gap-1 mb-2 opacity-0 transition-opacity duration-300" id="hero-trusted-mobile">
-  <span class="material-icons-outlined text-green-500 text-base">verified</span>
-  Trusted by 180+ founding members
-</div>
-<!-- Mobile-only image (between heading and description) -->
-<div class="lg:hidden mb-3">
-<div class="relative rounded-2xl overflow-hidden shadow-soft bg-gradient-to-br from-blue-50 to-white border border-gray-100 p-6 min-h-[240px] flex items-center justify-center">
-<img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="no-save object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
-<div class="relative z-10 bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs transform rotate-2 transition-transform duration-500">
-<div class="flex items-center justify-between mb-4">
-<div class="text-sm font-medium text-slate-text">Total Freedom Fund</div>
-<span class="material-icons-outlined text-green-500">trending_up</span>
-</div>
-<div class="text-3xl font-bold text-navy mb-2">$1,482,902.14</div>
-<div class="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-<div class="bg-green-500 h-1.5 rounded-full" style="width: 78%"></div>
-</div>
-<div class="text-xs text-slate-text text-right">Target: $1.85m by age 45</div>
-</div>
-</div>
-</div>
-<p class="mt-2 text-sm text-slate-text sm:text-base sm:mt-5 sm:max-w-xl sm:mx-auto md:mt-5 lg:mx-0 leading-relaxed">
-                        FRED builds and maintains your long-term investing system — so your money compounds toward early corporate freedom, automatically.
-                    </p>
-<!-- Mobile-only: Avg freedom date (above buttons, centered) -->
-<div class="lg:hidden text-sm text-slate-text flex items-center gap-1 justify-center mt-3 opacity-0 transition-opacity duration-300" id="hero-avg-mobile">
-  <span class="text-yellow-500 text-lg leading-none">★</span>
-  <i>Average Freedom Date: 6.2 years earlier</i>
-</div>
-<div class="mt-3 sm:mt-12 flex flex-col sm:flex-row sm:justify-center lg:justify-start gap-3 sm:gap-4">
-<a class="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-primary hover:bg-primary-dark md:py-4 md:text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]" href="#calculator">
-                            See My Freedom Date
-                        </a>
-<a class="flex items-center justify-center px-8 py-3 border border-gray-200 text-base font-medium rounded-xl text-navy bg-white hover:bg-gray-50 md:py-4 md:text-lg transition-all hover:border-gray-300" href="#methodology">
-                            How it works
-                        </a>
-</div>
-<!-- Desktop-only combined stats -->
-<div class="mt-6 text-sm text-slate-text hidden lg:flex items-center gap-2 justify-start opacity-0 transition-opacity duration-300" id="hero-stats-text">
-  <span class="flex items-center gap-1"><span class="text-yellow-500 text-lg leading-none">★</span>
-  Avg Freedom Date: 6.2 years earlier</span>
-  <span class="flex items-center gap-1"><span class="material-icons-outlined text-green-500 text-base">verified</span>
-  Trusted by 180+ founding members</span>
-</div>
-</div>
-<!-- Desktop-only image (right column) -->
-<div class="hidden lg:block lg:col-span-6">
-<div class="relative rounded-2xl overflow-hidden shadow-soft bg-gradient-to-br from-blue-50 to-white border border-gray-100 p-8 min-h-[400px] flex items-center justify-center">
-<img alt="Relaxed professional woman sitting in a cafe looking at a tablet" class="no-save object-cover w-full h-full absolute inset-0 opacity-90 mix-blend-overlay" data-alt="Relaxed professional enjoying financial freedom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9QXVbBKbGIg5sodj_HR03wRBnru6Oqnn6xd-T0Qv-BA_lpPPLNHEBkjVpOvPIlloFzv7WfHv60EJBsgCl6kn9_6Hd1H6n4N5XVjgIm9iEXlMHWKNb99FSd6F6zZiJnsn5tRVBQmhUICJLudUsC5I-g5cr2PWxKSter0-YqjnIx7sIhSluPm9FmIt9Org1Hu5zqR6hmXDZmfIPA1BLuVuY5FEfJEwV4oTG4zlCR8Ey8erBZILZHDcRgdBRbxuNLvPbvsu6mcRfzr0"/>
-<div class="relative z-10 bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs transform rotate-2 hover:rotate-0 transition-transform duration-500">
-<div class="flex items-center justify-between mb-4">
-<div class="text-sm font-medium text-slate-text">Total Freedom Fund</div>
-<span class="material-icons-outlined text-green-500">trending_up</span>
-</div>
-<div class="text-3xl font-bold text-navy mb-2">$1,482,902.14</div>
-<div class="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-<div class="bg-green-500 h-1.5 rounded-full" style="width: 78%"></div>
-</div>
-<div class="text-xs text-slate-text text-right">Target: $1.85m by age 45</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Trust Bar & Value Props -->
-<section class="bg-[#F9FAFB] py-16 border-y border-transparent">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
-<p class="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">Secured by industry leaders</p>
-<div class="flex justify-center gap-6 sm:gap-12 md:gap-20 items-center opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-<div class="h-8 flex items-center font-bold text-xl text-gray-600"><span class="material-icons-outlined mr-2">account_balance</span> Alpaca</div>
-<div class="h-8 flex items-center font-bold text-xl text-gray-600"><span class="material-icons-outlined mr-2">security</span> Cloudflare</div>
-<div class="h-8 flex items-center font-bold text-xl text-gray-600"><span class="material-icons-outlined mr-2">lock</span> Plaid</div>
-</div>
-</div>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="grid md:grid-cols-3 gap-8">
-<div class="group p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-<div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-<span class="material-icons-outlined text-primary text-2xl">tune</span>
-</div>
-<h3 class="text-xl font-bold text-navy mb-3">Flexible Portfolios</h3>
-<p class="text-slate-text leading-relaxed text-sm sm:text-base">
-                        Use our default portfolio optimized for long-term growth or build your own. Stay disciplined while keeping full control.
-                    </p>
-</div>
-<div class="group p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-<div class="w-12 h-12 bg-blue-50/50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-<span class="material-icons-outlined text-primary text-2xl">account_balance_wallet</span>
-</div>
-<h3 class="text-xl font-bold text-navy mb-3">Your Assets, Your Name</h3>
-<p class="text-slate-text leading-relaxed text-sm sm:text-base">
-                    Your money is held in a segregated account at our partner brokerage. Liquid, portable and accessible at any time.
-                </p>
-</div>
-<div class="group p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-<div class="w-12 h-12 bg-blue-50/50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-<span class="material-icons-outlined text-primary text-2xl">vpn_key</span>
-</div>
-<h3 class="text-xl font-bold text-navy mb-3">Passkey Security</h3>
-<p class="text-slate-text leading-relaxed text-sm sm:text-base">
-                    Passkey authentication and bank-grade encryption keep your financial future secure. No passwords required.
-                </p>
-</div>
-</div>
-</div>
-</section>
-<!-- Quiz/Calculator Section -->
-<section class="py-12 lg:py-24 bg-[#EFF6FF] relative overflow-hidden border-y border-gray-200 scroll-mt-16 lg:scroll-mt-0" id="calculator">
-<div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-<div class="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-<div class="absolute top-1/2 right-0 w-64 h-64 bg-blue-300/20 rounded-full blur-3xl"></div>
-</div>
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-<div class="text-center mb-12">
-<h2 class="text-3xl font-bold text-navy sm:text-4xl"><span class="sm:hidden">How Soon Is Freedom?</span><span class="hidden sm:inline">How Soon Could You Be Free?</span></h2>
-<p class="mt-4 text-lg text-slate-text"><span class="sm:hidden">Adjust the sliders to see your timeline.</span><span class="hidden sm:inline">Adjust the sliders to see your accelerated timeline.</span></p>
-</div>
-<div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 md:p-12 border border-blue-100 overflow-clip max-w-full">
-<div class="grid md:grid-cols-2 gap-12">
-<div class="space-y-8 overflow-clip min-w-0">
-  
-<div>
-<div class="flex justify-between items-center mb-2 overflow-hidden">
-<label class="text-sm font-medium text-navy min-w-0 truncate">Current Age</label>
-<span id="age-display" class="text-lg font-bold text-primary whitespace-nowrap flex-shrink-0">24</span>
-</div>
-<input id="age-input" class="w-full accent-primary" max="45" min="18" type="range" value="24"/>
-</div>
+<body class="font-display text-navy antialiased min-h-screen flex flex-col items-center px-4 pt-4 sm:pt-7 pb-12 sm:px-5 selection:bg-primary/20 selection:text-primary">
 
-<div>
-<div class="flex justify-between items-center mb-2 overflow-hidden">
-<label class="text-sm font-medium text-navy min-w-0 truncate">Desired Freedom Income</label>
-<span id="freedom-income-display" class="text-lg font-bold text-primary whitespace-nowrap flex-shrink-0">$80,000</span>
-</div>
-<input id="freedom-income-input" class="w-full accent-primary" max="200000" min="40000" step="5000" type="range" value="80000"/>
-</div>
+<!-- Logo -->
+<header class="mb-4 sm:mb-8">
+  <a href="/" class="font-montserrat font-black italic text-[36px] sm:text-[48px] tracking-[0px] leading-none text-primary rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">FRED</a>
+</header>
 
-<div>
-<div class="flex justify-between items-center mb-2 overflow-hidden">
-<label class="text-sm font-medium text-navy min-w-0 truncate">I Can Invest...</label>
-<span id="invest-display" class="text-lg font-bold text-primary whitespace-nowrap flex-shrink-0">$1,250/mo</span>
-</div>
-<input id="invest-input" class="w-full accent-primary" max="5000" min="250" step="250" type="range" value="1250"/>
-<div class="flex justify-between text-xs text-gray-400 mt-2">
-<span>Steady</span>
-<span>Hyperdrive</span>
-</div>
-</div>
-</div>
-<div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl pt-8 px-4 sm:px-8 pb-4 flex flex-col justify-center items-center text-center border border-blue-100 min-w-0">
-<p class="text-sm text-slate-text uppercase tracking-wide font-semibold mb-2">Your Year to be Free</p>
-<div id="freedom-age-display" class="text-7xl font-bold text-navy mb-2 tracking-tighter">49</div>
-<p id="years-earlier-text" class="text-green-600 font-medium flex items-center gap-1 mb-4 bg-green-50 px-3 py-1 rounded-full text-sm">
-  <span class="material-icons-outlined text-sm">bolt</span> 16 yrs earlier than average
-</p>
-<a class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-primary/20" href="#join">
-                            Start My Automated Plan
-                        </a>
-<p class="mt-4 text-[8px] text-gray-400 leading-relaxed">
-    Projections are illustrative and based on a 10% avg annual return, adjusted for inflation and dividend reinvestment.
+<main class="w-full max-w-[600px] text-center">
+
+  <!-- Headline -->
+  <!-- ATTORNEY APPROVED 2026-09-01: "exact" removed by attorney direction -->
+  <h1 class="font-montserrat font-extrabold text-[clamp(30px,7.4vw,46px)] leading-[1.05] tracking-[-0.025em] text-navy mb-2 sm:mb-4">
+    Find the <span class="text-primary">age</span> you could quit your job.
+  </h1>
+
+  <!-- Subhead -->
+  <p class="text-[17px] text-slate-text max-w-[44ch] mx-auto mb-2 sm:mb-3">
+    Move three sliders and get the year you could walk away from work for good, in under 30<span class="sm:hidden">s.</span><span class="hidden sm:inline"> seconds.</span>
   </p>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- How It Works -->
-<section class="py-12 lg:py-24 bg-background-light border-y border-transparent scroll-mt-16 lg:scroll-mt-0" id="methodology">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-<h2 class="text-3xl font-bold text-navy sm:text-4xl mb-16">The Path to Freedom</h2>
-<div class="grid md:grid-cols-3 gap-12 relative">
-<!-- Connecting Line -->
-<div class="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-gray-200 -z-0"></div>
-<!-- Step 1 -->
-<div class="relative z-10">
-<div class="w-24 h-24 bg-white rounded-full border-8 border-blue-50 shadow-lg flex items-center justify-center mx-auto mb-6">
-<span class="material-icons-outlined text-4xl text-primary">settings_input_component</span>
-</div>
-<h3 class="text-lg font-bold text-navy mb-2">1. Set Your Goals</h3>
-<p class="text-slate-text text-sm max-w-xs mx-auto">Define your monthly contribution and desired retirement income.</p>
-</div>
-<!-- Step 2 -->
-<div class="relative z-10">
-<div class="w-24 h-24 bg-white rounded-full border-8 border-blue-50 shadow-lg flex items-center justify-center mx-auto mb-6">
-<span class="material-icons-outlined text-4xl text-primary">autorenew</span>
-</div>
-<h3 class="text-lg font-bold text-navy mb-2">2. We Automate It</h3>
-<p class="text-slate-text text-sm max-w-xs mx-auto">FRED invests every dollar automatically into a diversified portfolio.</p>
-</div>
-<!-- Step 3 -->
-<div class="relative z-10">
-<div class="w-24 h-24 bg-white rounded-full border-8 border-blue-50 shadow-lg flex items-center justify-center mx-auto mb-6">
-<span class="material-icons-outlined text-4xl text-primary">beach_access</span>
-</div>
-<h3 class="text-lg font-bold text-navy mb-2">3. Relax &amp; Retire</h3>
-<p class="text-slate-text text-sm max-w-xs mx-auto">Watch your freedom date move closer as compound interest works.</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Investment Strategy & Donut Chart -->
-<section class="py-12 lg:py-24 bg-white">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="grid lg:grid-cols-2 gap-16 items-center">
-<div class="flex flex-col items-center">
-<div class="relative flex justify-center">
-<div class="w-56 h-56 lg:w-80 lg:h-80 relative">
-<svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-<circle class="donut-segment text-primary" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="188.5 251.327" stroke-dashoffset="0" stroke-width="12"></circle>
-<circle class="donut-segment text-blue-400" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="50.265 251.327" stroke-dashoffset="-188.5" stroke-width="12"></circle>
-<circle class="donut-segment text-navy" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="12.566 251.327" stroke-dashoffset="-238.765" stroke-width="12"></circle>
-</svg>
-<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-<span class="text-sm font-medium text-slate-text uppercase">Portfolio</span>
-<span class="text-3xl font-bold text-navy">100%</span>
-</div>
-</div>
-<!-- Desktop floating labels -->
-<div class="hidden lg:block absolute top-[-5%] -right-26 bg-white shadow-md p-3 rounded-lg border border-gray-100 text-sm">
-<div class="font-bold text-primary">VTI (75%)</div>
-<div class="text-xs text-gray-500">Total US Stock Market</div>
-</div>
-<div class="hidden lg:block absolute top-[10%] -left-34 bg-white shadow-md p-3 rounded-lg border border-gray-100 text-sm">
-<div class="font-bold text-blue-400">VXUS (20%)</div>
-<div class="text-xs text-gray-500">Total Intl Stock Market</div>
-</div>
-<div class="hidden lg:block absolute -top-14 left-[25%] -translate-x-1/2 bg-white shadow-md p-3 rounded-lg border border-gray-100 text-sm">
-<div class="font-bold text-navy">VBR (5%)</div>
-<div class="text-xs text-gray-500">Small Cap Value</div>
-</div>
-</div>
-<!-- Mobile legend -->
-<div class="flex lg:hidden gap-4 mt-4 justify-center">
-<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-primary"></span><span class="text-xs font-semibold text-navy">VTI 75%</span></div>
-<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400"></span><span class="text-xs font-semibold text-navy">VXUS 20%</span></div>
-<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-navy"></span><span class="text-xs font-semibold text-navy">VBR 5%</span></div>
-</div>
-</div>
-<div>
-<h2 class="text-3xl font-bold text-navy mb-6"><span class="sm:hidden">The "Boglehead" Way</span><span class="hidden sm:inline">The "Boglehead" Philosophy</span></h2>
-<p class="text-lg text-slate-text mb-8">
-                        We subscribe to the Nobel Prize-winning strategy of modern portfolio theory. Maximum diversification, minimal fees.
-                    </p>
-<ul class="space-y-6">
-<li class="flex items-start">
-<span class="material-icons-outlined text-green-500 mr-3 mt-1">check_circle</span>
-<div>
-<strong class="block text-navy font-semibold">Total Market Exposure</strong>
-<span class="text-slate-text text-sm">You own thousands of companies across the global stock market.</span>
-</div>
-</li>
-<li class="flex items-start">
-<span class="material-icons-outlined text-green-500 mr-3 mt-1">check_circle</span>
-<div>
-<strong class="block text-navy font-semibold">Small Cap Value Tilt</strong>
-<span class="text-slate-text text-sm">Slight overweighting in small value stocks for historically higher returns.</span>
-</div>
-</li>
-<li class="flex items-start">
-<span class="material-icons-outlined text-green-500 mr-3 mt-1">check_circle</span>
-<div>
-<strong class="block text-navy font-semibold">Designed for Long-Term Growth</strong>
-<span class="text-slate-text text-sm">Based on decades of market data to pursue strong returns through broad diversification.</span>
-</div>
-</li>
-</ul>
-</div>
-</div>
-</div>
-</section>
-<!-- Comparison Table -->
-<section class="py-12 lg:py-24 bg-gray-50">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h2 class="text-3xl font-bold text-navy text-center mb-8 lg:mb-16">How FRED Stacks Up</h2>
 
-    <!-- Mobile stacked cards (visible below md) -->
-    <div class="md:hidden space-y-4">
-      <!-- Annual Fee -->
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
-          <h4 class="font-semibold text-navy text-sm">Annual Fee</h4>
-        </div>
-        <div class="divide-y divide-gray-100">
-          <div class="flex justify-between items-center px-4 py-3 bg-primary/5">
-            <span class="font-bold text-primary text-sm">FRED</span>
-            <span class="text-sm font-bold text-navy">$8/mo flat <span class="text-[10px] font-normal text-slate-text">(as low as $5/mo)</span></span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Autopilot</span>
-            <span class="text-sm text-slate-text">$10/mo or $100/yr</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Alinea</span>
-            <span class="text-sm text-slate-text">$10/mo flat</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Advisors</span>
-            <span class="text-sm text-slate-text">0.25%–1.0%/yr</span>
-          </div>
-        </div>
+  <!-- Pre-input disclosure -->
+  <!-- ATTORNEY REVIEW PENDING: attorney-supplied wording; final language to be confirmed during screenshot review -->
+  <p class="mx-auto mb-3 max-w-[54ch] text-[12.5px] leading-snug text-slate-text" role="note">
+    FRED&rsquo;s calculator is an educational planning tool. It does not provide investment advice or recommend any investment.
+  </p>
+
+  <!-- Input card -->
+  <div class="bg-white border border-gray-200 rounded-[20px] p-4 sm:p-8 text-left mt-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.04),0_20px_50px_-16px_rgba(19,91,236,0.22)]">
+
+    <div class="mb-3 sm:mb-6">
+      <div class="flex items-baseline justify-between mb-2 sm:mb-3">
+        <label for="age-number" class="text-[15px] font-semibold text-navy">I&rsquo;m currently</label>
+        <span class="inline-flex items-baseline">
+          <input id="age-number" type="number" value="30" min="18" max="60" step="1" aria-label="I’m currently, age in years"
+            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+          <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">years old</span>
+        </span>
       </div>
-      <!-- Investment Approach -->
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
-          <h4 class="font-semibold text-navy text-sm">Investment Approach</h4>
-        </div>
-        <div class="divide-y divide-gray-100">
-          <div class="flex justify-between items-center px-4 py-3 bg-primary/5">
-            <span class="font-bold text-primary text-sm">FRED</span>
-            <span class="text-sm font-medium text-navy text-right">Diversified index portfolio</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Autopilot</span>
-            <span class="text-sm text-slate-text text-right">Copy-trading disclosures</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Alinea</span>
-            <span class="text-sm text-slate-text text-right">Theme-based portfolios</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Advisors</span>
-            <span class="text-sm text-slate-text text-right">Advisor/algorithm-managed</span>
-          </div>
-        </div>
+      <input id="age-range" type="range" value="30" min="18" max="60" step="1" aria-label="Current age in years" class="w-full">
+    </div>
+
+    <div class="mb-3 sm:mb-6">
+      <div class="flex items-baseline justify-between mb-2 sm:mb-3">
+        <label for="invest-number" class="text-[15px] font-semibold text-navy">I can invest</label>
+        <span class="inline-flex items-baseline">
+          <span class="font-montserrat font-bold text-lg text-primary" aria-hidden="true">$</span>
+          <input id="invest-number" type="number" value="2000" min="0" max="10000" step="50" aria-label="I can invest, in dollars per month"
+            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+          <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">/mo</span>
+        </span>
       </div>
-      <!-- Trade Execution -->
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
-          <h4 class="font-semibold text-navy text-sm">Trade Execution Timing</h4>
-        </div>
-        <div class="divide-y divide-gray-100">
-          <div class="flex justify-between items-center px-4 py-3 bg-primary/5">
-            <span class="font-bold text-primary text-sm">FRED</span>
-            <span class="text-xs text-green-600 font-medium flex items-center gap-1"><span class="material-icons-outlined text-green-500 text-base">check_circle</span> Immediate</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Autopilot</span>
-            <span class="text-xs text-slate-text flex items-center gap-1"><span class="material-icons-outlined text-gray-300 text-base">remove_circle</span> 2-week delay</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Alinea</span>
-            <span class="text-xs text-slate-text flex items-center gap-1"><span class="material-icons-outlined text-gray-300 text-base">remove_circle</span> Auto rebalance</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Advisors</span>
-            <span class="text-xs text-slate-text">Managed by algorithm</span>
-          </div>
-        </div>
+      <input id="invest-range" type="range" value="2000" min="0" max="10000" step="50" aria-label="Monthly investment in dollars" class="w-full">
+    </div>
+
+    <div class="mb-1">
+      <div class="flex items-baseline justify-between mb-2 sm:mb-3">
+        <label for="retire-number" class="text-[15px] font-semibold text-navy">I want to retire on</label>
+        <span class="inline-flex items-baseline">
+          <span class="font-montserrat font-bold text-lg text-primary" aria-hidden="true">$</span>
+          <input id="retire-number" type="number" value="7500" min="1000" max="30000" step="100" aria-label="I want to retire on, in dollars per month"
+            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+          <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">/mo</span>
+        </span>
       </div>
-      <!-- Paycheck-Based Investing -->
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
-          <h4 class="font-semibold text-navy text-sm">Paycheck-Based Investing</h4>
-        </div>
-        <div class="divide-y divide-gray-100">
-          <div class="flex justify-between items-center px-4 py-3 bg-primary/5">
-            <span class="font-bold text-primary text-sm">FRED</span>
-            <span class="material-icons-outlined text-green-500 text-xl">check_circle</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Autopilot</span>
-            <span class="material-icons-outlined text-red-500 text-xl">cancel</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Alinea</span>
-            <span class="material-icons-outlined text-red-500 text-xl">cancel</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Advisors</span>
-            <span class="text-xs text-slate-text">Varies</span>
-          </div>
-        </div>
+      <input id="retire-range" type="range" value="7500" min="1000" max="30000" step="100" aria-label="Desired monthly retirement income in dollars" class="w-full">
+    </div>
+
+    <!-- Return scenario selector. Always visible: the user's ability to choose among return
+         assumptions is part of the calculator's characterization as an interactive analysis tool. -->
+    <div class="mt-3 sm:mt-5">
+      <div class="mb-2 sm:mb-2.5 flex items-baseline justify-between">
+        <span id="return-label" class="text-[15px] font-semibold text-navy">Assumed annual return</span>
       </div>
-      <!-- Defined End Game -->
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
-          <h4 class="font-semibold text-navy text-sm">Defined End Game</h4>
-        </div>
-        <div class="divide-y divide-gray-100">
-          <div class="flex justify-between items-center px-4 py-3 bg-primary/5">
-            <span class="font-bold text-primary text-sm">FRED</span>
-            <span class="text-xs text-green-600 font-medium flex items-center gap-1"><span class="material-icons-outlined text-green-500 text-base">check_circle</span> Freedom Date <span class="text-[10px] font-normal text-slate-text">(w/ Strats)</span></span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Autopilot</span>
-            <span class="text-xs text-slate-text flex items-center gap-1"><span class="material-icons-outlined text-gray-300 text-base">remove_circle</span> None</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Alinea</span>
-            <span class="text-xs text-slate-text flex items-center gap-1"><span class="material-icons-outlined text-gray-300 text-base">remove_circle</span> None</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Advisors</span>
-            <span class="text-xs text-slate-text">Varies</span>
-          </div>
-        </div>
-      </div>
-      <!-- Long-Term Focus -->
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100">
-          <h4 class="font-semibold text-navy text-sm">Long-Term Focus Design</h4>
-        </div>
-        <div class="divide-y divide-gray-100">
-          <div class="flex justify-between items-center px-4 py-3 bg-primary/5">
-            <span class="font-bold text-primary text-sm">FRED</span>
-            <span class="text-xs text-green-600 font-medium flex items-center gap-1"><span class="material-icons-outlined text-green-500 text-base">check_circle</span> Set & Forget</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Autopilot</span>
-            <span class="text-xs text-slate-text flex items-center gap-1"><span class="material-icons-outlined text-yellow-500 text-base">warning</span> Trade-following</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Alinea</span>
-            <span class="text-xs text-slate-text flex items-center gap-1"><span class="material-icons-outlined text-yellow-500 text-base">warning</span> Trend-driven</span>
-          </div>
-          <div class="flex justify-between items-center px-4 py-3">
-            <span class="text-sm text-slate-text">Advisors</span>
-            <span class="text-xs text-slate-text">Varies</span>
-          </div>
-        </div>
+      <div id="return-seg" class="seg" role="radiogroup" aria-labelledby="return-label">
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-return="conservative" class="seg-btn">
+          <span class="seg-name">Conservative</span><span class="seg-pct">8%</span>
+        </button>
+        <button type="button" role="radio" aria-checked="true" tabindex="0" data-return="moderate" class="seg-btn is-active">
+          <span class="seg-name">Moderate</span><span class="seg-pct">10%</span>
+        </button>
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-return="optimistic" class="seg-btn">
+          <span class="seg-name">Optimistic</span><span class="seg-pct">12%</span>
+        </button>
       </div>
     </div>
 
-    <!-- Desktop table (visible at md+) -->
-    <div class="hidden md:block overflow-x-auto rounded-2xl shadow-soft border border-gray-200 bg-white">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-white border-b border-gray-100">
-            <th class="p-6 min-w-[255px] text-sm font-semibold text-gray-400 uppercase tracking-wider w-1/3">
-              Feature
-            </th>
-
-            <th class="p-6 min-w-[190px] text-lg font-bold text-primary bg-primary/5 text-center border-t-4 border-t-primary">
-              FRED
-            </th>
-
-            <th class="p-6 min-w-[190px] text-base font-semibold text-navy text-center opacity-60">
-              Autopilot
-            </th>
-
-            <th class="p-6 min-w-[180px] text-base font-semibold text-navy text-center opacity-60">
-              Alinea
-            </th>
-
-            <th class="p-6 min-w-[220px] text-base font-semibold text-navy text-center opacity-60">
-              Financial / Robo Advisors
-            </th>
-          </tr>
-        </thead>
-
-        <tbody class="divide-y divide-gray-100">
-          <!-- Annual Fee -->
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 font-medium text-navy">Annual Fee</td>
-
-            <td class="px-6 py-4 text-center bg-primary/5 font-bold text-navy">
-              $8/mo flat<br>
-              <span class="text-xs text-slate-text font-medium">(pay as low as $5/mo)</span>
-            </td>
-
-            <td class="px-6 py-4 text-center text-slate-text">$10/mo or $100/yr</td>
-            <td class="px-6 py-4 text-center text-slate-text">$10/mo flat</td>
-            <td class="px-6 py-4 text-center text-slate-text">0.25%–1.0% of assets</td>
-          </tr>
-
-          <!-- Investment Approach -->
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 font-medium text-navy">Investment Approach</td>
-
-            <td class="px-6 py-4 text-center bg-primary/5 text-slate-text font-medium">
-              Diversified<br>long-term index portfolio
-            </td>
-
-            <td class="px-6 py-4 text-center text-slate-text">
-              Copy-trading public political disclosures
-            </td>
-
-            <td class="px-6 py-4 text-center text-slate-text">
-              Theme-based investing portfolios
-            </td>
-
-            <td class="px-6 py-4 text-center text-slate-text">
-              Advisor-managed or algorithm-based portfolios
-            </td>
-          </tr>
-
-          <!-- Trade Execution Timing -->
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 font-medium text-navy">Trade Execution Timing</td>
-
-            <td class="px-6 py-4 text-center bg-primary/5">
-              <span class="material-icons-outlined text-green-500">check_circle</span><br>
-              <span class="text-xs text-green-600 font-medium">Executed immediately based on your plan</span>
-            </td>
-           
-            <td class="px-6 py-4 text-center">
-              <span class="material-icons-outlined text-gray-300">remove_circle</span><br>
-              <span class="text-xs text-slate-text">Based on public filings (minimum 2-week delay)</span>
-            </td>
-           
-            <td class="px-6 py-4 text-center">
-              <span class="material-icons-outlined text-gray-300">remove_circle</span><br>
-              <span class="text-xs text-slate-text">Automated portfolio rebalancing trades</span>
-            </td>
-
-            <td class="px-6 py-4 text-center text-slate-text">
-              Managed by advisor or algorithm
-            </td>
-          </tr>
-
-          <!-- Paycheck-Based Investing -->
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="p-6 font-medium text-navy">Paycheck-Based Investing</td>
-
-            <td class="p-6 text-center bg-primary/5">
-              <span class="material-icons-outlined text-green-500">check_circle</span>
-            </td>
-
-            <td class="p-6 text-center">
-              <span class="material-icons-outlined text-red-500">cancel</span>
-            </td>
-
-            <td class="p-6 text-center">
-              <span class="material-icons-outlined text-red-500">cancel</span>
-            </td>
-
-            <td class="p-6 text-center text-slate-text font-medium">
-              Varies by provider
-            </td>
-          </tr>
-
-          <!-- Defined Retirement Target -->
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 font-medium text-navy">Defined End Game</td>
-
-            <td class="px-6 py-4 text-center bg-primary/5">
-              <span class="material-icons-outlined text-green-500">check_circle</span><br>
-              <span class="text-xs text-green-600 font-medium">Freedom Date w/ Strats</span>
-            </td>
-
-            <td class="px-6 py-4 text-center">
-              <span class="material-icons-outlined text-gray-300">remove_circle</span><br>
-              <span class="text-xs text-slate-text">None</span>
-            </td>
-
-            <td class="px-6 py-4 text-center">
-              <span class="material-icons-outlined text-gray-300">remove_circle</span><br>
-              <span class="text-xs text-slate-text">No defined projection</span>
-            </td>
-
-            <td class="px-6 py-4 text-center text-slate-text font-medium">
-              Varies by advisor
-            </td>
-          </tr>
-
-          <!-- Long-Term Focus Design -->
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 font-medium text-navy">Long-Term Focus Design</td>
-
-            <td class="px-6 py-4 text-center bg-primary/5">
-              <span class="material-icons-outlined text-green-500">check_circle</span><br>
-              <span class="text-xs text-green-600 font-medium">Set It & Forget It</span>
-            </td>
-
-            <td class="px-6 py-4 text-center">
-              <span class="material-icons-outlined text-yellow-500">warning</span><br>
-              <span class="text-xs text-slate-text">Trade-following strategy</span>
-            </td>
-
-            <td class="px-6 py-4 text-center">
-              <span class="material-icons-outlined text-yellow-500">warning</span><br>
-              <span class="text-xs text-slate-text">Trend-driven strategy</span>
-            </td>
-
-            <td class="px-6 py-4 text-center text-slate-text font-medium">
-              Varies by strategy
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="text-[9px] text-slate-text mt-4 text-center">
-      Comparisons are for general information only and may vary by plan/provider.
-    </p>
+    <button type="button" id="reveal-btn" aria-controls="reveal-zone" aria-expanded="false"
+      class="group mt-3 sm:mt-5 w-full rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-3 py-[18px] sm:px-6 font-montserrat font-extrabold text-lg text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 active:translate-y-px cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+      Reveal my Freedom <span class="whitespace-nowrap">Date <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
+    </button>
   </div>
-</section>
-<!-- Pricing -->
-<section class="py-12 lg:py-24 bg-white relative" id="pricing">
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-<h2 class="text-3xl font-bold text-navy mb-4">Simple, Transparent Pricing</h2>
-<p class="text-slate-text mb-12">We don't take a percentage of your future. <span class="block sm:inline">Just a small fee for the service.</span></p>
-<div class="bg-navy text-white rounded-3xl p-1 relative overflow-hidden shadow-2xl max-w-sm mx-auto">
-<div class="bg-gray-900 rounded-[20px] p-8 relative z-10 h-full flex flex-col">
-<div class="absolute -top-1 -right-1 bg-primary text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-[20px] text-white tracking-wide shadow-lg">Limited Time</div>
-<h3 class="text-xl font-medium text-gray-300 mb-2">Founder Access</h3>
-<p class="text-sm text-gray-400 mb-3 -mx-4 sm:mx-0">
-  Normally $8/month • Save $800+ over 10 yrs
-</p>
-<div class="flex items-baseline justify-center my-6">
-<span class="text-5xl font-bold tracking-tight">$99</span>
-<span class="text-xl text-gray-400 ml-2">Lifetime</span>
-</div>
-<ul class="space-y-4 mb-8 text-left text-gray-300 text-sm -mx-2 sm:mx-0">
-<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Lifetime access for all features</li>
-<li class="flex items-center whitespace-nowrap"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> One-time founder price (no monthly fee)</li>
-<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Priority beta access + early features</li>
-<li class="flex items-center"><span class="material-icons-outlined text-primary mr-2 text-base">check</span> Founder badge + community status</li>
-</ul>
-<a class="block w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-xl transition-colors mt-auto" href="#join">
-                        Reserve Your Founder Spot
-                    </a>
-<p class="text-[9px] text-gray-500 mt-2 -mx-6 sm:-mx-2">
-Not feeling more confident in your financial future with FRED? Full refund.<br>
-No payment today. If invited, you can choose to claim Founder Access.<br>
-Founder spots are limited. Once full, pricing switches to $8/month.
-</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Footer & Scarcity -->
-<section class="bg-background-light py-16 border-t border-gray-200 scroll-mt-16 lg:scroll-mt-0" id="join">
-<div class="max-w-md mx-auto px-4 text-center">
-<h3 class="text-2xl font-bold text-navy mb-1">Join Private Beta</h3>
-<div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary mb-6">
-  <span class="material-icons-outlined text-base">lock</span>
-  Limited to 300 founding members
-</div>
-<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-4">
-<div class="flex justify-between text-sm font-medium mb-2">
-<span class="text-navy">Spots Filled</span>
-<span class="text-primary" id="progress-count">187 / 300</span>
-</div>
-<div class="w-full bg-gray-100 rounded-full h-3 mb-4">
-<div class="bg-primary h-3 rounded-full relative" id="progress-bar" style="width: 62%">
-<div class="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow"></div>
-</div>
-</div>
-<p id="waitlist-note" class="text-xs text-slate-text text-left -mx-1 min-[400px]:mx-0">We limit beta spots to ensure high-touch support for every founding member. The beta is currently <b>iOS only</b>.</p>
-</div>
-<div class="relative min-h-[52px]">
-<form id="waitlist-form" class="flex gap-2 transition-all duration-300">
-<input id="email-input" class="flex-1 rounded-xl border-gray-300 focus:border-primary focus:ring-primary shadow-sm transition-all duration-500 text-[12.5px] sm:text-base" placeholder="Enter your email" type="email" required/>
-<button id="footer-join-button" type="submit" class="flex items-center justify-center bg-navy hover:bg-slate-800 text-white font-medium px-6 py-3 rounded-xl transition-all duration-[600ms] whitespace-nowrap shadow-lg overflow-hidden cursor-pointer disabled:cursor-default">
-<span id="btn-text">Reserve Spot</span>
-<span id="btn-loading" class="hidden items-center justify-center gap-2">
-<span class="material-icons-outlined text-lg animate-spin">sync</span>
-<span class="text-sm">Reserving your spot...</span>
-</span>
-                </button>
-</form>
-<div id="waitlist-msg" class="hidden mt-2"></div>
-</div>
-<p class="text-sm text-slate-text mt-4">
-<span class="sm:hidden -mx-2 sm:mx-0">If invited, you have the option to claim Founder Access.</span><span class="hidden sm:inline">If invited, you'll have the option to claim Founder Access.</span>
-</p>
-<p class="text-sm text-slate-text">
-No payment today.
-</p>
-<div class="mt-6 pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
-<div class="flex justify-center space-x-6 mb-4">
-<a class="hover:text-primary" href="/privacy">Privacy</a>
-<a class="hover:text-primary" href="/terms">Terms</a>
-<a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
-</div>
-<p>© 2026 FREDvested LLC</p>
-<div class="mt-4 text-[10px] leading-relaxed text-gray-400 -mx-4 sm:mx-auto sm:max-w-xl">
-FREDvested LLC is not a broker-dealer and does not provide investment advice.<br>
-  Brokerage services provided by Alpaca Securities LLC, member FINRA/SIPC.<br>
-  Investing involves risk, including possible loss of principal.
-</div>
-</div>
-</div>
-</section>
-<script>
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const href = this.getAttribute('href');
-        if (href === '#') return;
-        const target = document.querySelector(href);
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-  });
 
-  document.addEventListener("DOMContentLoaded", () => {
-    // 1. Grab all the input elements
-    const ageInput = document.getElementById('age-input');
-    const ageDisplay = document.getElementById('age-display');
+  <!-- Lives outside the inert zone so first-reveal announcements reach screen readers -->
+  <p id="result-sr" class="sr-only" aria-live="polite"></p>
 
-    const freedomInput = document.getElementById('freedom-income-input');
-    const freedomDisplay = document.getElementById('freedom-income-display');
-    
-    const investInput = document.getElementById('invest-input');
-    const investDisplay = document.getElementById('invest-display');
+  <!-- Result + capture (collapsed until reveal) -->
+  <div id="reveal-zone" class="reveal-zone text-left" inert>
 
-    // Grab the output display elements
-    const freedomAgeDisplay = document.getElementById('freedom-age-display');
-    const earlierTextDisplay = document.getElementById('years-earlier-text');
+    <!-- Result card -->
+    <div id="result-card" class="mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
+      <div id="feasible-block">
+        <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
+        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
+        <p id="result-age" class="mt-2 font-montserrat font-black text-[clamp(56px,16vw,92px)] leading-[0.95] tracking-[-0.03em] text-white"></p>
+        <p class="mt-1 text-base font-medium text-[#dbe7ff]">years old</p>
+        <p id="result-chip" class="mt-[18px] inline-block rounded-full border border-white/35 bg-white/15 px-[18px] py-[9px] font-montserrat font-bold text-base text-white"></p>
+        <p id="result-assumptions" class="mt-4 text-xs text-[#c7d6f5]"></p>
+        <p id="result-target" class="mt-1 text-[12.5px] text-[#c7d6f5]"></p>
+      </div>
+      <div id="infeasible-block" hidden>
+        <p id="infeasible-message" class="font-montserrat font-bold text-[22px] leading-snug text-white"></p>
+      </div>
 
-    // 2. Helper function to format currency
-    const formatCurrency = (value) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0
-      }).format(value);
-    };
+      <!-- Short-form hypothetical / no-guarantee disclosure, in close proximity to the output.
+           Full paragraph lives at the end of the "How this calculation works" accordion. -->
+      <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
+      <div class="mt-6 border-t border-white/20 pt-4">
+        <p class="text-[11.5px] leading-relaxed text-[#dbe7ff] text-center">
+          Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.
+        </p>
+      </div>
+    </div>
 
-    // 3. Listen for the 'input' event on all sliders
-    ageInput.addEventListener('input', (e) => {
-      ageDisplay.textContent = e.target.value;
-      updateCalculations();
-    });
+    <!-- Methodology accordion (collapsed by default) -->
+    <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
+    <details id="calc-method" class="calc-method mt-3 rounded-[16px] border border-gray-200 bg-white text-left shadow-soft">
+      <summary class="flex cursor-pointer select-none items-center justify-between gap-3 rounded-[16px] px-5 py-4 text-[14px] font-semibold text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+        How this calculation works
+        <svg class="calc-chevron h-4 w-4 flex-shrink-0 text-slate-text transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="space-y-3 border-t border-gray-100 px-5 pb-5 pt-4 text-[13px] leading-relaxed text-slate-text">
+        <p><b class="font-semibold text-navy">What it does:</b> Calculates an illustrative retirement timeline from your inputs: current age, monthly investment amount, desired monthly retirement income, and the annual return scenario you select.</p>
+        <p><b class="font-semibold text-navy">How:</b> Applies a fixed 4% annual withdrawal rate to determine the target portfolio size, then projects time-to-target assuming a constant, reinvested nominal annual return at your selected rate.</p>
+        <p><b class="font-semibold text-navy">Exclusions:</b> Unless otherwise stated, this calculation does not reflect advisory fees, fund expenses, taxes, inflation, changes in contributions or spending, withdrawals, or other personal circumstances. It assumes a constant annual return and does not reflect market volatility, losses, drawdowns, or sequence-of-returns risk.</p>
+        <p><b class="font-semibold text-navy">Variability:</b> Results will vary based on the information entered, the assumptions selected, and changes in market conditions and personal circumstances.</p>
+        <p><b class="font-semibold text-navy">No securities:</b> This tool does not consider, analyze, or recommend any specific securities or investment products.</p>
+        <p><b class="font-semibold text-navy">Not advice:</b> This tool provides general, hypothetical planning information only. It does not provide individualized investment advice or recommend any security, investment product, asset allocation, or investment strategy.</p>
+        <p class="rounded-lg border border-dashed border-gray-300 px-4 py-3 leading-snug">These results are hypothetical illustrations for planning purposes only. They do not reflect actual client performance and are not a prediction or guarantee of future investment results, retirement readiness, or financial independence. The assumed annual return is a hypothetical planning assumption. Actual returns can be lower, higher, or negative and will vary over time. This is not a guarantee that you will be able to retire or reach any goal by the date shown.</p>
+      </div>
+    </details>
 
-    freedomInput.addEventListener('input', (e) => {
-      freedomDisplay.textContent = formatCurrency(e.target.value);
-      updateCalculations();
-    });
-    
-    investInput.addEventListener('input', (e) => {
-      investDisplay.textContent = formatCurrency(e.target.value) + "/mo";
-      updateCalculations();
-    });
+    <!-- Capture block. Kept visually separate from the result (larger gap, distinct surface) and
+         product-neutral: nothing here references the user's result, date, or plan, and no script
+         writes result data into this section. -->
+    <div class="mt-8 sm:mt-10 rounded-[18px] border border-gray-200 bg-[#f3f6fb] p-5 sm:p-7 text-center shadow-soft">
+      <!-- ATTORNEY APPROVED 2026-09-01: headline approved; subhead is attorney-provided registration-conditioned text -->
+      <h2 class="font-montserrat font-extrabold text-[21px] text-navy"><span class="sm:hidden">Your financial future, on autopilot.</span><span class="hidden sm:inline">Put your financial future on autopilot.</span></h2>
+      <p class="mt-2 text-[14.5px] leading-relaxed text-slate-text">
+        Once registered as an investment adviser, FRED will invest a slice of every paycheck automatically and will build your confidence for the day you stop. FRED&rsquo;s services will include withdrawal strategy education, Monte Carlo simulations, and a plan for living off what you&rsquo;ve built. Only 300 founding spots are available at launch, and the waitlist is the only way in. Drop your email for a shot at one.
+      </p>
 
-    // 4. The core calculation logic
-    function updateCalculations() {
-      const currentAge = parseInt(ageInput.value);
-      const desiredIncome = parseInt(freedomInput.value);
-      const investIncome = parseInt(investInput.value);
-      
-      // Safety check to prevent math errors if investment is 0
-      if (investIncome <= 0) return;
+      <div class="relative mt-5 min-h-[52px]">
+        <form id="waitlist-form" class="flex flex-col gap-2.5 sm:flex-row" novalidate>
+          <label class="sr-only" for="capture-email">Email address</label>
+          <input id="capture-email" type="email" placeholder="you@email.com" autocomplete="email" required
+            class="min-w-0 flex-1 rounded-xl border-gray-200 px-4 py-[14px] text-[15px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
+          <button type="submit" id="join-waitlist-btn"
+            class="rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span id="btn-text">Claim my spot</span>
+            <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
+            </span>
+          </button>
+        </form>
 
-      // A. Calculate Target Portfolio Value w/ 4% Rule
-      const targetPortfolio = desiredIncome / 0.04;
+        <!-- Success state (hidden until signup completes or a saved status is found) -->
+        <div id="success-block" class="hidden opacity-0 transition-opacity duration-300">
+          <a href="/about" id="success-link"
+            class="group flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span>You&rsquo;re in! See how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+          </a>
+          <p id="success-note" class="mt-2.5 text-[13px] font-medium text-slate-text"></p>
+        </div>
+      </div>
 
-      // B. Calculate Time to Goal
-      const annualRate = 0.10; // 10% average annual return
-      const monthlyRate = annualRate / 12; // Compounded monthly
-      
-      // Calculate total months needed using the annuity formula
-      const numerator = Math.log(1 + (targetPortfolio * monthlyRate) / investIncome);
-      const denominator = Math.log(1 + monthlyRate);
-      const monthsToGoal = numerator / denominator;
-      
-      // Convert to years
-      const yearsToGoal = monthsToGoal / 12;
+      <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
 
-      // C. Calculate Freedom Age
-      // Use Math.ceil to round up to the nearest full year ensuring they hit the goal
-      let freedomAge = Math.ceil(currentAge + yearsToGoal);
-      
-      // Sanity cap just in case the numbers get astronomically high
-      if (freedomAge > 120) freedomAge = 120;
+      <p id="capture-cta-note" class="mt-3.5 text-[13px] font-medium text-navy">Join the waitlist today.</p>
+      <!-- Waitlist count: rendered only from a live API value. No baked number, no fallback; the
+           line is reserved (min-height) so the layout does not shift when it fills in. -->
+      <p id="capture-count" class="mt-1 min-h-[18px] text-xs text-slate-text" aria-live="polite"></p>
+      <p class="mt-0.5 text-xs text-slate-text">Founding member spots are limited. No payment until launch.</p>
+      <!-- ATTORNEY REVIEW PENDING: interim consent language, Group C answers control final version -->
+      <p class="mt-3 text-[11px] leading-relaxed text-slate-text text-left" role="note">
+        By joining the waitlist, you consent to receive email updates from FRED and to our storing your email address and the calculator inputs you entered, as described in our <a href="/privacy" class="underline hover:text-primary">Privacy Policy</a>. You can unsubscribe at any time. Joining the waitlist does not create an advisory relationship and does not guarantee access to FRED, founding member pricing, or any investment outcome.
+      </p>
+    </div>
 
-      // D. Update the big age number
-      freedomAgeDisplay.textContent = freedomAge;
+  </div>
+</main>
 
-      // E. Update the "Years earlier than average" text (assuming 65 is average)
-      const averageRetirement = 65;
-      const yearsEarlier = averageRetirement - freedomAge;
+<!-- Footer -->
+<footer class="w-full max-w-[600px] pt-6 text-center text-sm text-slate-text">
+  <div class="flex justify-center space-x-6 mb-4">
+    <a class="hover:text-primary" href="/about">How FRED Works</a>
+    <a class="hover:text-primary" href="/privacy">Privacy</a>
+    <a class="hover:text-primary" href="/terms">Terms</a>
+    <a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
+  </div>
+  <p>&copy; 2026 FREDvested LLC</p>
+  <!-- ATTORNEY: status sentence pending final confirmation -->
+  <div class="mt-4 text-[10px] leading-relaxed text-gray-600">
+    FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br>
+    Investing involves risk, including possible loss of principal.
+  </div>
+</footer>
 
-      // Dynamic styling based on whether they beat the average or not
-      const isMobile = window.innerWidth < 640;
-      const yrsWord = isMobile ? 'yrs' : 'years';
-      const pillBase = 'font-medium flex items-center justify-center gap-1 mb-4 px-3 py-1 rounded-full text-sm text-center';
-      if (yearsEarlier > 0) {
-        earlierTextDisplay.innerHTML = `<span class="material-icons-outlined text-sm">bolt</span> ${yearsEarlier} ${yrsWord} earlier than average`;
-        earlierTextDisplay.className = `text-green-600 bg-green-50 ${pillBase}`;
-      } else if (yearsEarlier === 0) {
-        earlierTextDisplay.innerHTML = `Right on average retirement age`;
-        earlierTextDisplay.className = `text-gray-600 bg-gray-100 justify-center ${pillBase}`;
-      } else {
-        // If they are retiring later than 65
-        earlierTextDisplay.innerHTML = `${Math.abs(yearsEarlier)} ${yrsWord} later than average`;
-        earlierTextDisplay.className = `text-orange-600 bg-orange-50 justify-center ${pillBase}`;
-      }
-    }
-
-    // 5. Run once on load to sync initial math with the starting slider values
-    updateCalculations();
-  });
-</script>
+<script src="assets/waitlist.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
-  // Turnstile sitekey — test key for localhost/ngrok, real key for production
-  const isDev = location.hostname === 'localhost'
-    || location.hostname === '127.0.0.1'
-    || location.hostname.endsWith('.ngrok-free.app')
-    || location.hostname.endsWith('.ngrok.io');
+(function () {
+  // Swappable term: change here if legal requires different phrasing in the result/capture areas.
+  const FREEDOM_LABEL = "Freedom Date";
 
-  const TURNSTILE_SITEKEY = isDev
-    ? '1x00000000000000000000AA'   // Cloudflare test key (always passes)
-    : '0x4AAAAAACr1ix6Vcrw7VxES';    // Replace with your real Cloudflare Turnstile sitekey
+  // Return scenarios the user can select (Marketing Rule interactive-analysis-tool requirement).
+  // Change the percentages here; the segmented control, result copy, and payload all read from these.
+  const RETURN_CONSERVATIVE = 8;
+  const RETURN_MODERATE = 10;
+  const RETURN_OPTIMISTIC = 12;
+  const RETURN_SCENARIOS = {
+    conservative: { name: "Conservative", pct: RETURN_CONSERVATIVE },
+    moderate: { name: "Moderate", pct: RETURN_MODERATE },
+    optimistic: { name: "Optimistic", pct: RETURN_OPTIMISTIC },
+  };
+  let selectedReturn = "moderate";
+  const currentScenario = () => RETURN_SCENARIOS[selectedReturn];
+  // "an 8%", "a 10%", "a 12%": the article follows the spoken number.
+  const articleFor = (pct) => (/^(8|11|18)/.test(String(pct)) ? "an" : "a");
 
-  // API base URL — matches backend environment
-  const API_BASE = isDev
-    ? 'https://lpapi-dev.fredvested.com/api/waitlist'
-    : 'https://lpapi.fredvested.com/api/waitlist';
+  const WITHDRAWAL_RATE = 0.04;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("waitlist-form");
-    const emailInput = document.getElementById("email-input");
-    const freedomAgeDisplay = document.getElementById("freedom-age-display");
-    const msg = document.getElementById("waitlist-msg");
-    const heroStatsEl = document.getElementById("hero-stats-text");
-    const heroTrustedMobile = document.getElementById("hero-trusted-mobile");
-    const heroAvgMobile = document.getElementById("hero-avg-mobile");
-    const progressCountEl = document.getElementById("progress-count");
-    const progressBarEl = document.getElementById("progress-bar");
-    const navJoinButton = document.getElementById("nav-join-button");
-    const footerJoinButton = document.getElementById("footer-join-button");
-    const btnText = document.getElementById("btn-text");
-    const btnLoading = document.getElementById("btn-loading");
-    const waitlistNote = document.getElementById("waitlist-note");
+  const { isValidEmail, getSavedStatus, saveStatus, saveFreedomDate, fetchStats, createTurnstile, submitWaitlist, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
 
-    // --- Invisible Turnstile ---
-    let turnstileToken = null;
-    let turnstileWidgetId = null;
+  const revealZone = document.getElementById("reveal-zone");
+  const feasibleBlock = document.getElementById("feasible-block");
+  const infeasibleBlock = document.getElementById("infeasible-block");
+  const ageEl = document.getElementById("result-age");
+  const chipEl = document.getElementById("result-chip");
+  const assumptionsEl = document.getElementById("result-assumptions");
+  const targetEl = document.getElementById("result-target");
+  const srEl = document.getElementById("result-sr");
 
-    function initTurnstile() {
-      if (typeof turnstile === 'undefined') {
-        // Script hasn't loaded yet, retry shortly
-        setTimeout(initTurnstile, 200);
-        return;
-      }
-      turnstileWidgetId = turnstile.render(form, {
-        sitekey: TURNSTILE_SITEKEY,
-        appearance: 'interaction-only',
-        callback: (token) => { turnstileToken = token; },
-        'expired-callback': () => { turnstileToken = null; },
-        'error-callback': () => { turnstileToken = null; },
-      });
-    }
-    initTurnstile();
+  const form = document.getElementById("waitlist-form");
+  const emailInput = document.getElementById("capture-email");
+  const joinBtn = document.getElementById("join-waitlist-btn");
+  const btnText = document.getElementById("btn-text");
+  const btnLoading = document.getElementById("btn-loading");
+  const successBlock = document.getElementById("success-block");
+  const successNote = document.getElementById("success-note");
+  const msg = document.getElementById("waitlist-msg");
 
-    // --- Status message card builder ---
-    function showStatusCard(status, fadeIn = false) {
-      const cards = {
-        WAITLISTFOUNDER: {
-          bg: "bg-green-50 border-green-200",
-          text: "text-green-700",
-          icon: "check_circle",
-          iconColor: "text-green-500",
-          message: window.innerWidth > 640 ? "You secured a founder spot. We'll email you soon." : window.innerWidth < 400 ? "Founder spot secured. Email coming soon." : "Founder spot secured. We'll email you soon."
-        },
-        WAITLISTNORMAL: {
-          bg: "bg-blue-50 border-blue-200",
-          text: "text-blue-700",
-          icon: "schedule",
-          iconColor: "text-blue-500",
-          message: window.innerWidth > 640 ? "Founder spots full — you're on the priority waitlist." : "Founder spots full; you're on the priority list."
-        },
-        already_joined: {
-          bg: "bg-gray-50 border-gray-200",
-          text: "text-gray-600",
-          icon: "info",
-          iconColor: "text-gray-400",
-          message: window.innerWidth < 400 ? "You're on the list! We'll be in touch." : "You're already on the list! We'll be in touch."
-        }
-      };
-      const card = cards[status] || cards.already_joined;
-      msg.innerHTML = `
-        <div class="${card.bg} border rounded-xl px-4 py-3 flex items-center gap-3 ${card.text} transition-opacity duration-300" style="opacity: ${fadeIn ? '0' : '1'}">
-          <span class="material-icons-outlined ${card.iconColor} text-xl">${card.icon}</span>
-          <span class="text-sm sm:text-sm font-medium">${card.message}</span>
-        </div>
-      `;
-      msg.classList.remove("hidden");
-      if (fadeIn) {
-        // Trigger reflow then fade in
-        requestAnimationFrame(() => {
-          msg.querySelector('div').style.opacity = '1';
-        });
-      }
-    }
+  const infeasibleMessageEl = document.getElementById("infeasible-message");
+  const INFEASIBLE_MESSAGES = {
+    "no-investment": "Add a monthly investment amount to reveal your " + FREEDOM_LABEL + ".",
+    "horizon": "At these numbers, your target is more than a lifetime away. Try raising your monthly investment or lowering your retirement income.",
+  };
 
-    let loadingAborted = false;
+  const STATUS_NOTES = {
+    WAITLISTFOUNDER: "You’re in line for a Founder invite.",
+    WAITLISTNORMAL: "You’re on the priority waitlist for a Founder spot.",
+    already_joined: "You’re already on the list.",
+  };
 
-    function showLoading() {
-      loadingAborted = false;
+  const prefersReducedMotion = () =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      // Step 1: Fade out input and button text
-      emailInput.style.opacity = "0";
-      btnText.style.opacity = "0";
-      footerJoinButton.disabled = true;
+  const formatUSD = (n) => "$" + Math.round(n).toLocaleString("en-US");
+  const formatMonthYear = (d) =>
+    d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-      // Step 2: After text fades, collapse input, expand button, swap to loading text
-      setTimeout(() => {
-        if (loadingAborted) return;
-        emailInput.style.width = "0";
-        emailInput.style.padding = "0";
-        emailInput.style.border = "none";
-        emailInput.style.margin = "0";
-        emailInput.style.flex = "0";
-        emailInput.style.overflow = "hidden";
-        form.style.gap = "0";
-        footerJoinButton.style.width = "100%";
-        footerJoinButton.style.flex = "1";
+  function compute(age, invest, retire) {
+    const target = (retire * 12) / WITHDRAWAL_RATE;
+    if (invest <= 0) return { feasible: false, target, reason: "no-investment" };
+    const monthlyRate = currentScenario().pct / 100 / 12;
+    const n = Math.log((target * monthlyRate) / invest + 1) / Math.log(1 + monthlyRate);
+    const years = n / 12;
+    const ageAtFreedom = age + years;
+    if (ageAtFreedom > 100 || years > 72) return { feasible: false, target, reason: "horizon" };
+    const now = new Date();
+    const date = new Date(now.getFullYear(), now.getMonth() + Math.round(n), 1);
+    return { feasible: true, target, years, ageAtFreedom, date };
+  }
 
-        // Swap text immediately so it's ready when button finishes expanding
-        btnText.classList.add("hidden");
-        btnLoading.classList.remove("hidden");
-        btnLoading.classList.add("flex");
-      }, 300);
-    }
+  // False until the user touches any slider or number input; untouched defaults
+  // revealed as-is should not be recorded as chosen numbers. Deliberately NOT set by the
+  // return-scenario control: picking a scenario says nothing about whether the age /
+  // invest / retire numbers are the user's own, and that is what this flag gates.
+  let hasInteracted = false;
 
-    function resetForm() {
-      loadingAborted = true;
-      emailInput.style.opacity = "";
-      emailInput.style.width = "";
-      emailInput.style.padding = "";
-      emailInput.style.border = "";
-      emailInput.style.margin = "";
-      emailInput.style.flex = "";
-      emailInput.style.overflow = "";
-      form.style.gap = "";
-      footerJoinButton.style.width = "";
-      footerJoinButton.style.flex = "";
-      footerJoinButton.disabled = false;
-      btnText.style.opacity = "";
-      btnText.classList.remove("hidden");
-      btnLoading.classList.add("hidden");
-      btnLoading.classList.remove("flex");
-      form.style.display = "flex";
-    }
-
-    // 1. Check LocalStorage First
-    const savedStatus = localStorage.getItem("waitlist_status");
-    if (savedStatus) {
-      form.style.display = "none";
-      showStatusCard(savedStatus);
-    }
-
-    // --- Shared UI update logic ---
-    const formatCount = (count) => {
-      if (count <= 10) return count.toString();
-      let step = count >= 1000 ? 100 : 10;
-      let rounded = Math.floor((count - 1) / step) * step;
-      return `${rounded}+`;
-    };
-
-    function updateUI(data) {
-      const formattedCount = formatCount(data.count || 181);
-      const yearsEarlier = data.avgFreedomAge ? Math.round((65 - data.avgFreedomAge) * 10) / 10 : 6.2;
-
-      const actualCount = data.count || 0;
-      const maxCount = 300;
-      const percentage = Math.min((actualCount / maxCount) * 100, 100);
-      const isFull = actualCount >= maxCount;
-
-      if (progressCountEl) {
-        progressCountEl.textContent = isFull 
-        ? `${maxCount} / ${maxCount} (Full)` 
-        : `${actualCount} / ${maxCount}`;
-      }
-
-      if (progressBarEl) {
-        progressBarEl.style.width = `${percentage}%`;
-      }
-
-      if (waitlistNote) {
-        waitlistNote.innerHTML = isFull
-          ? "Private beta is currently full. Join the priority waitlist to receive a founder invitation if spots open - <b>iOS only</b>."
-          : "We limit beta spots to ensure high-touch support for every founding member. The beta is currently <b>iOS only</b>.";
-      }
-
-      if (navJoinButton) {
-        navJoinButton.textContent = isFull ? "Join Priority Waitlist" : "Join Private Beta";
-        navJoinButton.classList.remove('opacity-0');
-        navJoinButton.classList.add('opacity-100');
-      }
-
-      if (btnText) {
-        btnText.textContent = isFull ? "Join Waitlist" : "Reserve Spot";
-      }
-
-      if (heroStatsEl) {
-        let currentHTML = heroStatsEl.innerHTML;
-        currentHTML = currentHTML.replace(/Trusted by \d+\+? founding members/g, `Trusted by ${formattedCount} founding members`);
-        currentHTML = currentHTML.replace(/Avg Freedom Date: [\d\.]+/g, `Avg Freedom Date: ${yearsEarlier}`);
-        heroStatsEl.innerHTML = currentHTML;
-        heroStatsEl.classList.remove('opacity-0');
-        heroStatsEl.classList.add('opacity-100');
-      }
-
-      if (heroTrustedMobile) {
-        heroTrustedMobile.innerHTML = heroTrustedMobile.innerHTML.replace(/Trusted by \d+\+? founding members/g, `Trusted by ${formattedCount} founding members`);
-        heroTrustedMobile.classList.remove('opacity-0');
-        heroTrustedMobile.classList.add('opacity-100');
-      }
-
-      if (heroAvgMobile) {
-        heroAvgMobile.innerHTML = heroAvgMobile.innerHTML.replace(/Average Freedom Date: [\d\.]+/g, `Average Freedom Date: ${yearsEarlier}`);
-        heroAvgMobile.classList.remove('opacity-0');
-        heroAvgMobile.classList.add('opacity-100');
-      }
-    }
-
-    // 2. Fetch Stats on Load (GET)
-    async function fetchStats() {
-      try {
-        const res = await fetch(`${API_BASE}/stats`);
-        const data = await res.json();
-        updateUI(data);
-      } catch (err) {
-        console.error("Failed to load stats", err);
-        // Show nav button even if fetch fails
-        if (navJoinButton) {
-          navJoinButton.classList.remove('opacity-0');
-          navJoinButton.classList.add('opacity-100');
-        }
-      }
-    }
-    fetchStats();
-
-    // 3. Handle Form Submission (POST)
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const email = emailInput.value.trim().toLowerCase();
-
-      // Frontend Email Validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        msg.innerHTML = `
-          <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 text-red-600">
-            <span class="material-icons-outlined text-xl">error_outline</span>
-            <span class="text-sm font-medium">Please enter a valid email address.</span>
-          </div>
-        `;
-        msg.classList.remove("hidden");
-        return;
-      }
-
-      // Get the freedom age from the calculator display
-      const freedomAge = parseInt(freedomAgeDisplay.textContent, 10);
-
-      // Get Turnstile token (invisible widget generates it automatically)
-      if (!turnstileToken) {
-        msg.innerHTML = `
-          <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 flex items-center gap-3 text-yellow-700">
-            <span class="material-icons-outlined text-xl">warning</span>
-            <span class="text-sm font-medium">Security verification in progress. Please try again in a moment.</span>
-          </div>
-        `;
-        msg.classList.remove("hidden");
-        return;
-      }
-
-      // Show loading state with fade transition
-      showLoading();
-      const loadingStartedAt = Date.now();
-
-      try {
-        const res = await fetch(API_BASE, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, freedomAge, turnstileToken }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Something went wrong.");
-        }
-
-        // Wait for minimum 3s of loading animation before showing result
-        const elapsed = Date.now() - loadingStartedAt;
-        const remaining = Math.max(0, 3000 - elapsed);
-        await new Promise(resolve => setTimeout(resolve, remaining));
-
-        // For already_joined, save the real status so refresh shows the correct card
-        const displayStatus = data.status;
-        const realStatus = data.realStatus || data.status;
-        localStorage.setItem("waitlist_status", realStatus);
-
-        // Fade out the loading button over 300ms, then fade in the status card
-        footerJoinButton.style.opacity = "0";
-        footerJoinButton.style.transition = "opacity 300ms ease";
-        await new Promise(resolve => setTimeout(resolve, 300));
-        form.style.display = "none";
-        showStatusCard(displayStatus, true);
-
-        // Update all UI stats with the fresh data from the POST response
-        updateUI(data);
-
-      } catch (err) {
-        // Abort the delayed loading transition so it doesn't overwrite us
-        resetForm();
-        msg.innerHTML = `
-          <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 text-red-600">
-            <span class="material-icons-outlined text-xl">error_outline</span>
-            <span class="text-sm font-medium">${err.message}</span>
-          </div>
-        `;
-        msg.classList.remove("hidden");
-        if (turnstileWidgetId !== null && typeof turnstile !== 'undefined') {
-          turnstile.reset(turnstileWidgetId);
-          turnstileToken = null;
-        }
-      }
+  // --- Return scenario segmented control (radiogroup with roving tabindex) ---
+  const segButtons = Array.from(document.querySelectorAll("#return-seg .seg-btn"));
+  function setReturn(key) {
+    if (!RETURN_SCENARIOS[key]) return;
+    selectedReturn = key;
+    segButtons.forEach((b) => {
+      const active = b.dataset.return === key;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-checked", String(active));
+      b.tabIndex = active ? 0 : -1;
     });
+    liveUpdate();
+  }
+  segButtons.forEach((b) => b.addEventListener("click", () => setReturn(b.dataset.return)));
+  document.getElementById("return-seg").addEventListener("keydown", (e) => {
+    const keys = Object.keys(RETURN_SCENARIOS);
+    const i = keys.indexOf(selectedReturn);
+    let next = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = keys[(i + 1) % keys.length];
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = keys[(i - 1 + keys.length) % keys.length];
+    if (!next) return;
+    e.preventDefault();
+    setReturn(next);
+    segButtons.find((b) => b.dataset.return === next).focus();
   });
-</script>
-<script>
-  (function() {
-    var isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('ngrok');
-    if (!isDev) return;
-    var map = { '/privacy': 'privacy.html', '/terms': 'terms.html' };
-    document.querySelectorAll('a[href]').forEach(function(a) {
-      if (map[a.getAttribute('href')]) a.href = map[a.getAttribute('href')];
+
+  // Keep each slider and its number input in sync; the slider holds the clamped value.
+  function sizeNumberInput(num) {
+    num.style.width = Math.max(String(num.value).length, 1) + 0.6 + "ch";
+  }
+  function bindRow(rangeId, numberId) {
+    const range = document.getElementById(rangeId);
+    const num = document.getElementById(numberId);
+    const clamp = (v) => Math.min(Math.max(v, +num.min), +num.max);
+    sizeNumberInput(num);
+    range.addEventListener("input", () => {
+      hasInteracted = true;
+      num.value = range.value;
+      sizeNumberInput(num);
+      liveUpdate();
     });
-  })();
+    num.addEventListener("input", () => {
+      hasInteracted = true;
+      if (num.value !== "") range.value = clamp(+num.value);
+      sizeNumberInput(num);
+      liveUpdate();
+    });
+    num.addEventListener("blur", () => {
+      if (num.value !== "" && !isNaN(+num.value)) range.value = clamp(+num.value);
+      // Read back from the range so typed values snap to the step grid both controls share.
+      num.value = range.value;
+      sizeNumberInput(num);
+      liveUpdate();
+    });
+  }
+  bindRow("age-range", "age-number");
+  bindRow("invest-range", "invest-number");
+  bindRow("retire-range", "retire-number");
+
+  const readInputs = () => ({
+    age: +document.getElementById("age-range").value,
+    invest: +document.getElementById("invest-range").value,
+    retire: +document.getElementById("retire-range").value,
+  });
+
+  let cancelCountUp = null;
+  function countUp(el, target, duration) {
+    if (cancelCountUp) cancelCountUp();
+    let rafId = 0;
+    const start = performance.now();
+    function cancel() {
+      cancelAnimationFrame(rafId);
+      clearTimeout(failsafe);
+      cancelCountUp = null;
+    }
+    function finish() {
+      cancel();
+      el.textContent = target;
+      el.removeAttribute("aria-hidden");
+    }
+    // Guarantees the final value even if animation frames are suspended.
+    const failsafe = setTimeout(finish, duration + 300);
+    cancelCountUp = cancel;
+    el.setAttribute("aria-hidden", "true");
+    function step(t) {
+      const p = Math.min((t - start) / duration, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) {
+        rafId = requestAnimationFrame(step);
+      } else {
+        finish();
+      }
+    }
+    rafId = requestAnimationFrame(step);
+  }
+
+  // Last feasible result, sent with the signup so the backend can track avg freedom age.
+  let lastFreedomAge = null;
+  let lastFreedomMonthYear = null;
+
+  function render(animate) {
+    const { age, invest, retire } = readInputs();
+    const res = compute(age, invest, retire);
+    if (res.feasible) {
+      feasibleBlock.hidden = false;
+      infeasibleBlock.hidden = true;
+      const roundedAge = Math.round(res.ageAtFreedom);
+      lastFreedomAge = roundedAge;
+      lastFreedomMonthYear = formatMonthYear(res.date);
+      if (animate && !prefersReducedMotion()) {
+        countUp(ageEl, roundedAge, 900);
+      } else {
+        if (cancelCountUp) cancelCountUp();
+        ageEl.textContent = roundedAge;
+        ageEl.removeAttribute("aria-hidden");
+      }
+      chipEl.textContent = FREEDOM_LABEL + " · " + formatMonthYear(res.date);
+      const sc = currentScenario();
+      assumptionsEl.textContent =
+        "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% avg annual return (" + sc.name + " scenario) & 4% withdrawal rate.";
+      targetEl.textContent = "Projected portfolio target: " + formatUSD(res.target) + ".";
+      srEl.textContent =
+        "You could be free at " + roundedAge + " years old. " +
+        FREEDOM_LABEL + ": " + formatMonthYear(res.date) + ". " +
+        "Projected portfolio target: " + formatUSD(res.target) + ". " +
+        "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% average annual return (" + sc.name + " scenario) and 4% withdrawal rate. " +
+        "Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.";
+    } else {
+      feasibleBlock.hidden = true;
+      infeasibleBlock.hidden = false;
+      lastFreedomAge = null;
+      lastFreedomMonthYear = null;
+      const message = INFEASIBLE_MESSAGES[res.reason] || INFEASIBLE_MESSAGES["no-investment"];
+      infeasibleMessageEl.textContent = message;
+      srEl.textContent = message;
+    }
+  }
+
+  let revealed = false;
+  function liveUpdate() {
+    if (revealed) render(false);
+  }
+
+  const revealBtn = document.getElementById("reveal-btn");
+  revealBtn.addEventListener("click", () => {
+    const firstReveal = !revealed;
+    revealed = true;
+    render(firstReveal);
+    revealZone.removeAttribute("inert");
+    revealZone.classList.add("open");
+    revealBtn.setAttribute("aria-expanded", "true");
+    if (firstReveal && window.plausible) plausible("Freedom Date Revealed");
+    // Once fully open, stop clipping so the card shadows render past the container.
+    setTimeout(() => {
+      revealZone.style.maxHeight = "none";
+      revealZone.style.overflow = "visible";
+    }, 750);
+    setTimeout(() => {
+      revealZone.scrollIntoView({
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
+        block: "start",
+      });
+    }, 150);
+  });
+
+  // --- Live proof counts ---
+  // The count is shown only when the API returned a real value of at least
+  // STAT_TILE_MIN_N. Nothing is baked into the HTML and nothing is rendered while
+  // loading, on failure, or below the threshold, so the page can never display a
+  // number that did not come from the backend; the line's min-height keeps the
+  // layout stable while it stays empty.
+  function renderCount(count) {
+    const n = Number(count);
+    if (!Number.isFinite(n) || n < STAT_TILE_MIN_N) return;
+    document.getElementById("capture-count").textContent =
+      n.toLocaleString("en-US") + " people are already on the list.";
+  }
+  fetchStats().then((data) => renderCount(data.count)).catch(() => {
+    /* No fallback by design: the count line simply stays empty. */
+  });
+
+  // --- Signup flow ---
+  const ts = createTurnstile(form);
+
+  function showMsg(kind, text) {
+    const styles = kind === "error"
+      ? "bg-red-50 border-red-200 text-red-700"
+      : "bg-yellow-50 border-yellow-200 text-yellow-700";
+    msg.innerHTML =
+      '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium ' + styles + '">' + text + "</div>";
+  }
+
+  function showSuccess(displayStatus, fadeIn) {
+    form.style.display = "none";
+    document.getElementById("capture-cta-note").hidden = true;
+    successNote.textContent = STATUS_NOTES[displayStatus] || STATUS_NOTES.already_joined;
+    successBlock.classList.remove("hidden");
+    if (fadeIn) {
+      requestAnimationFrame(() => successBlock.classList.remove("opacity-0"));
+      // Restore keyboard/SR focus after the form disappears beneath the user.
+      document.getElementById("success-link").focus();
+    } else {
+      successBlock.classList.remove("opacity-0");
+    }
+  }
+
+  // If they already joined on a previous visit, skip the form entirely.
+  const savedStatus = getSavedStatus();
+  if (savedStatus) {
+    showSuccess(savedStatus, false);
+  }
+
+  let loadingAborted = false;
+
+  function showLoading() {
+    loadingAborted = false;
+    // Step 1: fade out the input and button text
+    emailInput.style.opacity = "0";
+    btnText.style.opacity = "0";
+    joinBtn.disabled = true;
+    // Step 2: collapse the input, expand the button to full width, swap in the loading state
+    setTimeout(() => {
+      if (loadingAborted) return;
+      emailInput.style.width = "0";
+      emailInput.style.height = "0";
+      emailInput.style.padding = "0";
+      emailInput.style.border = "none";
+      emailInput.style.margin = "0";
+      emailInput.style.flex = "0 1 auto";
+      emailInput.style.overflow = "hidden";
+      emailInput.disabled = true;
+      form.style.gap = "0";
+      joinBtn.style.width = "100%";
+      joinBtn.style.flex = "1";
+      btnText.classList.add("hidden");
+      btnLoading.classList.remove("hidden");
+      btnLoading.classList.add("flex");
+    }, 300);
+  }
+
+  function resetForm() {
+    loadingAborted = true;
+    emailInput.style.opacity = "";
+    emailInput.style.width = "";
+    emailInput.style.height = "";
+    emailInput.style.padding = "";
+    emailInput.style.border = "";
+    emailInput.style.margin = "";
+    emailInput.style.flex = "";
+    emailInput.style.overflow = "";
+    emailInput.disabled = false;
+    form.style.gap = "";
+    joinBtn.style.width = "";
+    joinBtn.style.flex = "";
+    joinBtn.style.opacity = "";
+    joinBtn.disabled = false;
+    btnText.style.opacity = "";
+    btnText.classList.remove("hidden");
+    btnLoading.classList.add("hidden");
+    btnLoading.classList.remove("flex");
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.innerHTML = "";
+
+    const email = emailInput.value.trim().toLowerCase();
+    if (!isValidEmail(email)) {
+      showMsg("error", "Please enter a valid email address.");
+      return;
+    }
+    const token = ts.getToken();
+    if (!token) {
+      showMsg("warn", "Security verification in progress. Please try again in a moment.");
+      return;
+    }
+
+    showLoading();
+    const loadingStartedAt = Date.now();
+
+    try {
+      const { age, invest, retire } = readInputs();
+      const payload = {
+        email,
+        turnstileToken: token,
+        age,
+        investMonthly: invest,
+        retireMonthly: retire,
+        interacted: hasInteracted,
+        returnAssumptionPct: currentScenario().pct,
+      };
+      if (lastFreedomAge !== null) payload.freedomAge = lastFreedomAge;
+      const data = await submitWaitlist(payload);
+
+      // Keep the loading animation on screen for at least 2s before the payoff.
+      const elapsed = Date.now() - loadingStartedAt;
+      await new Promise((r) => setTimeout(r, Math.max(0, 2000 - elapsed)));
+
+      // For already_joined, persist the real status so refreshes show the right card.
+      saveStatus(data.realStatus || data.status);
+      if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
+      if (window.plausible) plausible("Waitlist Signup");
+
+      // Fade the loading button out, then fade the success state in.
+      joinBtn.style.opacity = "0";
+      joinBtn.style.transition = "opacity 300ms ease";
+      await new Promise((r) => setTimeout(r, 300));
+      showSuccess(data.status, true);
+      renderCount(data.count);
+    } catch (err) {
+      resetForm();
+      showMsg("error", err.message);
+      ts.reset();
+    }
+  });
+
+  devLinkMap({ "/about": "about.html", "/privacy": "privacy.html", "/terms": "terms.html" });
+})();
 </script>
-</body></html>
+</body>
+</html>
