@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(WaitlistController.class)
@@ -62,7 +63,8 @@ class WaitlistControllerGeoGateTest {
     @Test
     void nonUsRequest_isRejectedAndNotStored() throws Exception {
         mockMvc.perform(signup().header("CF-IPCountry", "CA"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("geo_blocked"));
         verify(repository, never()).save(any());
         verify(emailService, never()).sendConfirmationEmail(anyString());
     }

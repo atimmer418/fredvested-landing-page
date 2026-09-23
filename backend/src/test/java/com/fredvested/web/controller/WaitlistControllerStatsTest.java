@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -18,7 +19,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// Each test mocks different repository values, so the stats memo is disabled here
+// (WaitlistControllerStatsCacheTest covers the caching itself).
 @WebMvcTest(WaitlistController.class)
+@TestPropertySource(properties = "waitlist.stats-cache-ms=0")
 class WaitlistControllerStatsTest {
 
     @Autowired MockMvc mockMvc;

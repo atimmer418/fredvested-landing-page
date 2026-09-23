@@ -74,7 +74,9 @@ class WaitlistControllerSignupDataTest {
         assertEquals(2000, saved.getInvestMonthly());
         assertEquals(7500, saved.getRetireMonthly());
         assertEquals(Boolean.TRUE, saved.getInteracted());
-        assertEquals(53, saved.getFreedomAge());
+        // freedom_age is recomputed server-side from the inputs (30 / 2000 / 7500 at 12% -> 51);
+        // the client's 53 is only compared against it and logged as drift.
+        assertEquals(51, saved.getFreedomAge());
         assertEquals(12, saved.getReturnAssumptionPct());
     }
 

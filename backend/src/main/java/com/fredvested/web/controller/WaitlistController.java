@@ -5,18 +5,30 @@ import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
 import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.TurnstileService;
+import com.fredvested.web.util.AttributionSanitizer;
+import com.fredvested.web.util.FreedomCalculator;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.security.MessageDigest;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.fredvested.web.controller.ApiErrorHandler.error;
 
 @RestController
 @RequestMapping("/api/waitlist")
@@ -35,40 +47,83 @@ public class WaitlistController {
     private EmailService emailService;
 
     private static final Logger log = LoggerFactory.getLogger(WaitlistController.class);
+    private static final ZoneId EASTERN = ZoneId.of("America/New_York");
 
     // US-residents-only gate driven by Cloudflare's CF-IPCountry header. Off by default
     // so dev/local (no Cloudflare in front) keep working; prod turns it on.
     @Value("${waitlist.us-only:false}")
     private boolean usOnly;
 
+    // GET /stats is public and fetched on every page load, and it runs six aggregate
+    // queries. The result is memoised for this long; a signup invalidates it.
+    @Value("${waitlist.stats-cache-ms:30000}")
+    private long statsCacheMs;
+    private volatile Map<String, Object> cachedStats;
+    private volatile long cachedStatsAt;
+
     // --- DTOs for Request/Response ---
     @Data
     public static class WaitlistRequest {
+        // The only field that can reject a request. Everything else is sanitised or
+        // dropped: losing a UTM tag is acceptable, losing a signup is not.
+        @NotBlank
+        @Email
+        @Size(max = 254)
         private String email;
-        private Integer freedomAge;
+        private String turnstileToken;
+
+        // Calculator inputs
         private Integer age;
         private Integer investMonthly;
         private Integer retireMonthly;
         private Boolean interacted;
         private Integer returnAssumptionPct;
-        private String turnstileToken;
+
+        // The client's own projection. Never stored as-is: the server recomputes from the
+        // inputs and logs a warning if the two disagree (drift between the implementations).
+        private Integer freedomAge;
+        private String freedomDate;      // yyyy-MM-dd
+        private Long portfolioTarget;
+        private Boolean revealedBeforeSubmit;
+
+        // Attribution snapshot from frontend/assets/attribution.js
+        private String utmSource;
+        private String utmMedium;
+        private String utmCampaign;
+        private String utmContent;
+        private String utmTerm;
+        private String firstUtmSource;
+        private String firstUtmCampaign;
+        private String firstUtmContent;
+        private String firstTouchAt;     // ISO-8601 instant
+        private String referrerHost;
+        private String landingPath;
+        private String deviceType;
     }
 
     // --- GET: Fetch Stats on Load ---
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
-        return ResponseEntity.ok(buildStatsMap("success"));
+        long now = System.currentTimeMillis();
+        Map<String, Object> cached = cachedStats;
+        if (statsCacheMs > 0 && cached != null && now - cachedStatsAt < statsCacheMs) {
+            return ResponseEntity.ok(cached);
+        }
+        Map<String, Object> fresh = buildStatsMap("success");
+        cachedStatsAt = now;
+        cachedStats = fresh;
+        return ResponseEntity.ok(fresh);
     }
 
     // --- POST: Handle Form Submission ---
     @PostMapping
-    public ResponseEntity<?> joinWaitlist(@RequestBody WaitlistRequest request, HttpServletRequest httpRequest) {
-       
+    public ResponseEntity<?> joinWaitlist(@Valid @RequestBody WaitlistRequest request, HttpServletRequest httpRequest) {
+
         // -1. Geo gate: only an explicit "US" passes. Missing header, unknown (XX) and
         // Tor (T1) are all rejected. Blocked attempts are not logged or stored.
         if (usOnly && !"US".equalsIgnoreCase(httpRequest.getHeader("CF-IPCountry"))) {
             return ResponseEntity.status(403)
-                .body(Map.of("message", "FRED is currently available to US residents only."));
+                .body(error("geo_blocked", "FRED is currently available to US residents only."));
         }
 
         // 0. Rate limit by IP
@@ -78,12 +133,12 @@ public class WaitlistController {
 
         if (!rateLimiterService.isAllowed(hashedIp)) {
             return ResponseEntity.status(429)
-                .body(Map.of("message", "Too many requests. Please try again in a minute."));
+                .body(error("rate_limited", "Too many requests. Please try again in a minute."));
         }
 
         // 1. Verify Cloudflare Turnstile
         if (!turnstileService.verifyToken(request.getTurnstileToken())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Security check failed."));
+            return ResponseEntity.badRequest().body(error("captcha_failed", "Security check failed."));
         }
 
         String email = request.getEmail().trim().toLowerCase();
@@ -105,16 +160,19 @@ public class WaitlistController {
         // 4. Save Entry
         WaitlistEntry entry = new WaitlistEntry();
         entry.setEmail(email);
-        entry.setFreedomAge(request.getFreedomAge());
-        entry.setCurrentAge(clampOrNull(request.getAge(), 18, 60));
-        entry.setInvestMonthly(clampOrNull(request.getInvestMonthly(), 0, 10000));
-        entry.setRetireMonthly(clampOrNull(request.getRetireMonthly(), 1000, 30000));
+        entry.setCurrentAge(clampOrNull("age", request.getAge(), 18, 60));
+        entry.setInvestMonthly(clampOrNull("investMonthly", request.getInvestMonthly(), 0, 10000));
+        entry.setRetireMonthly(clampOrNull("retireMonthly", request.getRetireMonthly(), 1000, 30000));
         entry.setInteracted(request.getInteracted());
         // Range, not a fixed set, so retuning the frontend scenarios never silently nulls the data.
-        entry.setReturnAssumptionPct(clampOrNull(request.getReturnAssumptionPct(), 1, 30));
+        entry.setReturnAssumptionPct(clampOrNull("returnAssumptionPct", request.getReturnAssumptionPct(), 1, 30));
+        applyProjection(entry, request);
+        applyAttribution(entry, request);
+        entry.setRevealedBeforeSubmit(Boolean.TRUE.equals(request.getRevealedBeforeSubmit()));
         entry.setStatus(newStatus);
         entry.setIpHash(hashedIp);
         repository.save(entry);
+        cachedStats = null;
 
         // 5. Send confirmation email (failure must not affect signup response)
         try {
@@ -125,6 +183,71 @@ public class WaitlistController {
 
         // 6. Return updated stats and status
         return ResponseEntity.ok(buildStatsMap(newStatus.name()));
+    }
+
+    // Recompute the projection from the (already bounded) inputs and store the server's
+    // numbers. The client's numbers are only compared against them: a mismatch beyond
+    // rounding means frontend compute() and FreedomCalculator have drifted.
+    private void applyProjection(WaitlistEntry entry, WaitlistRequest request) {
+        Integer age = entry.getCurrentAge();
+        Integer invest = entry.getInvestMonthly();
+        Integer retire = entry.getRetireMonthly();
+        Integer pct = entry.getReturnAssumptionPct();
+        if (age == null || invest == null || retire == null || pct == null) {
+            if (request.getFreedomAge() != null) {
+                log.debug("Client projection ignored: calculator inputs incomplete or out of range");
+            }
+            return;
+        }
+        FreedomCalculator.Result server = FreedomCalculator.compute(age, invest, retire, pct, LocalDate.now(EASTERN));
+        entry.setFreedomAge(server.freedomAge());
+        entry.setComputedFreedomDate(server.freedomDate());
+        entry.setComputedPortfolioTarget(server.portfolioTarget());
+        warnIfDrifted(request, server);
+    }
+
+    private void warnIfDrifted(WaitlistRequest request, FreedomCalculator.Result server) {
+        Integer clientAge = request.getFreedomAge();
+        boolean sameAge = (clientAge == null && server.freedomAge() == null)
+            || (clientAge != null && server.freedomAge() != null && Math.abs(clientAge - server.freedomAge()) <= 1);
+        if (!sameAge) {
+            log.warn("Projection drift: freedomAge client={} server={}", clientAge, server.freedomAge());
+        }
+
+        if (request.getFreedomDate() != null) {
+            LocalDate clientDate = null;
+            try { clientDate = LocalDate.parse(request.getFreedomDate()); } catch (RuntimeException ignored) { /* logged below */ }
+            boolean sameDate = clientDate != null && server.freedomDate() != null
+                && Math.abs(ChronoUnit.MONTHS.between(server.freedomDate(), clientDate)) <= 1;
+            if (!sameDate) {
+                log.warn("Projection drift: freedomDate client={} server={}", request.getFreedomDate(), server.freedomDate());
+            }
+        }
+
+        if (request.getPortfolioTarget() != null && Math.abs(request.getPortfolioTarget() - server.portfolioTarget()) > 1) {
+            log.warn("Projection drift: portfolioTarget client={} server={}", request.getPortfolioTarget(), server.portfolioTarget());
+        }
+    }
+
+    // Sanitised copies of the attribution fields. A malformed value becomes null; nothing
+    // here can reject the signup.
+    private void applyAttribution(WaitlistEntry entry, WaitlistRequest request) {
+        try {
+            entry.setUtmSource(AttributionSanitizer.token(request.getUtmSource()));
+            entry.setUtmMedium(AttributionSanitizer.token(request.getUtmMedium()));
+            entry.setUtmCampaign(AttributionSanitizer.token(request.getUtmCampaign()));
+            entry.setUtmContent(AttributionSanitizer.token(request.getUtmContent()));
+            entry.setUtmTerm(AttributionSanitizer.token(request.getUtmTerm()));
+            entry.setFirstUtmSource(AttributionSanitizer.token(request.getFirstUtmSource()));
+            entry.setFirstUtmCampaign(AttributionSanitizer.token(request.getFirstUtmCampaign()));
+            entry.setFirstUtmContent(AttributionSanitizer.token(request.getFirstUtmContent()));
+            entry.setFirstTouchAt(AttributionSanitizer.instantToEastern(request.getFirstTouchAt()));
+            entry.setReferrerHost(AttributionSanitizer.host(request.getReferrerHost()));
+            entry.setLandingPath(AttributionSanitizer.path(request.getLandingPath()));
+            entry.setDeviceType(AttributionSanitizer.deviceType(request.getDeviceType()));
+        } catch (RuntimeException e) {
+            log.warn("Attribution dropped for a signup: {}", e.getClass().getSimpleName());
+        }
     }
 
     // Helper to package the current stats
@@ -150,9 +273,16 @@ public class WaitlistController {
     }
 
     // Out-of-range values become null rather than clamped: a clamped value would
-    // fabricate a data point the user never chose. Bounds mirror the frontend sliders.
-    private static Integer clampOrNull(Integer v, int min, int max) {
-        return (v == null || v < min || v > max) ? null : v;
+    // fabricate a data point the user never chose. Bounds mirror the frontend sliders,
+    // so a hit here is a tampered request -- logged (field and direction only, never
+    // the value) because a spike is a bot signature.
+    private static Integer clampOrNull(String field, Integer v, int min, int max) {
+        if (v == null) return null;
+        if (v < min || v > max) {
+            log.warn("Calculator input out of range: field={} direction={}", field, v < min ? "below" : "above");
+            return null;
+        }
+        return v;
     }
 
     // Helper to Hash the IP Address (SHA-256)
