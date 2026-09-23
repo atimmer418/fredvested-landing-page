@@ -856,10 +856,16 @@
 </script>
 
 <script src="assets/waitlist.js"></script>
+<!-- attribution.js captures UTM/first-touch on load; analytics.js owns every event and the
+     production-hostname gate. Both must run before Plausible's deferred script executes. -->
+<script src="assets/attribution.js"></script>
+<script src="assets/analytics.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 (function () {
   const { isValidEmail, getSavedStatus, saveStatus, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
+  // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
+  const Analytics = window.FredAnalytics;
 
   const form = document.getElementById("waitlist-form");
   const emailInput = document.getElementById("capture-email");
@@ -959,6 +965,7 @@
 
   // --- Signup flow (same motion system as the calculator page) ---
   const ts = createTurnstile(form);
+  emailInput.addEventListener("focus", () => Analytics.track("Email Focused"));
 
   function showMsg(kind, text) {
     const styles = kind === "error"
@@ -1064,13 +1071,20 @@
     msg.innerHTML = "";
 
     const email = emailInput.value.trim().toLowerCase();
+    if (!email) {
+      showMsg("error", "Please enter your email address.");
+      Analytics.track("Waitlist Failed", { reason: "empty_email" });
+      return;
+    }
     if (!isValidEmail(email)) {
       showMsg("error", "Please enter a valid email address.");
+      Analytics.track("Waitlist Failed", { reason: "invalid_email" });
       return;
     }
     const token = ts.getToken();
     if (!token) {
       showMsg("warn", "Security verification in progress. Please try again in a moment.");
+      Analytics.track("Waitlist Failed", { reason: "captcha_failed" });
       return;
     }
 
@@ -1078,13 +1092,18 @@
     const loadingStartedAt = Date.now();
 
     try {
-      const data = await submitWaitlist({ email, turnstileToken: token });
+      // No calculator on this page: the signup carries attribution only and revealed:false.
+      const data = await submitWaitlist(Object.assign(
+        { email, turnstileToken: token, revealedBeforeSubmit: false },
+        Analytics.getAttribution()
+      ));
+      if (data.status === "already_joined") Analytics.track("Waitlist Failed", { reason: "duplicate" });
+      else Analytics.track("Waitlist Submitted", { source_page: "about" });
 
       const elapsed = Date.now() - loadingStartedAt;
       await new Promise((r) => setTimeout(r, Math.max(0, 3000 - elapsed)));
 
       saveStatus(data.realStatus || data.status);
-      if (window.plausible) plausible("Waitlist Signup", { props: { page: "about" } });
 
       joinBtn.style.opacity = "0";
       joinBtn.style.transition = "opacity 300ms ease";
@@ -1095,6 +1114,7 @@
       resetForm();
       showMsg("error", err.message);
       ts.reset();
+      Analytics.track("Waitlist Failed", { reason: err.reason || "server_error" });
     }
   });
 

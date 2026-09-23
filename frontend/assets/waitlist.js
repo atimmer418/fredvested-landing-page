@@ -83,16 +83,54 @@
     };
   }
 
+  // Structured failure reasons (the analytics vocabulary; see assets/analytics.js).
+  // The backend names the reason in a `code` field; the HTTP status is the fallback
+  // for responses that carry none. The visitor only ever sees a generic message.
+  const SUBMIT_TIMEOUT_MS = 15000;
+  const FAILURE_REASONS = ['invalid_email', 'empty_email', 'duplicate', 'rate_limited',
+    'server_error', 'network_error', 'timeout', 'geo_blocked', 'captcha_failed'];
+  const REASON_BY_STATUS = { 429: 'rate_limited', 403: 'geo_blocked', 409: 'duplicate' };
+  const GENERIC_MESSAGES = {
+    invalid_email: 'Please enter a valid email address.',
+    empty_email: 'Please enter your email address.',
+    rate_limited: 'Too many requests. Please try again in a minute.',
+    geo_blocked: 'FRED is currently available to US residents only.',
+    captcha_failed: 'Security check failed. Please try again.',
+    timeout: 'That took too long. Please check your connection and try again.',
+    network_error: 'Could not reach FRED. Please check your connection and try again.',
+    server_error: 'Something went wrong. Please try again.',
+  };
+
+  class WaitlistError extends Error {
+    constructor(reason, message) {
+      super(message || GENERIC_MESSAGES[reason] || GENERIC_MESSAGES.server_error);
+      this.name = 'WaitlistError';
+      this.reason = reason;
+    }
+  }
+
+  function reasonFor(status, code) {
+    if (FAILURE_REASONS.indexOf(code) !== -1) return code;
+    return REASON_BY_STATUS[status] || 'server_error';
+  }
+
   function submitWaitlist(payload) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SUBMIT_TIMEOUT_MS);
     return fetch(API_BASE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     }).then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Something went wrong.');
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* non-JSON body (proxy error page, empty 5xx) */ }
+      if (!res.ok) throw new WaitlistError(reasonFor(res.status, data.code), data.message);
       return data;
-    });
+    }).catch((err) => {
+      if (err instanceof WaitlistError) throw err;
+      throw new WaitlistError(err && err.name === 'AbortError' ? 'timeout' : 'network_error');
+    }).finally(() => clearTimeout(timer));
   }
 
   // Clean URLs (/about, /privacy) resolve to .html files when developing

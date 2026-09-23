@@ -349,6 +349,10 @@
 </footer>
 
 <script src="assets/waitlist.js"></script>
+<!-- attribution.js captures UTM/first-touch on load; analytics.js owns every event and the
+     production-hostname gate. Both must run before Plausible's deferred script executes. -->
+<script src="assets/attribution.js"></script>
+<script src="assets/analytics.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 (function () {
@@ -373,6 +377,8 @@
   const WITHDRAWAL_RATE = 0.04;
 
   const { isValidEmail, getSavedStatus, saveStatus, saveFreedomDate, fetchStats, createTurnstile, submitWaitlist, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
+  // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
+  const Analytics = window.FredAnalytics;
 
   const revealZone = document.getElementById("reveal-zone");
   const feasibleBlock = document.getElementById("feasible-block");
@@ -410,6 +416,8 @@
   const formatUSD = (n) => "$" + Math.round(n).toLocaleString("en-US");
   const formatMonthYear = (d) =>
     d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  // Local calendar components, so the first-of-month date never shifts a day across timezones.
+  const isoDate = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01";
 
   function compute(age, invest, retire) {
     const target = (retire * 12) / WITHDRAWAL_RATE;
@@ -443,7 +451,10 @@
     });
     liveUpdate();
   }
-  segButtons.forEach((b) => b.addEventListener("click", () => setReturn(b.dataset.return)));
+  segButtons.forEach((b) => b.addEventListener("click", () => {
+    if (b.dataset.return !== selectedReturn) Analytics.recordInput("return_scenario");
+    setReturn(b.dataset.return);
+  }));
   document.getElementById("return-seg").addEventListener("keydown", (e) => {
     const keys = Object.keys(RETURN_SCENARIOS);
     const i = keys.indexOf(selectedReturn);
@@ -452,6 +463,7 @@
     if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = keys[(i - 1 + keys.length) % keys.length];
     if (!next) return;
     e.preventDefault();
+    Analytics.recordInput("return_scenario");
     setReturn(next);
     segButtons.find((b) => b.dataset.return === next).focus();
   });
@@ -460,19 +472,21 @@
   function sizeNumberInput(num) {
     num.style.width = Math.max(String(num.value).length, 1) + 0.6 + "ch";
   }
-  function bindRow(rangeId, numberId) {
+  function bindRow(rangeId, numberId, field) {
     const range = document.getElementById(rangeId);
     const num = document.getElementById(numberId);
     const clamp = (v) => Math.min(Math.max(v, +num.min), +num.max);
     sizeNumberInput(num);
     range.addEventListener("input", () => {
       hasInteracted = true;
+      Analytics.recordInput(field);
       num.value = range.value;
       sizeNumberInput(num);
       liveUpdate();
     });
     num.addEventListener("input", () => {
       hasInteracted = true;
+      Analytics.recordInput(field);
       if (num.value !== "") range.value = clamp(+num.value);
       sizeNumberInput(num);
       liveUpdate();
@@ -485,9 +499,9 @@
       liveUpdate();
     });
   }
-  bindRow("age-range", "age-number");
-  bindRow("invest-range", "invest-number");
-  bindRow("retire-range", "retire-number");
+  bindRow("age-range", "age-number", "age");
+  bindRow("invest-range", "invest-number", "monthly_invest");
+  bindRow("retire-range", "retire-number", "target_income");
 
   const readInputs = () => ({
     age: +document.getElementById("age-range").value,
@@ -529,6 +543,9 @@
   // Last feasible result, sent with the signup so the backend can track avg freedom age.
   let lastFreedomAge = null;
   let lastFreedomMonthYear = null;
+  // Also sent with the signup so the backend can recompute and detect drift between the two implementations.
+  let lastFreedomDateIso = null;
+  let lastPortfolioTarget = null;
 
   function render(animate) {
     const { age, invest, retire } = readInputs();
@@ -539,6 +556,8 @@
       const roundedAge = Math.round(res.ageAtFreedom);
       lastFreedomAge = roundedAge;
       lastFreedomMonthYear = formatMonthYear(res.date);
+      lastFreedomDateIso = isoDate(res.date);
+      lastPortfolioTarget = Math.round(res.target);
       if (animate && !prefersReducedMotion()) {
         countUp(ageEl, roundedAge, 900);
       } else {
@@ -562,6 +581,8 @@
       infeasibleBlock.hidden = false;
       lastFreedomAge = null;
       lastFreedomMonthYear = null;
+      lastFreedomDateIso = null;
+      lastPortfolioTarget = Math.round(res.target);
       const message = INFEASIBLE_MESSAGES[res.reason] || INFEASIBLE_MESSAGES["no-investment"];
       infeasibleMessageEl.textContent = message;
       srEl.textContent = message;
@@ -581,7 +602,13 @@
     revealZone.removeAttribute("inert");
     revealZone.classList.add("open");
     revealBtn.setAttribute("aria-expanded", "true");
-    if (firstReveal && window.plausible) plausible("Freedom Date Revealed");
+    // After the result has rendered, never on the raw click. compute() cannot throw for the slider
+    // domain; an unreachable result is a real outcome (lastFreedomAge null -> freedom_age_band "unreachable").
+    const inputs = readInputs();
+    Analytics.track(firstReveal ? "Freedom Date Revealed" : "Recalculated", {
+      age: inputs.age, invest: inputs.invest, retire: inputs.retire,
+      return_scenario: selectedReturn, freedom_age: lastFreedomAge,
+    });
     // Once fully open, stop clipping so the card shadows render past the container.
     setTimeout(() => {
       revealZone.style.maxHeight = "none";
@@ -613,6 +640,11 @@
 
   // --- Signup flow ---
   const ts = createTurnstile(form);
+
+  document.getElementById("calc-method").addEventListener("toggle", (e) => {
+    if (e.target.open) Analytics.track("Explainer Opened");
+  });
+  emailInput.addEventListener("focus", () => Analytics.track("Email Focused"));
 
   function showMsg(kind, text) {
     const styles = kind === "error"
@@ -697,13 +729,20 @@
     msg.innerHTML = "";
 
     const email = emailInput.value.trim().toLowerCase();
+    if (!email) {
+      showMsg("error", "Please enter your email address.");
+      Analytics.track("Waitlist Failed", { reason: "empty_email" });
+      return;
+    }
     if (!isValidEmail(email)) {
       showMsg("error", "Please enter a valid email address.");
+      Analytics.track("Waitlist Failed", { reason: "invalid_email" });
       return;
     }
     const token = ts.getToken();
     if (!token) {
       showMsg("warn", "Security verification in progress. Please try again in a moment.");
+      Analytics.track("Waitlist Failed", { reason: "captcha_failed" });
       return;
     }
 
@@ -722,7 +761,15 @@
         returnAssumptionPct: currentScenario().pct,
       };
       if (lastFreedomAge !== null) payload.freedomAge = lastFreedomAge;
+      if (lastFreedomDateIso !== null) payload.freedomDate = lastFreedomDateIso;
+      if (lastPortfolioTarget !== null) payload.portfolioTarget = lastPortfolioTarget;
+      payload.revealedBeforeSubmit = revealed;
+      Object.assign(payload, Analytics.getAttribution());
       const data = await submitWaitlist(payload);
+      // Only after a 2xx. An address already on the list is not a new signup, so it is
+      // recorded as a duplicate failure even though the visitor sees the success state.
+      if (data.status === "already_joined") Analytics.track("Waitlist Failed", { reason: "duplicate" });
+      else Analytics.track("Waitlist Submitted", { source_page: "home" });
 
       // Keep the loading animation on screen for at least 2s before the payoff.
       const elapsed = Date.now() - loadingStartedAt;
@@ -731,7 +778,6 @@
       // For already_joined, persist the real status so refreshes show the right card.
       saveStatus(data.realStatus || data.status);
       if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
-      if (window.plausible) plausible("Waitlist Signup");
 
       // Fade the loading button out, then fade the success state in.
       joinBtn.style.opacity = "0";
@@ -743,6 +789,7 @@
       resetForm();
       showMsg("error", err.message);
       ts.reset();
+      Analytics.track("Waitlist Failed", { reason: err.reason || "server_error" });
     }
   });
 
