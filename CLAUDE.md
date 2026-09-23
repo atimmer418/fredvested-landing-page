@@ -56,7 +56,13 @@ cd backend
 - `spring.jpa.hibernate.ddl-auto=validate` in **every** profile (base default, dev, prod, local). Hibernate only checks the entities against the schema on startup; it never creates or alters tables.
 - **Any entity change without a matching migration will crash the app on startup by design** (`Schema-validation: missing column [...]`). That crash is the feature: it replaces a silent auto-migration with a loud failure. The fix is always a new migration, never switching `ddl-auto` to `update` -- `update` would mutate the database outside version control and leave the Flyway history lying about what the schema is. (This happened once: Railway dev, 2026-09-22.)
 - `spring.flyway.baseline-on-migrate=true` / `baseline-version=1`: a pre-Flyway database that already has the table is recorded as "at V1" without running V1. Because such databases may predate columns V1 assumes, migrations that add columns those databases might lack must be written idempotently (see `V2__add_calculator_input_columns.sql` for the information_schema + PREPARE pattern; MySQL has no `ADD COLUMN IF NOT EXISTS`).
-- To test a migration locally against a real MySQL: create a scratch database (`mysql -u root -p -e "CREATE DATABASE fred_scratch"`), then `./gradlew bootRun --args='--spring.profiles.active=local --spring.datasource.url=jdbc:mysql://localhost:3306/fred_scratch?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC'` and watch for `Started WaitlistApplication` (pass) or `APPLICATION FAILED TO START` (fail). Drop the scratch database afterward.
+- **Before deploying any migration, dry-run it against a snapshot of the TARGET environment's schema, never against local.** Local is usually ahead of what is deployed; that is exactly how V1's baseline was wrong (it captured the working tree while Railway dev was still five columns behind, and the deploy crashed). Recipe, per environment (dev, then prod):
+  1. Railway → the target project → the MySQL service → **Variables**: copy the public connection values (`MYSQL_PUBLIC_URL`, or `RAILWAY_TCP_PROXY_DOMAIN` + `RAILWAY_TCP_PROXY_PORT` with `MYSQLUSER` / `MYSQLPASSWORD` / `MYSQLDATABASE`). Also take a Railway backup of the database volume first (service → **Backups**), so the deploy itself is reversible.
+  2. Schema-only dump plus the Flyway history: `mysqldump -h HOST -P PORT -u USER -p --no-data DATABASE > snapshot-schema.sql` and `mysqldump -h HOST -P PORT -u USER -p DATABASE flyway_schema_history > snapshot-history.sql` (the second one fails harmlessly on a database Flyway has never touched -- skip it then). No row data is needed or wanted.
+  3. Load it locally: `mysql -u root -p -e "DROP DATABASE IF EXISTS fred_snapshot; CREATE DATABASE fred_snapshot"`, then `mysql -u root -p fred_snapshot < snapshot-schema.sql` and `mysql -u root -p fred_snapshot < snapshot-history.sql`.
+  4. Boot against it with the code you are about to deploy: `./gradlew bootRun --args='--spring.profiles.active=local --spring.datasource.url=jdbc:mysql://localhost:3306/fred_snapshot?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC'`. Expect Flyway to log exactly the migrations the target is missing, then `Started WaitlistApplication`. `APPLICATION FAILED TO START` with `Schema-validation` means the migration does not produce what the entities expect: fix the migration, never the setting.
+  5. `mysql -u root -p -e "DROP DATABASE fred_snapshot"`. Then deploy, and watch the Railway log for the same Flyway lines.
+- For a quick local check without a snapshot (not a substitute for the above): create a scratch database (`mysql -u root -p -e "CREATE DATABASE fred_scratch"`), boot against it the same way, and drop it afterward.
 
 ### Profiles & Environment Variables
 
@@ -66,7 +72,14 @@ cd backend
 | `prod` | `application-prod.properties` | Deployed on Railway |
 
 Required env vars for dev: `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQLPASSWORD`
-Required for prod: above + `CLOUDFLARE_TURNSTILE_SECRET`, `CORS_ALLOWED_ORIGINS`
+Required for prod: above + `CLOUDFLARE_TURNSTILE_SECRET`, `CORS_ALLOWED_ORIGINS`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`
+Optional (defaults in `application*.properties`): `WAITLIST_DOUBLE_OPT_IN` (true), `API_PUBLIC_URL` (the API's own origin, used in email links), `EMAIL_FROM`, `WAITLIST_US_ONLY`
+
+### Email funnel (double opt-in)
+- Signup writes the waitlist row and a pending `email_message` row in one transaction; `EmailOutboxPublisher` (scheduled, single instance) sends it via Resend, refusing suppressed addresses, and mints the confirmation/unsubscribe tokens at send time so only their SHA-256 hashes are ever stored.
+- `GET /api/waitlist/confirm?token=` confirms once and redirects to the landing site's `/confirmed` page (`status=confirmed|expired|invalid`); unknown and already-used tokens are indistinguishable. `POST /api/waitlist/resend-confirmation` is rate limited per address (1/10 min, 3/day) and answers identically whether or not the address exists. `GET /api/waitlist/unsubscribe?token=` suppresses the address.
+- `POST /api/webhooks/resend` verifies the Svix signature over the raw body, rejects stale timestamps, is idempotent on `svix-id` (UNIQUE on `email_event`), ignores older events for a message that already has a newer status, and suppresses on bounce/complaint. Unknown message ids get a 200 and are ignored.
+- Weekly view: `v_waitlist_funnel`; suppressions: `v_email_suppressions`.
 
 ### Founder Cap Logic
 The first 300 waitlist signups get `WAITLISTFOUNDER` status; subsequent signups get `WAITLISTNORMAL`.

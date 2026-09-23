@@ -2,15 +2,40 @@ package com.fredvested.web.repository;
 
 import com.fredvested.web.model.WaitlistEntry;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface WaitlistRepository extends JpaRepository<WaitlistEntry, Long> {
 
     boolean existsByEmail(String email);
 
     WaitlistEntry findByEmail(String email);
+
+    // Indexed lookup by the SHA-256 of a confirmation token (never by the raw token)
+    Optional<WaitlistEntry> findByConfirmationTokenHash(String confirmationTokenHash);
+
+    // Targeted writes for the outbox publisher. It runs across a network call, so it
+    // must never merge a stale snapshot of the row back over a concurrent
+    // confirmation, unsubscribe or bounce; it only ever touches its own columns.
+    @Modifying
+    @Transactional
+    @Query("update WaitlistEntry w set w.confirmationTokenHash = :hash, w.confirmationExpiresAt = :expires where w.id = :id")
+    int setConfirmationToken(@Param("id") Long id, @Param("hash") String hash, @Param("expires") LocalDateTime expires);
+
+    @Modifying
+    @Transactional
+    @Query("update WaitlistEntry w set w.emailStatus = :status where w.id = :id")
+    int setEmailStatus(@Param("id") Long id, @Param("status") String status);
+
+    @Modifying
+    @Transactional
+    @Query("update WaitlistEntry w set w.emailStatus = :status, w.confirmationSentAt = :sentAt where w.id = :id")
+    int markConfirmationSent(@Param("id") Long id, @Param("status") String status, @Param("sentAt") LocalDateTime sentAt);
 
     long countByStatus(WaitlistEntry.WaitlistStatus status);
 

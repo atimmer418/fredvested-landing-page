@@ -2,6 +2,7 @@
 //
 // Records which content brought a visitor here so it can be stored with their
 // waitlist signup (Plausible is anonymous and cannot be joined to a person).
+// Parses utm_source, utm_medium, utm_campaign, utm_content and utm_term only.
 // Two snapshots:
 //   first touch -> localStorage  "fred_attr_first"  written once, never overwritten
 //   last touch  -> sessionStorage "fred_attr_last"  overwritten on every load that
@@ -11,7 +12,9 @@
 // Deliberately NO persistent visitor ID: a durable first-party ID would be a
 // cookie in all but name and would need a privacy-policy revision.
 (function (global) {
-  const PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'];
+  // UTM only. A `ref` parameter is deliberately not captured: the disclosures
+  // counsel is drafting describe UTM attribution and nothing else.
+  const PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
   const FIRST_KEY = 'fred_attr_first';
   const LAST_KEY = 'fred_attr_last';
   const VISIT_KEY = 'fred_visit';
@@ -107,7 +110,6 @@
     put('utmCampaign', last.utm_campaign);
     put('utmContent', last.utm_content);
     put('utmTerm', last.utm_term);
-    put('ref', last.ref);
     put('firstUtmSource', first.utm_source);
     put('firstUtmCampaign', first.utm_campaign);
     put('firstUtmContent', first.utm_content);

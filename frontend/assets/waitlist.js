@@ -133,6 +133,27 @@
     }).finally(() => clearTimeout(timer));
   }
 
+  // Asks the API for a fresh confirmation link. Resolves with the parsed body for
+  // ANY HTTP status: the endpoint answers the same way whether or not the address
+  // is on the list, and the page must not treat any completed request differently.
+  // Rejects only when the request itself failed (timeout / network).
+  function resendConfirmation(email) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SUBMIT_TIMEOUT_MS);
+    return fetch(API_BASE + '/resend-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+      signal: controller.signal,
+    }).then(async (res) => {
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* no body */ }
+      return data;
+    }).catch((err) => {
+      throw new WaitlistError(err && err.name === 'AbortError' ? 'timeout' : 'network_error');
+    }).finally(() => clearTimeout(timer));
+  }
+
   // Clean URLs (/about, /privacy) resolve to .html files when developing
   // locally; production hosting maps the clean paths itself.
   function devLinkMap(map) {
@@ -154,6 +175,7 @@
     fetchStats,
     createTurnstile,
     submitWaitlist,
+    resendConfirmation,
     devLinkMap,
   };
 })(window);

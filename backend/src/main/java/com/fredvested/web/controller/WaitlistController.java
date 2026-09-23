@@ -2,8 +2,8 @@ package com.fredvested.web.controller;
 
 import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.WaitlistRepository;
-import com.fredvested.web.service.EmailService;
 import com.fredvested.web.service.RateLimiterService;
+import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
 import com.fredvested.web.util.AttributionSanitizer;
 import com.fredvested.web.util.FreedomCalculator;
@@ -44,7 +44,7 @@ public class WaitlistController {
     private RateLimiterService rateLimiterService;
 
     @Autowired
-    private EmailService emailService;
+    private SignupService signupService;
 
     private static final Logger log = LoggerFactory.getLogger(WaitlistController.class);
     private static final ZoneId EASTERN = ZoneId.of("America/New_York");
@@ -171,18 +171,18 @@ public class WaitlistController {
         entry.setRevealedBeforeSubmit(Boolean.TRUE.equals(request.getRevealedBeforeSubmit()));
         entry.setStatus(newStatus);
         entry.setIpHash(hashedIp);
-        repository.save(entry);
+        // Saves the row and its pending email (confirmation, or the welcome email when
+        // double opt-in is off) in one transaction. Nothing calls Resend on this thread:
+        // the outbox publisher sends later and retries, so a Resend outage never costs
+        // a signup and the HTTP response never waits on it.
+        signupService.createSignup(entry);
         cachedStats = null;
 
-        // 5. Send confirmation email (failure must not affect signup response)
-        try {
-            emailService.sendConfirmationEmail(email);
-        } catch (Exception e) {
-            log.error("Failed to send confirmation email to {}: {}", email, e.getMessage());
-        }
-
-        // 6. Return updated stats and status
-        return ResponseEntity.ok(buildStatsMap(newStatus.name()));
+        // 5. Return updated stats and status. requiresConfirmation tells the page whether a
+        // confirmation click is still needed (double opt-in), so its success copy can say so.
+        Map<String, Object> response = buildStatsMap(newStatus.name());
+        response.put("requiresConfirmation", signupService.isDoubleOptIn());
+        return ResponseEntity.ok(response);
     }
 
     // Recompute the projection from the (already bounded) inputs and store the server's

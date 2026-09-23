@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"/>
+  <meta name="theme-color" content="#ffffff"/>
+  <meta name="color-scheme" content="light"/>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link rel="icon" type="image/png" href="/assets/variation1.png">
+  <link rel="apple-touch-icon" href="/assets/variation1.png">
+  <title>Confirmed - FRED</title>
+  <meta name="description" content="Confirm your email for the FRED waitlist.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://fredvested.com/confirmed">
+  <meta property="og:site_name" content="FRED">
+  <meta property="og:title" content="Confirmed - FRED">
+  <!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
+  <link rel="stylesheet" href="dist/output.css">
+  <!-- Privacy-friendly analytics by Plausible, proxied through our own domain -->
+  <script defer data-domain="fredvested.com" src="/js/script.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
+</head>
+<body class="bg-background-light font-display text-navy antialiased">
+
+  <!-- Inline icon sprite (Material Icons Outlined, Apache 2.0). No request leaves our origin for icons. -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-arrow_back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></symbol>
+    <symbol id="i-check_circle" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/></symbol>
+  </svg>
+
+  <!-- Navbar -->
+  <nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <a href="/" class="flex-shrink-0 flex items-center gap-2">
+          <span class="font-montserrat text-[48px] font-black italic text-primary tracking-[0px] leading-none">FRED</span>
+        </a>
+        <a href="/" class="flex items-center gap-1 text-sm font-medium text-slate-text hover:text-primary transition-colors">
+          <svg class="text-base" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-arrow_back"/></svg>
+          Back to Home
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Header: one state block is shown, chosen from the query string -->
+  <section class="bg-white border-b border-gray-100 pb-12 pt-8 sm:py-12">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-4">
+        <svg class="text-base mr-1" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg>
+        Waitlist
+      </div>
+
+      <noscript>
+        <h1 class="text-4xl font-extrabold text-navy mb-3">Your link was received.</h1>
+        <p class="text-slate-text leading-relaxed">Turn on JavaScript to see the status of your confirmation, or write to <a href="mailto:help@fredvested.com" class="text-primary hover:underline">help@fredvested.com</a>.</p>
+      </noscript>
+
+      <div id="s-confirmed" hidden>
+        <h1 class="text-4xl font-extrabold text-navy mb-3">You&rsquo;re confirmed.</h1>
+        <p class="text-slate-text leading-relaxed">Your spot on the FRED waitlist is secured. We&rsquo;ll email you when your wave opens.</p>
+      </div>
+      <div id="s-expired" hidden>
+        <h1 class="text-4xl font-extrabold text-navy mb-3">That link has expired.</h1>
+        <p class="text-slate-text leading-relaxed">Confirmation links work for 7 days. Enter your email and we&rsquo;ll send a fresh one.</p>
+      </div>
+      <div id="s-invalid" hidden>
+        <h1 class="text-4xl font-extrabold text-navy mb-3">That link isn&rsquo;t valid.</h1>
+        <p class="text-slate-text leading-relaxed">It may have been used already. If you still need to confirm your email, request a new link.</p>
+      </div>
+      <div id="s-unsubscribed" hidden>
+        <h1 class="text-4xl font-extrabold text-navy mb-3">You&rsquo;ve been unsubscribed.</h1>
+        <p class="text-slate-text leading-relaxed">You won&rsquo;t receive any more emails from FRED. If this was a mistake, write to <a href="mailto:help@fredvested.com" class="text-primary hover:underline">help@fredvested.com</a>.</p>
+      </div>
+      <div id="s-default" hidden>
+        <h1 class="text-4xl font-extrabold text-navy mb-3">Confirm your email.</h1>
+        <p class="text-slate-text leading-relaxed">Check your inbox for the confirmation link from FRED. Need a new one? Enter your email below.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Content -->
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+    <!-- Confirmed: next step -->
+    <div id="c-confirmed" class="bg-white rounded-2xl border border-gray-100 shadow-card p-8" hidden>
+      <h2 class="text-xl font-bold text-navy mb-4">What happens next</h2>
+      <p class="text-slate-text leading-relaxed mb-6">Signups are reviewed in waves. When yours opens, the invitation and next steps arrive by email.</p>
+      <a href="/about" class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+        See how FRED works
+      </a>
+      <!-- TODO: referral share prompt -->
+    </div>
+
+    <!-- Expired / invalid / default: request a new link. No Turnstile here; the API rate limits
+         this per address and per IP, and the response is the same whether or not the address exists. -->
+    <div id="c-resend" class="bg-white rounded-2xl border border-gray-100 shadow-card p-8" hidden>
+      <h2 class="text-xl font-bold text-navy mb-4">Send a new confirmation link</h2>
+      <div class="relative min-h-[52px]">
+        <form id="resend-form" class="flex flex-col gap-2.5 sm:flex-row" novalidate>
+          <label class="sr-only" for="resend-email">Email address</label>
+          <input id="resend-email" type="email" placeholder="you@email.com" autocomplete="email" required
+            class="min-w-0 flex-1 rounded-xl border-gray-200 px-4 py-[14px] text-[15px] text-navy shadow-sm focus:border-primary focus:ring-primary">
+          <button type="submit" id="resend-btn"
+            class="rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] whitespace-nowrap cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            Send a new link
+          </button>
+        </form>
+      </div>
+      <div id="resend-msg" class="text-left" aria-live="polite"></div>
+      <p class="mt-3 text-[11px] leading-relaxed text-slate-text">Links work for 7 days. Only the most recent link for an address is valid.</p>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+<section class="bg-background-light pt-0 pb-16 scroll-mt-16 lg:scroll-mt-0">
+<div class="max-w-md mx-auto px-4 text-center">
+<div class="pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
+<div class="flex justify-center space-x-6 mb-4">
+<a class="hover:text-primary" href="/privacy">Privacy</a>
+<a class="hover:text-primary" href="/terms">Terms</a>
+<a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
+</div>
+<p>© 2026 FREDvested LLC</p>
+<!-- ATTORNEY: status sentence pending final confirmation (same wording as index.html / about.html footers) -->
+<div class="mt-4 text-[10px] leading-relaxed text-gray-600">
+  FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br>
+  Investing involves risk, including possible loss of principal.
+</div>
+</div>
+</div>
+</section>
+
+<script src="assets/waitlist.js"></script>
+<script src="assets/attribution.js"></script>
+<script src="assets/analytics.js"></script>
+<script>
+(function () {
+  // Show the right state FIRST, before touching any helper: if a script failed to
+  // load, the visitor who just clicked a link must still see their status.
+  const params = new URLSearchParams(location.search);
+  const status = params.get("status");
+  const state = ["confirmed", "expired", "invalid", "unsubscribed"].indexOf(status) !== -1 ? status : "default";
+
+  document.getElementById("s-" + state).hidden = false;
+  if (state === "confirmed") {
+    document.getElementById("c-confirmed").hidden = false;
+    // The backend passes the banded hours-to-confirm; only an exact band value is forwarded.
+    // Every analytics call goes through assets/analytics.js; nothing here calls plausible() directly.
+    const hours = params.get("hours");
+    if (window.FredAnalytics && ["<1", "1-6", "6-24", "24-72", "72+"].indexOf(hours) !== -1) {
+      window.FredAnalytics.track("Waitlist Confirmed", { hours_to_confirm_band: hours });
+      // Drop the band from the address bar so a reload or "open in browser" from an
+      // email app cannot fire the event again; the visible state is already chosen.
+      try {
+        params.delete("hours");
+        history.replaceState(null, "", location.pathname + "?" + params.toString());
+      } catch (e) { /* history API unavailable: nothing to do */ }
+    }
+  } else if (state !== "unsubscribed") {
+    document.getElementById("c-resend").hidden = false;
+  }
+
+  if (!window.FredWaitlist) return; // helpers missing: the page still shows its state
+  const { isValidEmail, resendConfirmation, devLinkMap } = window.FredWaitlist;
+
+  const form = document.getElementById("resend-form");
+  const emailInput = document.getElementById("resend-email");
+  const btn = document.getElementById("resend-btn");
+  const msg = document.getElementById("resend-msg");
+
+  function showMsg(kind, text) {
+    const styles = kind === "error"
+      ? "bg-red-50 border-red-200 text-red-700"
+      : "bg-blue-50 border-blue-200 text-blue-800";
+    msg.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium ' + styles + '">' + text + "</div>";
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.innerHTML = "";
+    const email = emailInput.value.trim().toLowerCase();
+    if (!email || !isValidEmail(email)) {
+      showMsg("error", "Please enter a valid email address.");
+      return;
+    }
+    btn.disabled = true;
+    try {
+      // Any completed request, whatever its status, gets the same answer: the
+      // response must not reveal whether the address is on the list.
+      await resendConfirmation(email);
+      showMsg("ok", "If that address is on our waitlist, a new confirmation link is on its way. Check your inbox.");
+    } catch (err) {
+      showMsg("error", "Could not reach FRED. Please check your connection and try again.");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  devLinkMap({ "/": "index.html", "/about": "about.html", "/privacy": "privacy.html", "/terms": "terms.html" });
+})();
+</script>
+</body>
+</html>

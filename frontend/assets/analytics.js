@@ -11,6 +11,8 @@
 // are excluded from billing). Per visitor per page session this file can send
 // at most: Calc Engaged, Explainer Opened, Freedom Date Revealed, Recalculated,
 // Email Focused, Waitlist Submitted (each once) and Waitlist Failed (max 3).
+// Waitlist Confirmed fires once on confirmed.html, a separate page load with
+// its own pageview, so it sits outside that 7-per-visitor budget.
 (function (global) {
   const PRODUCTION_HOSTS = ['fredvested.com', 'www.fredvested.com'];
   const FORCE_KEY = 'fred_analytics_force'; // localStorage; '1' sends from any host
@@ -18,8 +20,9 @@
 
   const ONCE = new Set([
     'Calc Engaged', 'Explainer Opened', 'Freedom Date Revealed', 'Recalculated',
-    'Email Focused', 'Waitlist Submitted',
+    'Email Focused', 'Waitlist Submitted', 'Waitlist Confirmed',
   ]);
+  const CONFIRM_BANDS = new Set(['<1', '1-6', '6-24', '24-72', '72+']);
   const FAILED_LIMIT = 3;
   const FAILED_REASONS = new Set([
     'invalid_email', 'empty_email', 'duplicate', 'rate_limited', 'server_error',
@@ -142,6 +145,12 @@
     },
 
     'Waitlist Failed': (ctx) => (FAILED_REASONS.has(ctx.reason) ? { reason: ctx.reason } : { reason: 'server_error' }),
+
+    // Fired by confirmed.html. The backend bands the hours from confirmation
+    // email to click and passes it in the query string; anything else is dropped.
+    'Waitlist Confirmed': (ctx) => (CONFIRM_BANDS.has(ctx.hours_to_confirm_band)
+      ? { hours_to_confirm_band: ctx.hours_to_confirm_band }
+      : false),
   };
 
   // Fire an event. Never throws: an analytics failure must never break the

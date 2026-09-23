@@ -2,15 +2,19 @@ package com.fredvested.web.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fredvested.web.model.WaitlistEntry;
+import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
 import com.fredvested.web.service.RateLimiterService;
+import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(WaitlistController.class)
+@Import(SignupService.class)
 @TestPropertySource(properties = "waitlist.us-only=true")
 class WaitlistControllerGeoGateTest {
 
@@ -36,6 +41,8 @@ class WaitlistControllerGeoGateTest {
     @MockBean TurnstileService turnstileService;
     @MockBean RateLimiterService rateLimiterService;
     @MockBean EmailService emailService;
+    @MockBean EmailMessageRepository emailMessageRepository;
+    @MockBean PlatformTransactionManager transactionManager;
 
     @BeforeEach
     void allowThrough() {
@@ -66,7 +73,7 @@ class WaitlistControllerGeoGateTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("geo_blocked"));
         verify(repository, never()).save(any());
-        verify(emailService, never()).sendConfirmationEmail(anyString());
+        verify(emailMessageRepository, never()).save(any()); // nothing queued for a blocked signup
     }
 
     @Test

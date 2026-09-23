@@ -1,13 +1,17 @@
 package com.fredvested.web.controller;
 
+import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
 import com.fredvested.web.service.RateLimiterService;
+import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Each test mocks different repository values, so the stats memo is disabled here
 // (WaitlistControllerStatsCacheTest covers the caching itself).
 @WebMvcTest(WaitlistController.class)
+@Import(SignupService.class)
 @TestPropertySource(properties = "waitlist.stats-cache-ms=0")
 class WaitlistControllerStatsTest {
 
@@ -31,6 +36,8 @@ class WaitlistControllerStatsTest {
     @MockBean TurnstileService turnstileService;
     @MockBean RateLimiterService rateLimiterService;
     @MockBean EmailService emailService;
+    @MockBean EmailMessageRepository emailMessageRepository;
+    @MockBean PlatformTransactionManager transactionManager;
 
     @Test
     void stats_includeProjectionCountBehindTheAverage() throws Exception {

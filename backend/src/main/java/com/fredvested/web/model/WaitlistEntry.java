@@ -89,6 +89,41 @@ public class WaitlistEntry {
     @Column(name = "device_type", length = 20)
     private String deviceType;
 
+    // Double opt-in. Only the SHA-256 of the confirmation token is stored, and it is
+    // cleared on use, so an already-used token is indistinguishable from an unknown one.
+    @Column(name = "confirmation_token_hash", length = 64)
+    private String confirmationTokenHash;
+
+    @Column(name = "confirmation_sent_at")
+    private LocalDateTime confirmationSentAt;
+
+    @Column(name = "confirmation_expires_at")
+    private LocalDateTime confirmationExpiresAt;
+
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
+
+    // Denormalised latest delivery status of this address's most recent email
+    @Column(name = "email_status", length = 20)
+    private String emailStatus;
+
+    // Set once, never cleared. The outbox publisher refuses to send to a suppressed
+    // address; a bounce, a complaint or an unsubscribe all land here.
+    @Column(name = "suppressed_at")
+    private LocalDateTime suppressedAt;
+
+    @Column(name = "suppression_reason", length = 40)
+    private String suppressionReason;
+
+    public static final String SUPPRESSION_HARD_BOUNCE = "hard_bounce";
+    public static final String SUPPRESSION_COMPLAINT = "complaint";
+    public static final String SUPPRESSION_MANUAL = "manual";
+    public static final String SUPPRESSION_UNSUBSCRIBE = "unsubscribe";
+
+    public boolean isSuppressed() {
+        return suppressedAt != null;
+    }
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private WaitlistStatus status;

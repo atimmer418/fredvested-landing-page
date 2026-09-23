@@ -1,14 +1,18 @@
 package com.fredvested.web.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
 import com.fredvested.web.service.RateLimiterService;
+import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // repeated GETs must not each hit the database, and a signup must invalidate it.
 // The memo lives on the controller bean, so each method gets a fresh context.
 @WebMvcTest(WaitlistController.class)
+@Import(SignupService.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class WaitlistControllerStatsCacheTest {
 
@@ -37,6 +42,8 @@ class WaitlistControllerStatsCacheTest {
     @MockBean TurnstileService turnstileService;
     @MockBean RateLimiterService rateLimiterService;
     @MockBean EmailService emailService;
+    @MockBean EmailMessageRepository emailMessageRepository;
+    @MockBean PlatformTransactionManager transactionManager;
 
     @Test
     void repeatedStatsReads_hitTheDatabaseOnce_untilASignupInvalidates() throws Exception {
