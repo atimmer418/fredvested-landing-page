@@ -1,5 +1,6 @@
 package com.fredvested.web.controller;
 
+import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.LandingUrls;
 import com.fredvested.web.service.RateLimiterService;
@@ -83,11 +84,19 @@ public class WaitlistConfirmationController {
                                         HttpServletRequest request) {
         SignupService.Confirmation result = signupService.confirm(token);
         String query = switch (result.outcome()) {
-            case CONFIRMED -> "status=confirmed&hours=" + URLEncoder.encode(result.hoursBand(), StandardCharsets.UTF_8);
+            case CONFIRMED -> "status=confirmed&hours=" + URLEncoder.encode(result.hoursBand(), StandardCharsets.UTF_8) + tier(result.status());
             case EXPIRED -> "status=expired";
             case INVALID -> "status=invalid";
         };
         return redirect(landingUrls.page(request, "confirmed", query));
+    }
+
+    // The decided tier travels with the redirect so the landing pages can show the right
+    // status afterwards (the founder slot is decided at confirmation, not at signup).
+    private static String tier(WaitlistEntry.WaitlistStatus status) {
+        if (status == WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER) return "&tier=founder";
+        if (status == WaitlistEntry.WaitlistStatus.WAITLISTNORMAL) return "&tier=normal";
+        return "";
     }
 
     // Link scanners that probe with HEAD must not consume the single-use token.
@@ -109,7 +118,15 @@ public class WaitlistConfirmationController {
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
 
-    /** Step one: no side effect. Auto-submits for a known token; a plain notice otherwise. */
+    /**
+     * Step one: no side effect, and deliberately NO auto-submit here. A suppression is
+     * never cleared, so a mail security sandbox that does execute JavaScript (Defender
+     * Safe Links, Proofpoint, Mimecast) must not be able to unsubscribe the recipient
+     * on delivery; a human click is required. Mail clients get one-click unsubscribe
+     * through the RFC 8058 List-Unsubscribe headers on every email instead.
+     * (A consumed confirmation token is recoverable via resend, so the confirm page
+     * can afford the auto-submit; this one cannot.)
+     */
     @GetMapping(value = "/unsubscribe", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> unsubscribePage(@RequestParam(value = "token", required = false) String token) {
         if (!signupService.hasUnsubscribeToken(token)) {
@@ -117,10 +134,11 @@ public class WaitlistConfirmationController {
                     "<p>This unsubscribe link isn't valid. It may have been cut short by your email app.</p>"
                     + "<p class=\"muted\">Need help? Write to help@fredvested.com.</p>");
         }
-        return autoPostPage("Unsubscribe from FRED emails",
-                "<p id=\"auto\">Unsubscribing this address&hellip;</p>",
-                "/api/waitlist/unsubscribe", token,
-                "<p>Click the button to stop receiving emails from FRED at this address.</p>", "Unsubscribe");
+        return htmlPage("Unsubscribe from FRED emails",
+                "<p>Click below to stop receiving emails from FRED at this address.</p>"
+                + "<form method=\"post\" action=\"/api/waitlist/unsubscribe\">"
+                + "<input type=\"hidden\" name=\"token\" value=\"" + escape(token) + "\">"
+                + "<button type=\"submit\">Unsubscribe</button></form>");
     }
 
     /**
@@ -147,11 +165,20 @@ public class WaitlistConfirmationController {
                 .body(page(title, body));
     }
 
-    /** Step two: the human clicked the button. */
+    /**
+     * Step two: the human clicked the button (302 to the landing page), or a mail client
+     * performed an RFC 8058 one-click unsubscribe: a POST to the List-Unsubscribe URL
+     * (token in the query) with the body "List-Unsubscribe=One-Click", answered 200 with
+     * no redirect and the same body whether or not the token was known.
+     */
     @PostMapping(value = "/unsubscribe", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Void> unsubscribe(@RequestParam(value = "token", required = false) String token,
-                                            HttpServletRequest request) {
+    public ResponseEntity<?> unsubscribe(@RequestParam(value = "token", required = false) String token,
+                                         @RequestParam(value = "List-Unsubscribe", required = false) String oneClick,
+                                         HttpServletRequest request) {
         boolean done = signupService.unsubscribe(token);
+        if ("One-Click".equals(oneClick)) {
+            return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body("Unsubscribed.");
+        }
         return redirect(landingUrls.page(request, "confirmed", done ? "status=unsubscribed" : "status=invalid"));
     }
 

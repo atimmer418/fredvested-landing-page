@@ -782,6 +782,7 @@
         <p class="text-sm font-bold text-navy">One more step: check your email.</p>
         <p class="mt-1 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
         <p class="mt-2 text-[13px] text-slate-text">Didn&rsquo;t get it? Check your spam folder, or <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">resend the email</button>.</p>
+        <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
         <div id="pending-msg" aria-live="polite"></div>
       </div>
     </div>
@@ -873,7 +874,7 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 (function () {
-  const { isValidEmail, getSavedStatus, saveStatus, savePendingEmail, getPendingEmail, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
 
@@ -1003,20 +1004,24 @@
 
     // Price card CTA: they already reserved their place, so the action button
     // becomes a status-worded confirmation. Still links to #join, where the
-    // success block spells out their status. WAITLISTNORMAL must not read as a
-    // reserved Founder spot; founder invites are spoken for at that point.
+    // success block spells out their status. Only a KNOWN founder may read as a
+    // reserved Founder spot: WAITLISTNORMAL, already_joined and a bare "confirmed"
+    // (tier unknown) all get the priority-waitlist wording.
     const founderCta = document.getElementById("founder-cta");
     founderCta.className = "flex w-full items-center justify-center gap-2 bg-green-500/10 border border-green-400/30 text-green-300 font-montserrat font-extrabold py-3.5 rounded-xl";
     founderCta.innerHTML =
       '<svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' +
-      (displayStatus === "WAITLISTNORMAL" ? "You’re on the priority waitlist" : "Your spot in line is reserved");
+      (displayStatus === "WAITLISTFOUNDER" ? "Your spot in line is reserved" : "You’re on the priority waitlist");
   }
 
   // Double opt-in: shown after a new signup until the emailed link is clicked
   // (confirmed.html then stores "confirmed" and clears the pending address). The
   // price card CTA is left alone: nothing is reserved until the click.
   const pendingBlock = document.getElementById("pending-block");
+  // The address also lives here for the session, so "resend" works even when storage is blocked.
+  let pendingEmailMemory = null;
   function showPending(email, fadeIn) {
+    if (email) pendingEmailMemory = email;
     form.style.display = "none";
     document.getElementById("pending-email").textContent = email || "the address you entered";
     pendingBlock.classList.remove("hidden");
@@ -1029,13 +1034,32 @@
     navCta.textContent = "Check your email";
     navCta.setAttribute("href", "#join");
   }
+  // Back to an empty, working form (the loading animation collapsed the input and
+  // spent the Turnstile token), and forget the pending state in this browser.
+  function restoreForm() {
+    pendingBlock.classList.add("hidden");
+    pendingBlock.classList.add("opacity-0");
+    document.getElementById("pending-msg").innerHTML = "";
+    pendingEmailMemory = null;
+    clearPendingEmail();
+    clearStatus();
+    resetForm();
+    ts.reset();
+    form.style.display = "";
+    navCta.textContent = "Get my Freedom Date";
+    navCta.setAttribute("href", "/");
+  }
+  document.getElementById("pending-reset").addEventListener("click", () => {
+    restoreForm();
+    emailInput.focus();
+  });
   document.getElementById("pending-resend").addEventListener("click", async () => {
     const out = document.getElementById("pending-msg");
-    const pendingEmail = getPendingEmail();
+    const pendingEmail = getPendingEmail() || pendingEmailMemory;
     if (!pendingEmail) {
-      // Storage was blocked, so the address is gone: bring the form back for it.
-      pendingBlock.classList.add("hidden");
-      form.style.display = "";
+      // Nothing in storage and nothing in memory (a reload with storage blocked): a
+      // resend needs the address, so bring the form back for it.
+      restoreForm();
       showMsg("warn", "Enter your email again and we’ll send a new link.");
       return;
     }
@@ -1055,7 +1079,9 @@
 
   const savedStatus = getSavedStatus();
   if (savedStatus === "pending_confirmation") {
-    showPending(getPendingEmail(), false);
+    // An expired pending state (older than the link itself) reads as absent: the form comes back.
+    const pendingEmail = getPendingEmail();
+    if (pendingEmail) showPending(pendingEmail, false); else clearStatus();
   } else if (savedStatus) {
     showSuccess(savedStatus, false);
     // If this browser computed a date before signing up, show it back in the hero
@@ -1160,9 +1186,10 @@
 
       // Double opt-in: a new signup is pending until the emailed link is clicked.
       // For already_joined, persist the real status so refreshes show the right card.
-      const pending = data.requiresConfirmation === true && data.status !== "already_joined";
+      // (An unconfirmed address entered again is answered like a fresh signup by the backend.)
+      const pending = data.requiresConfirmation === true;
       saveStatus(pending ? "pending_confirmation" : (data.realStatus || data.status));
-      if (pending) savePendingEmail(email);
+      if (pending) { savePendingEmail(email); pendingEmailMemory = email; }
 
       joinBtn.style.opacity = "0";
       joinBtn.style.transition = "opacity 300ms ease";

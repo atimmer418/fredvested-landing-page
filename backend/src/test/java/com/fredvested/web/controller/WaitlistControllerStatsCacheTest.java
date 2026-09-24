@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
+import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
@@ -41,6 +42,7 @@ class WaitlistControllerStatsCacheTest {
     @MockBean WaitlistRepository repository;
     @MockBean TurnstileService turnstileService;
     @MockBean RateLimiterService rateLimiterService;
+    @MockBean AddressRateLimiter addressLimiter;
     @MockBean EmailService emailService;
     @MockBean EmailMessageRepository emailMessageRepository;
     @MockBean PlatformTransactionManager transactionManager;
@@ -67,6 +69,32 @@ class WaitlistControllerStatsCacheTest {
 
         mockMvc.perform(get("/api/waitlist/stats")).andExpect(status().isOk()).andExpect(jsonPath("$.count").value(41));
         verify(repository, times(3)).countByConfirmedAtIsNotNull(); // the signup response + one fresh read after invalidation
+    }
+
+    // Review finding 2026-09-24: under double opt-in the public numbers change on
+    // CONFIRMATION, not on signup, so a confirmation must invalidate the memo too.
+    @Autowired SignupService signupService;
+
+    @Test
+    void aConfirmation_invalidatesTheCache() throws Exception {
+        when(repository.countByConfirmedAtIsNotNull()).thenReturn(40L);
+        mockMvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(40));
+        mockMvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(40));
+        verify(repository, times(1)).countByConfirmedAtIsNotNull();
+
+        com.fredvested.web.service.ConfirmationTokens.Generated token = com.fredvested.web.service.ConfirmationTokens.generate();
+        com.fredvested.web.model.WaitlistEntry entry = new com.fredvested.web.model.WaitlistEntry();
+        entry.setId(3L);
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(java.time.LocalDateTime.now().plusDays(1));
+        entry.setStatus(com.fredvested.web.model.WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
+        when(repository.findByConfirmationTokenHash(token.hash())).thenReturn(java.util.Optional.of(entry));
+        when(repository.countByConfirmedAtIsNotNull()).thenReturn(41L);
+
+        signupService.confirm(token.raw());
+
+        mockMvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(41));
+        verify(repository, times(2)).countByConfirmedAtIsNotNull();
     }
 
     @Test

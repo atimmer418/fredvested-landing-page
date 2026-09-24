@@ -73,7 +73,7 @@ class ConfirmationGetIsSideEffectFreeTest {
 
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", token.raw()))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1"));
+                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1&tier=founder"));
         assertNotNull(entry.getConfirmedAt());
         assertNull(entry.getConfirmationTokenHash(), "single use: the hash is cleared");
 

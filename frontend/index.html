@@ -320,6 +320,7 @@
           <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: check your email.</p>
           <p class="mt-1.5 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
           <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? Check your spam folder, or <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">resend the email</button>.</p>
+          <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
           <div id="pending-msg" aria-live="polite"></div>
         </div>
       </div>
@@ -384,7 +385,7 @@
 
   const WITHDRAWAL_RATE = 0.04;
 
-  const { isValidEmail, getSavedStatus, saveStatus, savePendingEmail, getPendingEmail, saveFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
 
@@ -681,7 +682,10 @@
   // Double opt-in: shown after a new signup until the emailed link is clicked
   // (confirmed.html then stores "confirmed" and clears the pending address).
   const pendingBlock = document.getElementById("pending-block");
+  // The address also lives here for the session, so "resend" works even when storage is blocked.
+  let pendingEmailMemory = null;
   function showPending(email, fadeIn) {
+    if (email) pendingEmailMemory = email;
     form.style.display = "none";
     document.getElementById("capture-cta-note").hidden = true;
     document.getElementById("pending-email").textContent = email || "the address you entered";
@@ -693,13 +697,31 @@
       pendingBlock.classList.remove("opacity-0");
     }
   }
+  // Back to an empty, working form (the loading animation collapsed the input and
+  // spent the Turnstile token), and forget the pending state in this browser.
+  function restoreForm() {
+    pendingBlock.classList.add("hidden");
+    pendingBlock.classList.add("opacity-0");
+    document.getElementById("pending-msg").innerHTML = "";
+    pendingEmailMemory = null;
+    clearPendingEmail();
+    clearStatus();
+    resetForm();
+    ts.reset();
+    form.style.display = "";
+    document.getElementById("capture-cta-note").hidden = false;
+  }
+  document.getElementById("pending-reset").addEventListener("click", () => {
+    restoreForm();
+    emailInput.focus();
+  });
   document.getElementById("pending-resend").addEventListener("click", async () => {
     const out = document.getElementById("pending-msg");
-    const pendingEmail = getPendingEmail();
+    const pendingEmail = getPendingEmail() || pendingEmailMemory;
     if (!pendingEmail) {
-      // Storage was blocked, so the address is gone: bring the form back for it.
-      pendingBlock.classList.add("hidden");
-      form.style.display = "";
+      // Nothing in storage and nothing in memory (a reload with storage blocked): a
+      // resend needs the address, so bring the form back for it.
+      restoreForm();
       showMsg("warn", "Enter your email again and we’ll send a new link.");
       return;
     }
@@ -720,7 +742,9 @@
   // If they already joined on a previous visit, skip the form entirely.
   const savedStatus = getSavedStatus();
   if (savedStatus === "pending_confirmation") {
-    showPending(getPendingEmail(), false);
+    // An expired pending state (older than the link itself) reads as absent: the form comes back.
+    const pendingEmail = getPendingEmail();
+    if (pendingEmail) showPending(pendingEmail, false); else clearStatus();
   } else if (savedStatus) {
     showSuccess(savedStatus, false);
   }
@@ -828,9 +852,10 @@
 
       // Double opt-in: a new signup is pending until the emailed link is clicked.
       // For already_joined, persist the real status so refreshes show the right card.
-      const pending = data.requiresConfirmation === true && data.status !== "already_joined";
+      // (An unconfirmed address entered again is answered like a fresh signup by the backend.)
+      const pending = data.requiresConfirmation === true;
       saveStatus(pending ? "pending_confirmation" : (data.realStatus || data.status));
-      if (pending) savePendingEmail(email);
+      if (pending) { savePendingEmail(email); pendingEmailMemory = email; }
       if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
 
       // Fade the loading button out, then fade the success state in.

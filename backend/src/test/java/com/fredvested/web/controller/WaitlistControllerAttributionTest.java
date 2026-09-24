@@ -5,6 +5,7 @@ import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
+import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
@@ -44,6 +45,7 @@ class WaitlistControllerAttributionTest {
     @MockBean WaitlistRepository repository;
     @MockBean TurnstileService turnstileService;
     @MockBean RateLimiterService rateLimiterService;
+    @MockBean AddressRateLimiter addressLimiter;
     @MockBean EmailService emailService;
     @MockBean EmailMessageRepository emailMessageRepository;
     @MockBean PlatformTransactionManager transactionManager;
@@ -212,6 +214,7 @@ class WaitlistControllerAttributionTest {
     void alreadyJoined_isStill200_withAlreadyJoinedStatus() throws Exception {
         WaitlistEntry existing = new WaitlistEntry();
         existing.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER);
+        existing.setConfirmedAt(java.time.LocalDateTime.now()); // a confirmed member; an unconfirmed one is answered like a fresh signup
         when(repository.existsByEmail("test@example.com")).thenReturn(true);
         when(repository.findByEmail("test@example.com")).thenReturn(existing);
         submit(basePayload()).andExpect(status().isOk())

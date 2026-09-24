@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Map;
 
 /**
  * Sends due outbox rows. Per message:
@@ -156,7 +157,12 @@ public class EmailOutboxPublisher {
         }
 
         try {
-            String resendId = emailService.send(entry.getEmail(), rendered.subject(), rendered.html(), rendered.text());
+            // RFC 8058 one-click unsubscribe for mail clients: the same per-email token as
+            // the footer link. Mail clients POST "List-Unsubscribe=One-Click" to the URL.
+            Map<String, String> headers = Map.of(
+                    "List-Unsubscribe", "<" + unsubscribeUrl + ">",
+                    "List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+            String resendId = emailService.send(entry.getEmail(), rendered.subject(), rendered.html(), rendered.text(), headers);
             LocalDateTime sentAt = now();
             message.setResendEmailId(resendId);
             message.setStatus(EmailMessage.STATUS_SENT);

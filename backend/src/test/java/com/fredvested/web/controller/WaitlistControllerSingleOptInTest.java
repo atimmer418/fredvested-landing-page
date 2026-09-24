@@ -6,6 +6,7 @@ import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
+import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
@@ -43,6 +44,7 @@ class WaitlistControllerSingleOptInTest {
     @MockBean WaitlistRepository repository;
     @MockBean TurnstileService turnstileService;
     @MockBean RateLimiterService rateLimiterService;
+    @MockBean AddressRateLimiter addressLimiter;
     @MockBean EmailService emailService;
     @MockBean EmailMessageRepository emailMessageRepository;
     @MockBean PlatformTransactionManager transactionManager;

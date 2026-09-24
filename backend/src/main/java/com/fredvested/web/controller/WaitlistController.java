@@ -2,6 +2,7 @@ package com.fredvested.web.controller;
 
 import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.WaitlistRepository;
+import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,6 +47,11 @@ public class WaitlistController {
 
     @Autowired
     private SignupService signupService;
+
+    // Bounds the confirmation emails one address can be sent through the signup form
+    // (an unconfirmed address re-submitted gets a fresh link); same limiter as /resend-confirmation.
+    @Autowired
+    private AddressRateLimiter addressLimiter;
 
     private static final Logger log = LoggerFactory.getLogger(WaitlistController.class);
     private static final ZoneId EASTERN = ZoneId.of("America/New_York");
@@ -101,6 +108,13 @@ public class WaitlistController {
         private String deviceType;
     }
 
+    // Under double opt-in the public numbers change on confirmation, not on signup;
+    // SignupService announces both, and the memo drops its snapshot.
+    @EventListener(SignupService.WaitlistCountsChanged.class)
+    public void onWaitlistCountsChanged() {
+        cachedStats = null;
+    }
+
     // --- GET: Fetch Stats on Load ---
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
@@ -146,8 +160,19 @@ public class WaitlistController {
         // 2. Check if already joined — return their real status so the frontend can store it
         if (repository.existsByEmail(email)) {
             WaitlistEntry existing = repository.findByEmail(email);
+            if (signupService.isDoubleOptIn() && existing != null && !existing.isConfirmed()) {
+                // On the list but never confirmed: the person most likely lost or never got
+                // the email, so re-entering the address queues a fresh confirmation and is
+                // answered exactly like a fresh signup. Nothing in the response says the
+                // address was already known, so this is not a confirmation-status oracle.
+                if (addressLimiter.allow(email)) signupService.requestResend(email);
+                Map<String, Object> response = buildStatsMap(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL.name());
+                response.put("requiresConfirmation", true);
+                return ResponseEntity.ok(response);
+            }
             Map<String, Object> response = buildStatsMap("already_joined");
-            response.put("realStatus", existing.getStatus().name());
+            response.put("realStatus", existing != null && existing.getStatus() != null
+                    ? existing.getStatus().name() : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL.name());
             return ResponseEntity.ok(response);
         }
 

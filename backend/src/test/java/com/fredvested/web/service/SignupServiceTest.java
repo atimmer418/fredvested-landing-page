@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import org.springframework.context.ApplicationEventPublisher;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +23,8 @@ class SignupServiceTest {
 
     WaitlistRepository waitlist = mock(WaitlistRepository.class);
     EmailMessageRepository outbox = mock(EmailMessageRepository.class);
-    SignupService service = new SignupService(waitlist, outbox, true);
+    ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    SignupService service = new SignupService(waitlist, outbox, events, true);
 
     WaitlistEntry entry;
 
@@ -51,7 +54,7 @@ class SignupServiceTest {
 
     @Test
     void createSignup_queuesTheWelcomeEmail_whenDoubleOptInIsOff() {
-        SignupService single = new SignupService(waitlist, outbox, false);
+        SignupService single = new SignupService(waitlist, outbox, events, false);
         when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
         single.createSignup(entry);
         ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
@@ -167,12 +170,30 @@ class SignupServiceTest {
         entry.setConfirmationTokenHash(token.hash());
         entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
         entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
-        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(299L);
+        // Review finding 2026-09-24: the count must run BEFORE the row is dirtied, or
+        // Hibernate's auto-flush lets a WAITLISTFOUNDER placeholder count itself at the cap.
+        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenAnswer(inv -> {
+            assertNull(entry.getConfirmedAt(), "slot decided before confirmed_at is set");
+            return 299L;
+        });
 
-        assertEquals(SignupService.ConfirmOutcome.CONFIRMED, service.confirm(token.raw()).outcome());
+        SignupService.Confirmation result = service.confirm(token.raw());
 
+        assertEquals(SignupService.ConfirmOutcome.CONFIRMED, result.outcome());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, result.status(), "the decided tier travels with the outcome");
         assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
         assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, entry.getStatus());
+        // The public numbers changed: the stats cache must hear about it.
+        verify(events).publishEvent(any(SignupService.WaitlistCountsChanged.class));
+    }
+
+    @Test
+    void doubleOptInSignup_doesNotTouchTheStatsCache_butSingleOptInDoes() {
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        service.createSignup(entry);
+        verify(events, never()).publishEvent(any());
+        new SignupService(waitlist, outbox, events, false).createSignup(entry);
+        verify(events).publishEvent(any(SignupService.WaitlistCountsChanged.class));
     }
 
     @Test
@@ -183,9 +204,10 @@ class SignupServiceTest {
         entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
         when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(300L);
 
-        service.confirm(token.raw());
+        SignupService.Confirmation result = service.confirm(token.raw());
 
         assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL, entry.getStatus());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL, result.status());
         assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
     }
 
@@ -201,7 +223,7 @@ class SignupServiceTest {
 
     @Test
     void singleOptInSignup_isConfirmedAtOnce_andDecidesTheCapFromConfirmedRows() {
-        SignupService single = new SignupService(waitlist, outbox, false);
+        SignupService single = new SignupService(waitlist, outbox, events, false);
         when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(12L);
 

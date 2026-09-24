@@ -1,5 +1,6 @@
 package com.fredvested.web.controller;
 
+import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.LandingUrls;
 import com.fredvested.web.service.RateLimiterService;
@@ -84,20 +85,26 @@ class WaitlistConfirmationControllerTest {
 
     // --- POST /confirm: the act ---
 
+    // The redirect carries the hours band and the decided tier (founder|normal), so the
+    // landing pages can show the right status afterwards without a second request.
     @Test
-    void confirmPost_redirectsToTheConfirmedPage_withTheHoursBand() throws Exception {
-        when(signupService.confirm("tok")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "<1"));
+    void confirmPost_redirectsToTheConfirmedPage_withTheHoursBand_andTheDecidedTier() throws Exception {
+        when(signupService.confirm("tok")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "<1", WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok"))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1"));
-        when(signupService.confirm("tok2")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "72+"));
+                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1&tier=founder"));
+        when(signupService.confirm("tok2")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "72+", WaitlistEntry.WaitlistStatus.WAITLISTNORMAL));
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok2"))
-                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=72%2B"));
+                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=72%2B&tier=normal"));
+        // An invited/claimed row confirming late is neither: no tier parameter at all.
+        when(signupService.confirm("tok3")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "<1", WaitlistEntry.WaitlistStatus.INVITED));
+        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok3"))
+                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1"));
     }
 
     @Test
     void confirmPost_expired_redirectsToTheExpiredState() throws Exception {
-        when(signupService.confirm("old")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.EXPIRED, null));
+        when(signupService.confirm("old")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.EXPIRED, null, null));
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "old"))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=expired"));
@@ -105,7 +112,7 @@ class WaitlistConfirmationControllerTest {
 
     @Test
     void confirmPost_unknownAndAlreadyUsedTokens_produceByteIdenticalResponses() throws Exception {
-        when(signupService.confirm(anyString())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null));
+        when(signupService.confirm(anyString())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null, null));
         MockHttpServletResponse unknown = mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "never-issued")).andReturn().getResponse();
         MockHttpServletResponse used = mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "used-before")).andReturn().getResponse();
         assertEquals(unknown.getStatus(), used.getStatus());
@@ -117,7 +124,7 @@ class WaitlistConfirmationControllerTest {
 
     @Test
     void confirmPost_missingToken_isTheSameInvalidResponse() throws Exception {
-        when(signupService.confirm(isNull())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null));
+        when(signupService.confirm(isNull())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null, null));
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=invalid"));
@@ -161,10 +168,15 @@ class WaitlistConfirmationControllerTest {
         verify(signupService, never()).requestResend(anyString());
     }
 
-    // --- unsubscribe: same auto-POST-with-fallback pattern ---
+    // --- unsubscribe: a human click, never an auto-submit ---
+    // Review finding 2026-09-24: an auto-submitting unsubscribe page would let a
+    // JS-executing link scanner (Defender Safe Links, Proofpoint, Mimecast) suppress
+    // the address permanently and silently; suppression is never cleared, unlike a
+    // consumed confirm token, which resend recovers. One-click unsubscribe for mail
+    // clients goes through RFC 8058 headers instead (see the one-click test below).
 
     @Test
-    void unsubscribeGet_autoSubmits_withAFallbackButton_andNeverSuppresses() throws Exception {
+    void unsubscribeGet_onlyShowsAButton_andNeverSuppresses_andNeverAutoSubmits() throws Exception {
         when(signupService.hasUnsubscribeToken("good")).thenReturn(true);
         String page = mockMvc.perform(get("/api/waitlist/unsubscribe").param("token", "good"))
                 .andExpect(status().isOk())
@@ -173,11 +185,26 @@ class WaitlistConfirmationControllerTest {
                 .andReturn().getResponse().getContentAsString();
         assertTrue(page.contains("method=\"post\"") && page.contains("action=\"/api/waitlist/unsubscribe\""), page);
         assertTrue(page.contains("name=\"token\" value=\"good\""), page);
-        assertTrue(page.contains("<script>") && page.contains(".submit()"), page);
-        String noscript = page.substring(page.indexOf("<noscript>"), page.indexOf("</noscript>"));
-        assertTrue(noscript.contains("<button") && noscript.contains("Unsubscribe"), noscript);
+        assertTrue(page.contains("<button") && page.contains("Unsubscribe"), page);
+        assertFalse(page.contains("<script"), "no script of any kind: a JS-executing scanner must not be able to unsubscribe");
         assertFalse(page.contains("<link") || page.contains("src=") || page.contains("googleapis"), "self-contained page");
         verify(signupService, never()).unsubscribe(anyString());
+    }
+
+    @Test
+    void oneClickUnsubscribePost_perRfc8058_unsubscribes_andAnswers200_withoutARedirect() throws Exception {
+        when(signupService.unsubscribe("good")).thenReturn(true);
+        // Mail clients POST to the List-Unsubscribe URL (token in the query) with this exact body.
+        mockMvc.perform(post("/api/waitlist/unsubscribe").param("token", "good")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED).content("List-Unsubscribe=One-Click"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist("Location"));
+        verify(signupService).unsubscribe("good");
+        // Unknown token: same 200, so the endpoint is not a membership oracle for mail providers either.
+        when(signupService.unsubscribe("nope")).thenReturn(false);
+        mockMvc.perform(post("/api/waitlist/unsubscribe").param("token", "nope")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED).content("List-Unsubscribe=One-Click"))
+                .andExpect(status().isOk());
     }
 
     @Test

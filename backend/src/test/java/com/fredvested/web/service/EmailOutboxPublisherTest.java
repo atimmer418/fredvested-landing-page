@@ -10,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,14 +66,22 @@ class EmailOutboxPublisherTest {
 
     @Test
     void confirmationSend_mintsHashedTokens_storesTheResendId_andStampsTheSend() throws Exception {
-        when(emailService.send(eq("a@example.com"), anyString(), anyString(), anyString())).thenReturn("re_abc");
+        when(emailService.send(eq("a@example.com"), anyString(), anyString(), anyString(), anyMap())).thenReturn("re_abc");
         ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> hash = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<LocalDateTime> expires = ArgumentCaptor.forClass(LocalDateTime.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, String>> headers = ArgumentCaptor.forClass(Map.class);
 
         assertTrue(publisher.publish(message));
 
-        verify(emailService).send(eq("a@example.com"), eq("Confirm your email for FRED's waitlist"), html.capture(), anyString());
+        verify(emailService).send(eq("a@example.com"), eq("Confirm your email for FRED's waitlist"), html.capture(), anyString(), headers.capture());
+        // RFC 8058 one-click unsubscribe for mail clients (the safe substitute for an
+        // auto-submitting unsubscribe page): the same token as the footer link.
+        String unsubRawFromHeader = between(headers.getValue().get("List-Unsubscribe"), "/api/waitlist/unsubscribe?token=", ">");
+        assertEquals("List-Unsubscribe=One-Click", headers.getValue().get("List-Unsubscribe-Post"));
+        assertTrue(headers.getValue().get("List-Unsubscribe").startsWith("<https://lpapi.fredvested.com/api/waitlist/unsubscribe?token="), headers.getValue().toString());
+        assertEquals(message.getUnsubscribeTokenHash(), ConfirmationTokens.hash(unsubRawFromHeader));
         assertEquals("re_abc", message.getResendEmailId());
         assertEquals(EmailMessage.STATUS_SENT, message.getStatus());
         assertEquals((short) 1, message.getAttempts());
@@ -102,13 +111,16 @@ class EmailOutboxPublisherTest {
     @Test
     void publicApiUrl_isForcedToHttps_inEveryLink() throws Exception {
         EmailOutboxPublisher misconfigured = new EmailOutboxPublisher(outbox, waitlist, emailService, "http://lpapi-dev.fredvested.com", "[PO Box pending]", 3, 7, 15);
-        when(emailService.send(anyString(), anyString(), anyString(), anyString())).thenReturn("re_1");
+        when(emailService.send(anyString(), anyString(), anyString(), anyString(), anyMap())).thenReturn("re_1");
         ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, String>> headers = ArgumentCaptor.forClass(Map.class);
 
         assertTrue(misconfigured.publish(message));
 
-        verify(emailService).send(anyString(), anyString(), html.capture(), text.capture());
+        verify(emailService).send(anyString(), anyString(), html.capture(), text.capture(), headers.capture());
+        assertTrue(headers.getValue().get("List-Unsubscribe").startsWith("<https://"), "the header link is https too");
         for (String body : new String[] { html.getValue(), text.getValue() }) {
             assertTrue(body.contains("https://lpapi-dev.fredvested.com/api/waitlist/confirm?token="), body);
             assertTrue(body.contains("https://lpapi-dev.fredvested.com/api/waitlist/unsubscribe?token="), body);
@@ -120,12 +132,12 @@ class EmailOutboxPublisherTest {
     void localApiUrls_stayHttp_soLocalDevelopmentKeepsWorking() throws Exception {
         for (String local : new String[] { "http://localhost:8081", "http://127.0.0.1:8081/", "http://192.168.1.20:8081" }) {
             EmailService svc = mock(EmailService.class);
-            when(svc.send(anyString(), anyString(), anyString(), anyString())).thenReturn("re_l");
+            when(svc.send(anyString(), anyString(), anyString(), anyString(), anyMap())).thenReturn("re_l");
             EmailOutboxPublisher p = new EmailOutboxPublisher(outbox, waitlist, svc, local, "[PO Box pending]", 3, 7, 15);
             ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
             message.setStatus(EmailMessage.STATUS_PENDING);
             assertTrue(p.publish(message));
-            verify(svc).send(anyString(), anyString(), html.capture(), anyString());
+            verify(svc).send(anyString(), anyString(), html.capture(), anyString(), anyMap());
             String expected = local.replaceAll("/+$", "") + "/api/waitlist/confirm?token=";
             assertTrue(html.getValue().contains(expected), local + " -> " + expected);
         }
@@ -134,11 +146,11 @@ class EmailOutboxPublisherTest {
     @Test
     void welcomeTemplate_sendsTheWelcomeEmail_withoutAConfirmationToken() throws Exception {
         message.setTemplate(EmailMessage.TEMPLATE_WELCOME);
-        when(emailService.send(anyString(), anyString(), anyString(), anyString())).thenReturn("re_w");
+        when(emailService.send(anyString(), anyString(), anyString(), anyString(), anyMap())).thenReturn("re_w");
 
         publisher.publish(message);
 
-        verify(emailService).send(eq("a@example.com"), eq("You're in"), anyString(), anyString());
+        verify(emailService).send(eq("a@example.com"), eq("You're in"), anyString(), anyString(), anyMap());
         verify(waitlist, never()).setConfirmationToken(any(), any(), any());
         verify(waitlist, never()).markConfirmationSent(any(), any(), any());
         verify(waitlist).setEmailStatus(7L, EmailMessage.STATUS_SENT);
@@ -155,7 +167,7 @@ class EmailOutboxPublisherTest {
 
     @Test
     void resendFailure_leavesTheMessagePending_withBackoffAndTheErrorRecorded() throws Exception {
-        when(emailService.send(anyString(), anyString(), anyString(), anyString())).thenThrow(new RuntimeException("503 from Resend"));
+        when(emailService.send(anyString(), anyString(), anyString(), anyString(), anyMap())).thenThrow(new RuntimeException("503 from Resend"));
 
         publisher.publish(message);
 
@@ -170,7 +182,7 @@ class EmailOutboxPublisherTest {
 
     @Test
     void afterMaxAttempts_theMessageFails() throws Exception {
-        when(emailService.send(anyString(), anyString(), anyString(), anyString())).thenThrow(new RuntimeException("down"));
+        when(emailService.send(anyString(), anyString(), anyString(), anyString(), anyMap())).thenThrow(new RuntimeException("down"));
         message.setAttempts((short) 2); // max is 3 in this test
 
         publisher.publish(message);

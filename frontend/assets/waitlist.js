@@ -60,17 +60,29 @@
     try { localStorage.setItem('waitlist_status', status); } catch (e) { /* storage blocked */ }
   }
 
-  // Double opt-in: the address a confirmation was just sent to, so a reload keeps
-  // showing "check your email" with the address, and confirmed.html clears it.
-  // Stays in this browser only; never sent anywhere.
+  // Double opt-in: the address a confirmation was just sent to, and when, so a reload
+  // keeps showing "check your email" with the address, and confirmed.html clears it.
+  // A pending state older than the link's own lifetime (7 days) counts as absent, so a
+  // browser that never sees the confirmation (the link was clicked elsewhere) gets the
+  // form back. Stays in this browser only; never sent anywhere.
+  const PENDING_KEY = 'waitlist_pending';
+  const PENDING_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   function savePendingEmail(email) {
-    try { localStorage.setItem('waitlist_pending_email', email); } catch (e) { /* storage blocked */ }
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify({ email: email, at: Date.now() })); } catch (e) { /* storage blocked */ }
   }
   function getPendingEmail() {
-    try { return localStorage.getItem('waitlist_pending_email'); } catch (e) { return null; }
+    try {
+      const saved = JSON.parse(localStorage.getItem(PENDING_KEY));
+      if (!saved || !saved.email) return null;
+      if (Date.now() - (saved.at || 0) > PENDING_MAX_AGE_MS) { clearPendingEmail(); return null; }
+      return saved.email;
+    } catch (e) { return null; }
   }
   function clearPendingEmail() {
-    try { localStorage.removeItem('waitlist_pending_email'); } catch (e) { /* storage blocked */ }
+    try { localStorage.removeItem(PENDING_KEY); } catch (e) { /* storage blocked */ }
+  }
+  function clearStatus() {
+    try { localStorage.removeItem('waitlist_status'); } catch (e) { /* storage blocked */ }
   }
 
   // The freedom date computed at signup, so other pages can show it back.
@@ -203,6 +215,7 @@
     savePendingEmail,
     getPendingEmail,
     clearPendingEmail,
+    clearStatus,
     saveFreedomDate,
     getFreedomDate,
     fetchStats,

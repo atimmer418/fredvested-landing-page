@@ -6,6 +6,7 @@ import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.EmailService;
+import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.RateLimiterService;
 import com.fredvested.web.service.SignupService;
 import com.fredvested.web.service.TurnstileService;
@@ -25,6 +26,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -42,6 +44,7 @@ class WaitlistControllerEmailTest {
     @MockBean WaitlistRepository repository;
     @MockBean TurnstileService turnstileService;
     @MockBean RateLimiterService rateLimiterService;
+    @MockBean AddressRateLimiter addressLimiter;
     @MockBean EmailService emailService;
     @MockBean EmailMessageRepository emailMessageRepository;
     @MockBean PlatformTransactionManager transactionManager;
@@ -81,7 +84,7 @@ class WaitlistControllerEmailTest {
     @Test
     void joinWaitlist_isNotAffectedByResendBeingDown() throws Exception {
         // Resend is never called here, so there is nothing to fail: the send is the publisher's job.
-        doThrow(new RuntimeException("Resend unavailable")).when(emailService).send(anyString(), anyString(), anyString(), anyString());
+        doThrow(new RuntimeException("Resend unavailable")).when(emailService).send(anyString(), anyString(), anyString(), anyString(), anyMap());
 
         mockMvc.perform(post("/api/waitlist")
                 .contentType(MediaType.APPLICATION_JSON)

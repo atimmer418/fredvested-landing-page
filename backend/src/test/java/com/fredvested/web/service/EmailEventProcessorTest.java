@@ -100,7 +100,7 @@ class EmailEventProcessorTest {
     @Test
     void openedEvent_isIgnored_andNeverPersisted() throws Exception {
         EmailEventProcessor.Outcome out = processor.process("svix_o", event("email.opened", "2026-09-23T16:00:00Z", "re_123"), received);
-        assertNotEquals(EmailEventProcessor.Outcome.DUPLICATE, out);
+        assertEquals(EmailEventProcessor.Outcome.IGNORED, out);
         verify(events, never()).save(any());
         verify(outbox, never()).save(any());
         assertEquals(EmailMessage.STATUS_SENT, message.getStatus());
@@ -110,7 +110,7 @@ class EmailEventProcessorTest {
     void unknownEventTypes_areIgnored_andNeverPersisted() throws Exception {
         byte[] contact = "{\"type\":\"contact.created\",\"created_at\":\"2026-09-23T16:00:00Z\",\"data\":{\"email\":\"someone@example.com\"}}".getBytes(StandardCharsets.UTF_8);
         EmailEventProcessor.Outcome out = processor.process("svix_c1", contact, received);
-        assertNotEquals(EmailEventProcessor.Outcome.DUPLICATE, out);
+        assertEquals(EmailEventProcessor.Outcome.IGNORED, out);
         verify(events, never()).save(any());
         verify(outbox, never()).findByResendEmailIdForUpdate(any());
     }

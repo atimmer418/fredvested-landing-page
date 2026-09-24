@@ -7,6 +7,7 @@ import com.fredvested.web.repository.WaitlistRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,15 +30,24 @@ public class SignupService {
 
     private final WaitlistRepository waitlist;
     private final EmailMessageRepository outbox;
+    private final ApplicationEventPublisher events;
     private final boolean doubleOptIn;
 
     public SignupService(WaitlistRepository waitlist,
                          EmailMessageRepository outbox,
+                         ApplicationEventPublisher events,
                          @Value("${waitlist.double-opt-in.enabled:true}") boolean doubleOptIn) {
         this.waitlist = waitlist;
         this.outbox = outbox;
+        this.events = events;
         this.doubleOptIn = doubleOptIn;
     }
+
+    /**
+     * Published whenever the confirmed population changes (a confirmation, or a
+     * single-opt-in signup), so the public /stats memo can drop its snapshot.
+     */
+    public record WaitlistCountsChanged() {}
 
     public boolean isDoubleOptIn() {
         return doubleOptIn;
@@ -61,13 +71,16 @@ public class SignupService {
         if (doubleOptIn) {
             entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
         } else {
+            // Decide the slot before dirtying the row (see confirm()).
+            WaitlistEntry.WaitlistStatus decided = founderSlotStatus();
             entry.setConfirmedAt(now());
             entry.setConfirmedSource(WaitlistEntry.CONFIRMED_SINGLE_OPT_IN);
-            entry.setStatus(founderSlotStatus());
+            entry.setStatus(decided);
         }
         WaitlistEntry saved = waitlist.save(entry);
         if (saved == null) saved = entry;
         enqueue(saved, doubleOptIn ? EmailMessage.TEMPLATE_CONFIRMATION : EmailMessage.TEMPLATE_WELCOME);
+        if (!doubleOptIn) events.publishEvent(new WaitlistCountsChanged());
         return saved;
     }
 
@@ -82,8 +95,8 @@ public class SignupService {
 
     public enum ConfirmOutcome { CONFIRMED, EXPIRED, INVALID }
 
-    /** hoursBand is set only when CONFIRMED. */
-    public record Confirmation(ConfirmOutcome outcome, String hoursBand) {}
+    /** hoursBand and status (the row's tier after the decision) are set only when CONFIRMED. */
+    public record Confirmation(ConfirmOutcome outcome, String hoursBand, WaitlistEntry.WaitlistStatus status) {}
 
     /**
      * Single use: the token hash is cleared on success, so replaying the same
@@ -93,30 +106,36 @@ public class SignupService {
     @Transactional
     public Confirmation confirm(String rawToken) {
         String hash = ConfirmationTokens.hash(rawToken);
-        if (hash == null) return new Confirmation(ConfirmOutcome.INVALID, null);
+        if (hash == null) return new Confirmation(ConfirmOutcome.INVALID, null, null);
         Optional<WaitlistEntry> found = waitlist.findByConfirmationTokenHash(hash);
-        if (found.isEmpty()) return new Confirmation(ConfirmOutcome.INVALID, null);
+        if (found.isEmpty()) return new Confirmation(ConfirmOutcome.INVALID, null, null);
 
         WaitlistEntry entry = found.get();
         LocalDateTime now = now();
         if (entry.getConfirmationExpiresAt() == null || now.isAfter(entry.getConfirmationExpiresAt())) {
-            return new Confirmation(ConfirmOutcome.EXPIRED, null);
+            return new Confirmation(ConfirmOutcome.EXPIRED, null, null);
+        }
+        // The founder slot is decided now, against confirmed rows, and BEFORE this row is
+        // dirtied: the entity is managed, so a JPQL count after setConfirmedAt would auto-flush
+        // the row and let a WAITLISTFOUNDER placeholder count itself at the cap boundary.
+        // Only the two pre-invitation states are (re)decided; an invited or claimed row is
+        // left alone.
+        WaitlistEntry.WaitlistStatus decided = entry.getStatus();
+        if (decided == null
+                || decided == WaitlistEntry.WaitlistStatus.WAITLISTNORMAL
+                || decided == WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER) {
+            decided = founderSlotStatus();
         }
         entry.setConfirmedAt(now);
         entry.setConfirmedSource(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN);
         entry.setConfirmationTokenHash(null);
         entry.setConfirmationExpiresAt(null);
-        // The founder slot is decided now, against confirmed rows. Only the two
-        // pre-invitation states are (re)decided; an invited or claimed row is left alone.
-        if (entry.getStatus() == null
-                || entry.getStatus() == WaitlistEntry.WaitlistStatus.WAITLISTNORMAL
-                || entry.getStatus() == WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER) {
-            entry.setStatus(founderSlotStatus());
-        }
+        entry.setStatus(decided);
         waitlist.save(entry);
+        events.publishEvent(new WaitlistCountsChanged());
 
         LocalDateTime from = entry.getConfirmationSentAt() != null ? entry.getConfirmationSentAt() : entry.getCreatedAt();
-        return new Confirmation(ConfirmOutcome.CONFIRMED, hoursBand(from, now));
+        return new Confirmation(ConfirmOutcome.CONFIRMED, hoursBand(from, now), decided);
     }
 
     /**

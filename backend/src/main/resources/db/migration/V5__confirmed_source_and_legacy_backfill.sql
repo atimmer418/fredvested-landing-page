@@ -35,7 +35,9 @@ WHERE w.confirmed_at IS NULL
   AND NOT EXISTS (SELECT 1 FROM email_message m
                   WHERE m.waitlist_id = w.id AND m.template = 'waitlist_confirmation');
 
--- The weekly funnel, now with the confirmed split. Same measurement rules as
+-- The weekly funnel, now with the confirmed split. confirmed_source is NULL until a
+-- row confirms, so the per-source counts use the null-safe <=> comparison: a
+-- group whose rows are all pending must report 0, not NULL. Same measurement rules as
 -- V4: each signup's FIRST confirmation email that Resend accepted is the one
 -- measured; "delivered" means a delivered event was ever received for it.
 -- confirmed_rate is double-opt-in confirmations over delivered confirmation
@@ -51,13 +53,13 @@ SELECT
     SUM(w.confirmation_sent_at IS NOT NULL)                                                         AS confirmation_sent,
     SUM(m.resend_email_id IS NOT NULL AND EXISTS (SELECT 1 FROM email_event e WHERE e.resend_email_id = m.resend_email_id AND e.event_type = 'email.delivered'))                                                                     AS delivered,
     SUM(w.confirmed_at IS NOT NULL)                                                                 AS confirmed,
-    SUM(w.confirmed_source = 'double_opt_in')                                                       AS confirmed_double_opt_in,
-    SUM(w.confirmed_source = 'legacy')                                                              AS confirmed_legacy,
-    SUM(w.confirmed_source = 'single_opt_in')                                                       AS confirmed_single_opt_in,
+    SUM(w.confirmed_source <=> 'double_opt_in')                                                     AS confirmed_double_opt_in,
+    SUM(w.confirmed_source <=> 'legacy')                                                            AS confirmed_legacy,
+    SUM(w.confirmed_source <=> 'single_opt_in')                                                     AS confirmed_single_opt_in,
     SUM(w.status IN ('INVITED', 'CLAIMED'))                                                         AS beta_invited,
     ROUND(SUM(w.confirmation_sent_at IS NOT NULL) / NULLIF(COUNT(*), 0), 4)                         AS sent_rate,
     ROUND(SUM(m.resend_email_id IS NOT NULL AND EXISTS (SELECT 1 FROM email_event e WHERE e.resend_email_id = m.resend_email_id AND e.event_type = 'email.delivered')) / NULLIF(SUM(w.confirmation_sent_at IS NOT NULL), 0), 4)      AS delivered_rate,
-    ROUND(SUM(w.confirmed_source = 'double_opt_in') / NULLIF(SUM(m.resend_email_id IS NOT NULL AND EXISTS (SELECT 1 FROM email_event e WHERE e.resend_email_id = m.resend_email_id AND e.event_type = 'email.delivered')), 0), 4)    AS confirmed_rate,
+    ROUND(SUM(w.confirmed_source <=> 'double_opt_in') / NULLIF(SUM(m.resend_email_id IS NOT NULL AND EXISTS (SELECT 1 FROM email_event e WHERE e.resend_email_id = m.resend_email_id AND e.event_type = 'email.delivered')), 0), 4)  AS confirmed_rate,
     ROUND(SUM(w.status IN ('INVITED', 'CLAIMED')) / NULLIF(SUM(w.confirmed_at IS NOT NULL), 0), 4)  AS invited_rate,
     ROUND(IFNULL(SUM(m.status = 'bounced'), 0) / NULLIF(SUM(w.confirmation_sent_at IS NOT NULL), 0), 4)    AS bounce_rate,
     ROUND(IFNULL(SUM(m.status = 'complained'), 0) / NULLIF(SUM(w.confirmation_sent_at IS NOT NULL), 0), 4) AS complaint_rate

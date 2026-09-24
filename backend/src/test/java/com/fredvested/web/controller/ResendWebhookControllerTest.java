@@ -48,6 +48,20 @@ class ResendWebhookControllerTest {
         return String.valueOf(Instant.now().getEpochSecond());
     }
 
+    // Opens are not tracked: an email.opened (or any untracked type) is 200 "ok" like a
+    // recorded one, so Resend never retries it and nothing distinguishes it on the wire.
+    @Test
+    void ignoredType_is200Ok_indistinguishableFromRecorded() throws Exception {
+        when(processor.process(eq("msg_open"), any(), any())).thenReturn(EmailEventProcessor.Outcome.IGNORED);
+        String body = "{\"type\":\"email.opened\",\"created_at\":\"2026-09-23T12:00:00.000Z\",\"data\":{\"email_id\":\"re_123\"}}";
+        String ts = now();
+        mockMvc.perform(post("/api/webhooks/resend").contentType(MediaType.APPLICATION_JSON)
+                .header("svix-id", "msg_open").header("svix-timestamp", ts).header("svix-signature", sign("msg_open", ts, body))
+                .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
+    }
+
     @Test
     void validSignedPayload_isAcceptedAndPersisted() throws Exception {
         when(processor.process(eq("msg_1"), any(), any())).thenReturn(EmailEventProcessor.Outcome.RECORDED);
