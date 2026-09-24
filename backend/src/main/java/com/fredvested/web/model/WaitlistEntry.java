@@ -103,6 +103,21 @@ public class WaitlistEntry {
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
+    // How confirmed_at came to be set: 'double_opt_in' (clicked the confirmation link),
+    // 'legacy' (signed up before double opt-in; backfilled by V5, they received the old
+    // welcome email), or 'single_opt_in' (signed up while the double opt-in flag was off).
+    // The public statistic, the founder cap and the funnel count confirmed rows only.
+    @Column(name = "confirmed_source", length = 20)
+    private String confirmedSource;
+
+    public static final String CONFIRMED_DOUBLE_OPT_IN = "double_opt_in";
+    public static final String CONFIRMED_LEGACY = "legacy";
+    public static final String CONFIRMED_SINGLE_OPT_IN = "single_opt_in";
+
+    public boolean isConfirmed() {
+        return confirmedAt != null;
+    }
+
     // Denormalised latest delivery status of this address's most recent email
     @Column(name = "email_status", length = 20)
     private String emailStatus;

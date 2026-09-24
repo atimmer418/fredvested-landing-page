@@ -39,14 +39,21 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntry, Long> {
 
     long countByStatus(WaitlistEntry.WaitlistStatus status);
 
+    // Confirmed rows only (double opt-in, legacy backfill, or single opt-in): the public
+    // statistic and the founder cap never count an address nobody has confirmed.
+    long countByConfirmedAtIsNotNull();
+
+    long countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus status);
+
     // Rows behind the public head-start stat. The about page disclosure states the assumptions
-    // behind every averaged row, so only rows it accurately describes qualify: a calculator
-    // result the user actually adjusted (interacted), made with one of the current return
-    // scenarios (mirrors RETURN_* in index.html; older clients used different math and
-    // tampered payloads fall outside the set), and a freedom age inside the calculator's
-    // own bounds (18 to 100). Every head-start query below shares this one filter.
+    // behind every averaged row, so only rows it accurately describes qualify: a confirmed
+    // waitlist member, a calculator result the user actually adjusted (interacted), made with
+    // one of the current return scenarios (mirrors RETURN_* in index.html; older clients used
+    // different math and tampered payloads fall outside the set), and a freedom age inside the
+    // calculator's own bounds (18 to 100). Every head-start query below shares this one filter.
     String HEAD_START_ROWS = " FROM WaitlistEntry w"
-        + " WHERE w.freedomAge BETWEEN 18 AND 100"
+        + " WHERE w.confirmedAt IS NOT NULL"
+        + " AND w.freedomAge BETWEEN 18 AND 100"
         + " AND w.returnAssumptionPct IN (8, 10, 12)"
         + " AND w.interacted = true";
 

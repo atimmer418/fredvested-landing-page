@@ -47,18 +47,18 @@ class WaitlistControllerStatsCacheTest {
 
     @Test
     void repeatedStatsReads_hitTheDatabaseOnce_untilASignupInvalidates() throws Exception {
-        when(repository.count()).thenReturn(40L);
+        when(repository.countByConfirmedAtIsNotNull()).thenReturn(40L);
 
         mockMvc.perform(get("/api/waitlist/stats")).andExpect(status().isOk()).andExpect(jsonPath("$.count").value(40));
         mockMvc.perform(get("/api/waitlist/stats")).andExpect(status().isOk()).andExpect(jsonPath("$.count").value(40));
         mockMvc.perform(get("/api/waitlist/stats")).andExpect(status().isOk());
-        verify(repository, times(1)).count();
+        verify(repository, times(1)).countByConfirmedAtIsNotNull();
 
         when(rateLimiterService.isAllowed(anyString())).thenReturn(true);
         when(turnstileService.verifyToken(anyString())).thenReturn(true);
         when(repository.existsByEmail(anyString())).thenReturn(false);
         when(repository.countByStatus(any())).thenReturn(0L);
-        when(repository.count()).thenReturn(41L);
+        when(repository.countByConfirmedAtIsNotNull()).thenReturn(41L);
         mockMvc.perform(post("/api/waitlist")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of("email", "cache@example.com", "turnstileToken", "token"))))
@@ -66,12 +66,12 @@ class WaitlistControllerStatsCacheTest {
                 .andExpect(jsonPath("$.count").value(41));
 
         mockMvc.perform(get("/api/waitlist/stats")).andExpect(status().isOk()).andExpect(jsonPath("$.count").value(41));
-        verify(repository, times(3)).count(); // the signup response + one fresh read after invalidation
+        verify(repository, times(3)).countByConfirmedAtIsNotNull(); // the signup response + one fresh read after invalidation
     }
 
     @Test
     void statsNeverExposePerRowData() throws Exception {
-        when(repository.count()).thenReturn(5L);
+        when(repository.countByConfirmedAtIsNotNull()).thenReturn(5L);
         mockMvc.perform(get("/api/waitlist/stats"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").doesNotExist())

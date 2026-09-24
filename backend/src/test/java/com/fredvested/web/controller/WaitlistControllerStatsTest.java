@@ -41,7 +41,7 @@ class WaitlistControllerStatsTest {
 
     @Test
     void stats_includeProjectionCountBehindTheAverage() throws Exception {
-        when(repository.count()).thenReturn(40L);
+        when(repository.countByConfirmedAtIsNotNull()).thenReturn(40L);
         when(repository.getAverageFreedomAge()).thenReturn(54.5);
         when(repository.countHeadStartProjections()).thenReturn(31L);
 
@@ -66,7 +66,7 @@ class WaitlistControllerStatsTest {
 
     @Test
     void stats_projectionCountIsZeroWhenNoProjectionsExist() throws Exception {
-        when(repository.count()).thenReturn(3L);
+        when(repository.countByConfirmedAtIsNotNull()).thenReturn(3L);
         when(repository.getAverageFreedomAge()).thenReturn(null);
         when(repository.countHeadStartProjections()).thenReturn(0L);
         when(repository.getFirstProjectionAt()).thenReturn(null);

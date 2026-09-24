@@ -43,17 +43,41 @@ public class SignupService {
         return doubleOptIn;
     }
 
+    /** The first FOUNDER_CAP confirmed signups get WAITLISTFOUNDER; confirmed rows only. */
+    public static final int FOUNDER_CAP = 300;
+
     /**
      * Saves the signup and its pending email in the same transaction, so a crash
      * between the two can never lose the confirmation. The email itself is sent
      * asynchronously by EmailOutboxPublisher.
+     *
+     * Under double opt-in the row is unconfirmed and holds no founder slot: it is
+     * WAITLISTNORMAL as a placeholder until {@link #confirm} decides. With the flag
+     * off there is no confirmation step, so the row is confirmed at once (source
+     * single_opt_in) and the slot is decided here.
      */
     @Transactional
     public WaitlistEntry createSignup(WaitlistEntry entry) {
+        if (doubleOptIn) {
+            entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
+        } else {
+            entry.setConfirmedAt(now());
+            entry.setConfirmedSource(WaitlistEntry.CONFIRMED_SINGLE_OPT_IN);
+            entry.setStatus(founderSlotStatus());
+        }
         WaitlistEntry saved = waitlist.save(entry);
         if (saved == null) saved = entry;
         enqueue(saved, doubleOptIn ? EmailMessage.TEMPLATE_CONFIRMATION : EmailMessage.TEMPLATE_WELCOME);
         return saved;
+    }
+
+    // Decided against confirmed founders only, so unconfirmed signups never occupy a
+    // slot and the cap means "300 confirmed founders", whichever path confirmed them.
+    private WaitlistEntry.WaitlistStatus founderSlotStatus() {
+        long confirmedFounders = waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER);
+        return confirmedFounders < FOUNDER_CAP
+                ? WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER
+                : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL;
     }
 
     public enum ConfirmOutcome { CONFIRMED, EXPIRED, INVALID }
@@ -79,8 +103,16 @@ public class SignupService {
             return new Confirmation(ConfirmOutcome.EXPIRED, null);
         }
         entry.setConfirmedAt(now);
+        entry.setConfirmedSource(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN);
         entry.setConfirmationTokenHash(null);
         entry.setConfirmationExpiresAt(null);
+        // The founder slot is decided now, against confirmed rows. Only the two
+        // pre-invitation states are (re)decided; an invited or claimed row is left alone.
+        if (entry.getStatus() == null
+                || entry.getStatus() == WaitlistEntry.WaitlistStatus.WAITLISTNORMAL
+                || entry.getStatus() == WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER) {
+            entry.setStatus(founderSlotStatus());
+        }
         waitlist.save(entry);
 
         LocalDateTime from = entry.getConfirmationSentAt() != null ? entry.getConfirmationSentAt() : entry.getCreatedAt();

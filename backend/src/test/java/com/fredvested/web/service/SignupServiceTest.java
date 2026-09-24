@@ -149,6 +149,70 @@ class SignupServiceTest {
         verify(waitlist, times(1)).save(entry);
     }
 
+    // --- confirmed rows only: the founder cap is decided when a row becomes confirmed ---
+
+    @Test
+    void doubleOptInSignup_isUnconfirmed_andHoldsNoFounderSlot_untilConfirmed() {
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        service.createSignup(entry);
+        assertNull(entry.getConfirmedAt());
+        assertNull(entry.getConfirmedSource());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL, entry.getStatus(), "placeholder until confirmed");
+        verify(waitlist, never()).countByStatusAndConfirmedAtIsNotNull(any());
+    }
+
+    @Test
+    void confirm_tagsTheSource_andTakesAFounderSlot_whileConfirmedFoundersAreUnderTheCap() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
+        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(299L);
+
+        assertEquals(SignupService.ConfirmOutcome.CONFIRMED, service.confirm(token.raw()).outcome());
+
+        assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, entry.getStatus());
+    }
+
+    @Test
+    void confirm_leavesTheRowNormal_whenTheConfirmedFounderCapIsFull() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
+        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(300L);
+
+        service.confirm(token.raw());
+
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL, entry.getStatus());
+        assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
+    }
+
+    @Test
+    void confirm_neverDemotes_aRowThatAlreadyLeftTheFounderBucket() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+        entry.setStatus(WaitlistEntry.WaitlistStatus.INVITED);
+        service.confirm(token.raw());
+        assertEquals(WaitlistEntry.WaitlistStatus.INVITED, entry.getStatus());
+    }
+
+    @Test
+    void singleOptInSignup_isConfirmedAtOnce_andDecidesTheCapFromConfirmedRows() {
+        SignupService single = new SignupService(waitlist, outbox, false);
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(12L);
+
+        single.createSignup(entry);
+
+        assertNotNull(entry.getConfirmedAt());
+        assertEquals(WaitlistEntry.CONFIRMED_SINGLE_OPT_IN, entry.getConfirmedSource());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, entry.getStatus());
+        verify(waitlist, never()).countByStatus(any());
+    }
+
     @Test
     void hoursBand_boundaries() {
         LocalDateTime t = LocalDateTime.of(2026, 9, 23, 12, 0);

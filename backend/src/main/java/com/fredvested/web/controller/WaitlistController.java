@@ -151,13 +151,8 @@ public class WaitlistController {
             return ResponseEntity.ok(response);
         }
 
-        // 3. Determine Status based on Cap
-        long foundersCount = repository.countByStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER);
-        WaitlistEntry.WaitlistStatus newStatus = (foundersCount < 300)
-            ? WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER
-            : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL;
-
-        // 4. Save Entry
+        // 3. Build the entry. Its status (the founder cap) is decided by SignupService:
+        // at confirmation under double opt-in, at signup with the flag off.
         WaitlistEntry entry = new WaitlistEntry();
         entry.setEmail(email);
         entry.setCurrentAge(clampOrNull("age", request.getAge(), 18, 60));
@@ -169,18 +164,19 @@ public class WaitlistController {
         applyProjection(entry, request);
         applyAttribution(entry, request);
         entry.setRevealedBeforeSubmit(Boolean.TRUE.equals(request.getRevealedBeforeSubmit()));
-        entry.setStatus(newStatus);
         entry.setIpHash(hashedIp);
         // Saves the row and its pending email (confirmation, or the welcome email when
         // double opt-in is off) in one transaction. Nothing calls Resend on this thread:
         // the outbox publisher sends later and retries, so a Resend outage never costs
         // a signup and the HTTP response never waits on it.
-        signupService.createSignup(entry);
+        WaitlistEntry saved = signupService.createSignup(entry);
+        if (saved == null) saved = entry;
         cachedStats = null;
 
-        // 5. Return updated stats and status. requiresConfirmation tells the page whether a
+        // 4. Return updated stats and status. requiresConfirmation tells the page whether a
         // confirmation click is still needed (double opt-in), so its success copy can say so.
-        Map<String, Object> response = buildStatsMap(newStatus.name());
+        WaitlistEntry.WaitlistStatus status = saved.getStatus() != null ? saved.getStatus() : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL;
+        Map<String, Object> response = buildStatsMap(status.name());
         response.put("requiresConfirmation", signupService.isDoubleOptIn());
         return ResponseEntity.ok(response);
     }
@@ -254,10 +250,12 @@ public class WaitlistController {
     private Map<String, Object> buildStatsMap(String status) {
         Map<String, Object> map = new HashMap<>();
         map.put("status", status);
-        map.put("count", repository.count()); // Total rows in the table
+        // Confirmed rows only (double opt-in, legacy backfill, single opt-in): an address
+        // nobody has confirmed is never part of a public number.
+        map.put("count", repository.countByConfirmedAtIsNotNull());
         // Founder-cap occupancy: statuses like INVITED/CLAIMED leave the founder bucket
         // without leaving the table, so the cap UI must not be driven by total count
-        map.put("founderCount", repository.countByStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
+        map.put("founderCount", repository.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
         Double avg = repository.getAverageFreedomAge();
         map.put("avgFreedomAge", avg != null ? avg : 0.0);
         // How many members' projections are inside that average; the frontend
