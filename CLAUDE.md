@@ -73,7 +73,7 @@ cd backend
 
 Required env vars for dev: `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQLPASSWORD`
 Required for prod: above + `CLOUDFLARE_TURNSTILE_SECRET`, `CORS_ALLOWED_ORIGINS`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`
-Optional (defaults in `application*.properties`): `WAITLIST_DOUBLE_OPT_IN` (true), `API_PUBLIC_URL` (the API's own origin, used in email links), `EMAIL_FROM`, `WAITLIST_US_ONLY`
+Optional (defaults in `application*.properties`): `WAITLIST_DOUBLE_OPT_IN` (true), `API_PUBLIC_URL` (the API's own origin, used in email links), `EMAIL_FROM`, `POSTAL_ADDRESS` (rendered in every email footer; the visible placeholder `[PO Box pending]` until set), `WAITLIST_US_ONLY`
 
 `API_PUBLIC_URL` must be the https origin (`https://lpapi-dev.fredvested.com`, `https://lpapi.fredvested.com`). If it is given as `http://` for a non-local host, `EmailOutboxPublisher` upgrades emailed links to https and logs a WARN (Railway dev had it as http on 2026-09-24: the phone mail client never followed the edge's 301, and the single-use token had crossed the network in cleartext). Local hosts (localhost, 127.0.0.1, LAN ranges) keep http.
 
@@ -81,9 +81,11 @@ A variable that exists but is blank is treated as unset (`BlankEnvironmentVariab
 
 ### Email funnel (double opt-in)
 - Signup writes the waitlist row and a pending `email_message` row in one transaction; `EmailOutboxPublisher` (scheduled, single instance) sends it via Resend, refusing suppressed addresses, and mints the confirmation/unsubscribe tokens at send time so only their SHA-256 hashes are ever stored.
-- `GET /api/waitlist/confirm?token=` confirms once and redirects to the landing site's `/confirmed` page (`status=confirmed|expired|invalid`); unknown and already-used tokens are indistinguishable. `POST /api/waitlist/resend-confirmation` is rate limited per address (1/10 min, 3/day) and answers identically whether or not the address exists. `GET /api/waitlist/unsubscribe?token=` suppresses the address.
-- `POST /api/webhooks/resend` verifies the Svix signature over the raw body, rejects stale timestamps, is idempotent on `svix-id` (UNIQUE on `email_event`), ignores older events for a message that already has a newer status, and suppresses on bounce/complaint. Unknown message ids get a 200 and are ignored.
-- Weekly view: `v_waitlist_funnel`; suppressions: `v_email_suppressions`.
+- Both emailed links are two-step so mail security scanners (which GET every link, and almost never run JavaScript) cannot act on them: `GET /api/waitlist/confirm?token=` and `GET /api/waitlist/unsubscribe?token=` render a self-contained page whose inline script POSTs the token on load, with a visible button inside `<noscript>` as the only other control. `POST /confirm` confirms once and redirects to the landing site's `/confirmed` page (`status=confirmed|expired|invalid`); unknown and already-used tokens are byte-identical. `POST /unsubscribe` suppresses. `POST /api/waitlist/resend-confirmation` is rate limited per address (1/10 min, 3/day) and answers identically whether or not the address exists.
+- The confirmation email is consent-only (counsel, 2026-09-24): why they are receiving it, the link, the expiry, the unsubscribe link and the postal address, nothing promotional (`EmailTemplatesTest` holds the deny-list). Every email carries the unsubscribe link and `POSTAL_ADDRESS`.
+- `POST /api/webhooks/resend` verifies the Svix signature over the raw body, rejects stale timestamps, is idempotent on `svix-id` (UNIQUE on `email_event`), ignores older events for a message that already has a newer status, and suppresses on bounce/complaint. Unknown message ids get a 200 and are ignored. **Opens are not tracked**: open tracking is off on the sending domain, `email.opened` is not subscribed, and if one arrives anyway it (like any type outside `EmailEventProcessor.HANDLED`) is answered 200 and never stored. Click tracking stays (record only, with the click block stripped).
+- The public statistic, the founder cap and the funnel count **confirmed rows only** (`confirmed_at IS NOT NULL`). `confirmed_source` says how: `double_opt_in` (clicked the link), `legacy` (pre double opt-in, backfilled by V5 with `confirmed_at = created_at`; they received the old welcome email), `single_opt_in` (flag off). The founder slot is decided by `SignupService` when a row becomes confirmed, never at submit time under double opt-in.
+- Weekly view: `v_waitlist_funnel` (with the confirmed split by source); suppressions: `v_email_suppressions`.
 
 ### Founder Cap Logic
 The first 300 waitlist signups get `WAITLISTFOUNDER` status; subsequent signups get `WAITLISTNORMAL`.

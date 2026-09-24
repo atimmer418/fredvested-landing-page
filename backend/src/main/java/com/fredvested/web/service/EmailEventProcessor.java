@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Records a verified webhook event and applies it, in one short transaction.
@@ -42,7 +43,8 @@ public class EmailEventProcessor {
     private static final Logger log = LoggerFactory.getLogger(EmailEventProcessor.class);
     private static final ZoneId EASTERN = ZoneId.of("America/New_York");
 
-    public enum Outcome { RECORDED, DUPLICATE }
+    /** IGNORED: not a tracked type (email.opened, contact.*, anything unknown); answered 200, never stored. */
+    public enum Outcome { RECORDED, DUPLICATE, IGNORED }
 
     private final EmailEventRepository events;
     private final EmailMessageRepository outbox;
@@ -57,12 +59,27 @@ public class EmailEventProcessor {
         this.mapper = mapper;
     }
 
+    /**
+     * The only event types that exist for us. Anything else, including
+     * email.opened, is answered 200 and dropped before it touches the database:
+     * open tracking is off on the sending domain and email.opened is not
+     * subscribed (counsel, 2026-09-24), and persisting a stray one would be open
+     * tracking by another name. Click tracking stays (record only).
+     */
+    static final Set<String> HANDLED = Set.of(
+            "email.sent", "email.delivered", "email.delivery_delayed", "email.bounced",
+            "email.complained", "email.failed", "email.suppressed", "email.clicked");
+
     @Transactional
     public Outcome process(String svixId, byte[] body, LocalDateTime receivedAt) throws IOException {
-        if (events.existsBySvixId(svixId)) return Outcome.DUPLICATE;
-
         JsonNode root = mapper.readTree(body);
         String type = root.path("type").asText(null);
+        if (type == null || !HANDLED.contains(type)) {
+            log.info("Webhook type {} is not tracked; ignored", type);
+            return Outcome.IGNORED;
+        }
+        if (events.existsBySvixId(svixId)) return Outcome.DUPLICATE;
+
         JsonNode data = root.path("data");
         String emailId = data.path("email_id").asText(null);
         LocalDateTime occurredAt = parseInstant(root.path("created_at").asText(null));
@@ -123,8 +140,8 @@ public class EmailEventProcessor {
                 log.warn("Resend reported email.failed for message {}", message.getId());
             }
             case "email.suppressed" -> suppress(entry, WaitlistEntry.SUPPRESSION_MANUAL, occurredAt);
-            case "email.delivery_delayed", "email.opened", "email.clicked" -> { /* recorded only */ }
-            default -> log.info("Unhandled webhook type {} recorded only", type);
+            case "email.delivery_delayed", "email.clicked" -> { /* recorded only */ }
+            default -> log.warn("Webhook type {} passed the HANDLED filter but has no branch; recorded only", type);
         }
         outbox.save(message);
         if (entry != null) waitlist.save(entry);

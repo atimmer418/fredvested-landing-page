@@ -21,7 +21,7 @@ class EmailOutboxPublisherTest {
     EmailMessageRepository outbox = mock(EmailMessageRepository.class);
     WaitlistRepository waitlist = mock(WaitlistRepository.class);
     EmailService emailService = mock(EmailService.class);
-    EmailOutboxPublisher publisher = new EmailOutboxPublisher(outbox, waitlist, emailService, "https://lpapi.fredvested.com/", 3, 7, 15);
+    EmailOutboxPublisher publisher = new EmailOutboxPublisher(outbox, waitlist, emailService, "https://lpapi.fredvested.com/", "[PO Box pending]", 3, 7, 15);
 
     WaitlistEntry entry;
     EmailMessage message;
@@ -72,7 +72,7 @@ class EmailOutboxPublisherTest {
 
         assertTrue(publisher.publish(message));
 
-        verify(emailService).send(eq("a@example.com"), eq("Confirm your email for the FRED waitlist"), html.capture(), anyString());
+        verify(emailService).send(eq("a@example.com"), eq("Confirm your email for FRED's waitlist"), html.capture(), anyString());
         assertEquals("re_abc", message.getResendEmailId());
         assertEquals(EmailMessage.STATUS_SENT, message.getStatus());
         assertEquals((short) 1, message.getAttempts());
@@ -91,6 +91,7 @@ class EmailOutboxPublisherTest {
         assertEquals(message.getUnsubscribeTokenHash(), ConfirmationTokens.hash(unsubRaw));
         assertFalse(html.getValue().contains(hash.getValue()));
         assertTrue(html.getValue().contains("https://lpapi.fredvested.com/api/waitlist/confirm?token="), "trailing slash on api.public-url is trimmed");
+        assertTrue(html.getValue().contains("FREDvested LLC, [PO Box pending]"), "postal address placeholder stays visible until POSTAL_ADDRESS is set");
         assertTrue(Duration.between(LocalDateTime.now(), expires.getValue()).toHours() >= 7 * 24 - 1);
     }
 
@@ -100,7 +101,7 @@ class EmailOutboxPublisherTest {
     // always https, whatever the variable says; only local development stays http.
     @Test
     void publicApiUrl_isForcedToHttps_inEveryLink() throws Exception {
-        EmailOutboxPublisher misconfigured = new EmailOutboxPublisher(outbox, waitlist, emailService, "http://lpapi-dev.fredvested.com", 3, 7, 15);
+        EmailOutboxPublisher misconfigured = new EmailOutboxPublisher(outbox, waitlist, emailService, "http://lpapi-dev.fredvested.com", "[PO Box pending]", 3, 7, 15);
         when(emailService.send(anyString(), anyString(), anyString(), anyString())).thenReturn("re_1");
         ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
@@ -120,7 +121,7 @@ class EmailOutboxPublisherTest {
         for (String local : new String[] { "http://localhost:8081", "http://127.0.0.1:8081/", "http://192.168.1.20:8081" }) {
             EmailService svc = mock(EmailService.class);
             when(svc.send(anyString(), anyString(), anyString(), anyString())).thenReturn("re_l");
-            EmailOutboxPublisher p = new EmailOutboxPublisher(outbox, waitlist, svc, local, 3, 7, 15);
+            EmailOutboxPublisher p = new EmailOutboxPublisher(outbox, waitlist, svc, local, "[PO Box pending]", 3, 7, 15);
             ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
             message.setStatus(EmailMessage.STATUS_PENDING);
             assertTrue(p.publish(message));

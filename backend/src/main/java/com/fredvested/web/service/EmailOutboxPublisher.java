@@ -43,6 +43,8 @@ public class EmailOutboxPublisher {
     private final WaitlistRepository waitlist;
     private final EmailService emailService;
     private final String apiPublicUrl;
+    // Rendered in every email footer (CAN-SPAM). "[PO Box pending]" until POSTAL_ADDRESS is set.
+    private final String postalAddress;
     private final int maxAttempts;
     private final int ttlDays;
     private final int staleSendingMinutes;
@@ -51,6 +53,7 @@ public class EmailOutboxPublisher {
                                 WaitlistRepository waitlist,
                                 EmailService emailService,
                                 @Value("${api.public-url:http://localhost:8081}") String apiPublicUrl,
+                                @Value("${email.postal-address:[PO Box pending]}") String postalAddress,
                                 @Value("${email.outbox.max-attempts:12}") int maxAttempts,
                                 @Value("${waitlist.confirmation.ttl-days:7}") int ttlDays,
                                 @Value("${email.outbox.stale-sending-minutes:15}") int staleSendingMinutes) {
@@ -58,6 +61,7 @@ public class EmailOutboxPublisher {
         this.waitlist = waitlist;
         this.emailService = emailService;
         this.apiPublicUrl = publicBaseUrl(apiPublicUrl);
+        this.postalAddress = postalAddress;
         this.maxAttempts = maxAttempts;
         this.ttlDays = ttlDays;
         this.staleSendingMinutes = staleSendingMinutes;
@@ -146,9 +150,9 @@ public class EmailOutboxPublisher {
         if (confirmation) {
             ConfirmationTokens.Generated confirm = ConfirmationTokens.generate();
             waitlist.setConfirmationToken(entry.getId(), confirm.hash(), now.plusDays(ttlDays));
-            rendered = EmailTemplates.confirmation(apiPublicUrl + "/api/waitlist/confirm?token=" + confirm.raw(), unsubscribeUrl, ttlDays);
+            rendered = EmailTemplates.confirmation(apiPublicUrl + "/api/waitlist/confirm?token=" + confirm.raw(), unsubscribeUrl, ttlDays, postalAddress);
         } else {
-            rendered = EmailTemplates.welcome(unsubscribeUrl);
+            rendered = EmailTemplates.welcome(unsubscribeUrl, postalAddress);
         }
 
         try {

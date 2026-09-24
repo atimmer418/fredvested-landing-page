@@ -1,10 +1,11 @@
 package com.fredvested.web.service;
 
 /**
- * The two waitlist emails. Pure functions of their links; no personalisation
- * beyond the address, which is not in the body at all. Web-safe font stacks
- * only: a hosted font would make every recipient's mail client fetch from a
- * vendor the privacy policy does not name.
+ * The two waitlist emails. Pure functions of their links and the postal
+ * address; no personalisation beyond the To header (the address is not in the
+ * body at all). Web-safe and system font stacks only: a hosted font would make
+ * every recipient's mail client fetch from a vendor the privacy policy does not
+ * name. Every email carries an unsubscribe link and the postal address.
  */
 public final class EmailTemplates {
 
@@ -12,32 +13,32 @@ public final class EmailTemplates {
 
     public record Rendered(String subject, String html, String text) {}
 
-    public static Rendered confirmation(String confirmUrl, String unsubscribeUrl, int ttlDays) {
-        String subject = "Confirm your email for the FRED waitlist";
+    /**
+     * Consent only (counsel, 2026-09-24): a double opt-in email exists to obtain
+     * consent, so it is not transactional and carries nothing promotional. Subject,
+     * one sentence on why they are receiving it, the link, the expiry, the
+     * unsubscribe link and the postal address. EmailTemplatesTest holds the
+     * deny-list of promotional phrases taken from the page copy.
+     */
+    public static Rendered confirmation(String confirmUrl, String unsubscribeUrl, int ttlDays, String postalAddress) {
+        String subject = "Confirm your email for FRED's waitlist";
         String text = """
-One more step: confirm your email to secure your spot on FRED's private beta waitlist.
+You're receiving this email because this address was entered on the waitlist form at fredvested.com. To finish signing up, confirm your email:
 
-Confirm your email:
 %s
 
-This link works for %d days. If you didn't sign up, you can ignore this email and nothing will happen.
-
-WHAT HAPPENS NEXT
-
-- Signups are reviewed in waves
-- If invited, you'll get an email with next steps to claim access
-- Access is limited: you'll have 48 hours to claim your spot when invited
+This link expires in %d days. If you didn't sign up, you can ignore this email and nothing will happen.
 
 The FRED Team
 help@fredvested.com
 
-You're receiving this because this address was entered at fredvested.com.
 Unsubscribe: %s
-""".formatted(confirmUrl, ttlDays, unsubscribeUrl);
+FREDvested LLC, %s
+""".formatted(confirmUrl, ttlDays, unsubscribeUrl, postalAddress);
 
         String html = shell("Confirm your email", """
               <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#0F172A;">
-                One more step: confirm your email to secure your spot on <strong>FRED's private beta waitlist</strong>.
+                You&#39;re receiving this email because this address was entered on the waitlist form at fredvested.com. To finish signing up, confirm your email.
               </p>
               <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                 <tr>
@@ -46,14 +47,15 @@ Unsubscribe: %s
                   </td>
                 </tr>
               </table>
-              <p style="margin:0 0 24px;font-size:13px;line-height:1.6;color:#64748B;">
-                This link works for %d days. If you didn&#39;t sign up, you can ignore this email and nothing will happen.
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#64748B;">
+                This link expires in %d days. If you didn&#39;t sign up, you can ignore this email and nothing will happen.
               </p>
-""".formatted(confirmUrl, ttlDays) + NEXT_STEPS, unsubscribeUrl);
+""".formatted(confirmUrl, ttlDays), unsubscribeUrl, postalAddress);
         return new Rendered(subject, html, text);
     }
 
-    public static Rendered welcome(String unsubscribeUrl) {
+    /** The single-opt-in path (double opt-in flag off): the original welcome email. */
+    public static Rendered welcome(String unsubscribeUrl, String postalAddress) {
         String subject = "You're in";
         String text = """
 You're on FRED's private beta waitlist.
@@ -72,7 +74,9 @@ The FRED Team
 help@fredvested.com
 
 You're receiving this because you signed up at fredvested.com.
-""" + "Unsubscribe: " + unsubscribeUrl + "\n";
+Unsubscribe: %s
+FREDvested LLC, %s
+""".formatted(unsubscribeUrl, postalAddress);
 
         String html = shell("You&#39;re in", """
               <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#0F172A;">
@@ -86,7 +90,7 @@ You're receiving this because you signed up at fredvested.com.
               <p style="margin:0;font-size:15px;line-height:1.7;color:#334155;">
                 You don&#39;t need to do anything else right now. You&#39;re in line.
               </p>
-""", unsubscribeUrl);
+""", unsubscribeUrl, postalAddress);
         return new Rendered(subject, html, text);
     }
 
@@ -111,7 +115,7 @@ You're receiving this because you signed up at fredvested.com.
               </table>
 """;
 
-    private static String shell(String title, String body, String unsubscribeUrl) {
+    private static String shell(String title, String body, String unsubscribeUrl, String postalAddress) {
         return """
 <!DOCTYPE html>
 <html>
@@ -146,11 +150,19 @@ You're receiving this because you signed up at fredvested.com.
           You&#39;re receiving this because this address was entered at fredvested.com.
           <a href="%s" style="color:#94a3b8;">Unsubscribe</a>
         </p>
+        <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
+          FREDvested LLC, %s
+        </p>
       </td>
     </tr>
   </table>
 </body>
 </html>
-""".formatted(title, body, unsubscribeUrl);
+""".formatted(title, body, unsubscribeUrl, escape(postalAddress));
+    }
+
+    private static String escape(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }

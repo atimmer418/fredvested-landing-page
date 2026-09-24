@@ -6,13 +6,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class EmailServiceTest {
 
+    static final String ADDR = "PO Box 123, Baltimore, MD 21201";
+
     @Test
     void confirmationEmail_carriesTheLinks_andNoHostedFont() {
         EmailTemplates.Rendered r = EmailTemplates.confirmation(
                 "https://lpapi.fredvested.com/api/waitlist/confirm?token=abc",
-                "https://lpapi.fredvested.com/api/waitlist/unsubscribe?token=xyz", 7);
+                "https://lpapi.fredvested.com/api/waitlist/unsubscribe?token=xyz", 7, ADDR);
 
-        assertThat(r.subject()).isEqualTo("Confirm your email for the FRED waitlist");
+        assertThat(r.subject()).isEqualTo("Confirm your email for FRED's waitlist");
         assertThat(r.html()).contains("confirm?token=abc").contains("unsubscribe?token=xyz");
         assertThat(r.text()).contains("confirm?token=abc").contains("Unsubscribe: https://lpapi.fredvested.com/api/waitlist/unsubscribe?token=xyz");
         assertThat(r.html()).contains("Confirm my email").contains("7 days").contains("The FRED Team");
@@ -24,14 +26,14 @@ class EmailServiceTest {
 
     @Test
     void confirmationEmail_statesTheConfiguredExpiry() {
-        EmailTemplates.Rendered r = EmailTemplates.confirmation("https://x/c?token=a", "https://x/u?token=b", 10);
+        EmailTemplates.Rendered r = EmailTemplates.confirmation("https://x/c?token=a", "https://x/u?token=b", 10, ADDR);
         assertThat(r.html()).contains("10 days").doesNotContain("7 days");
         assertThat(r.text()).contains("10 days");
     }
 
     @Test
     void welcomeEmail_keepsTheCopy_andCarriesTheUnsubscribeLink() {
-        EmailTemplates.Rendered r = EmailTemplates.welcome("https://lpapi.fredvested.com/api/waitlist/unsubscribe?token=xyz");
+        EmailTemplates.Rendered r = EmailTemplates.welcome("https://lpapi.fredvested.com/api/waitlist/unsubscribe?token=xyz", ADDR);
 
         assertThat(r.subject()).isEqualTo("You're in");
         assertThat(r.html()).contains("FRED's private beta waitlist");
@@ -49,7 +51,7 @@ class EmailServiceTest {
     @Test
     void emailsNeverContainTheRecipientsAddress() {
         // Only the address is personal data, and it lives in the To header, not the body.
-        EmailTemplates.Rendered r = EmailTemplates.confirmation("https://x/confirm?token=a", "https://x/unsubscribe?token=b", 7);
+        EmailTemplates.Rendered r = EmailTemplates.confirmation("https://x/confirm?token=a", "https://x/unsubscribe?token=b", 7, ADDR);
         assertThat(r.html()).doesNotContain("@example.com");
         assertThat(r.text()).doesNotContain("@example.com");
     }

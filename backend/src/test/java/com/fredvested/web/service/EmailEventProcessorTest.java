@@ -94,10 +94,31 @@ class EmailEventProcessorTest {
         verify(events, times(2)).save(any()); // still recorded, just not applied
     }
 
+    // Counsel, 2026-09-24: open tracking is off entirely. email.opened is not subscribed;
+    // if one arrives anyway it is answered 200 and ignored like any unknown event, and
+    // it is never persisted (persisting it would be open tracking by another name).
+    @Test
+    void openedEvent_isIgnored_andNeverPersisted() throws Exception {
+        EmailEventProcessor.Outcome out = processor.process("svix_o", event("email.opened", "2026-09-23T16:00:00Z", "re_123"), received);
+        assertNotEquals(EmailEventProcessor.Outcome.DUPLICATE, out);
+        verify(events, never()).save(any());
+        verify(outbox, never()).save(any());
+        assertEquals(EmailMessage.STATUS_SENT, message.getStatus());
+    }
+
+    @Test
+    void unknownEventTypes_areIgnored_andNeverPersisted() throws Exception {
+        byte[] contact = "{\"type\":\"contact.created\",\"created_at\":\"2026-09-23T16:00:00Z\",\"data\":{\"email\":\"someone@example.com\"}}".getBytes(StandardCharsets.UTF_8);
+        EmailEventProcessor.Outcome out = processor.process("svix_c1", contact, received);
+        assertNotEquals(EmailEventProcessor.Outcome.DUPLICATE, out);
+        verify(events, never()).save(any());
+        verify(outbox, never()).findByResendEmailIdForUpdate(any());
+    }
+
     @Test
     void recordOnlyEvents_doNotMoveTheOrderingWatermark() throws Exception {
         processor.process("s1", event("email.sent", "2026-09-23T15:00:00Z", "re_123"), received);
-        processor.process("s3", event("email.opened", "2026-09-23T17:00:00Z", "re_123"), received);
+        processor.process("s3", event("email.clicked", "2026-09-23T17:00:00Z", "re_123"), received);
         // "delivered" arrives late but is newer than the last status change ("sent")
         processor.process("s2", event("email.delivered", "2026-09-23T16:00:00Z", "re_123"), received);
 
