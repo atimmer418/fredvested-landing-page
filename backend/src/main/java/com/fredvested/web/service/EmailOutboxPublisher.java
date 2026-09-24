@@ -57,10 +57,42 @@ public class EmailOutboxPublisher {
         this.outbox = outbox;
         this.waitlist = waitlist;
         this.emailService = emailService;
-        this.apiPublicUrl = apiPublicUrl.replaceAll("/+$", "");
+        this.apiPublicUrl = publicBaseUrl(apiPublicUrl);
         this.maxAttempts = maxAttempts;
         this.ttlDays = ttlDays;
         this.staleSendingMinutes = staleSendingMinutes;
+    }
+
+    /**
+     * The base every emailed link is built on. Trailing slashes are dropped, and a
+     * public host is forced to https whatever the variable says: the links carry
+     * single-use tokens, and an http link sends the token in cleartext before the
+     * edge's 301 upgrades it (and some phone mail clients never follow that 301).
+     * Only local development hosts keep http.
+     */
+    static String publicBaseUrl(String configured) {
+        String base = configured.trim().replaceAll("/+$", "");
+        if (!base.regionMatches(true, 0, "http://", 0, 7)) return base;
+        String host;
+        try {
+            host = java.net.URI.create(base).getHost();
+        } catch (IllegalArgumentException e) {
+            host = null;
+        }
+        if (host != null && isLocalHost(host)) return base;
+        String upgraded = "https://" + base.substring(7);
+        log.warn("api.public-url is {}; emailed links will use {} instead. Set API_PUBLIC_URL to the https origin.", base, upgraded);
+        return upgraded;
+    }
+
+    private static boolean isLocalHost(String host) {
+        return host.equals("localhost")
+                || host.equals("127.0.0.1")
+                || host.equals("::1")
+                || host.equals("[::1]")
+                || host.startsWith("192.168.")
+                || host.startsWith("10.")
+                || host.matches("172\\.(1[6-9]|2\\d|3[01])\\..*");
     }
 
     @Scheduled(fixedDelayString = "${email.outbox.poll-ms:5000}", initialDelayString = "${email.outbox.initial-delay-ms:10000}")

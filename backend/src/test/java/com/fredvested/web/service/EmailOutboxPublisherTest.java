@@ -94,6 +94,42 @@ class EmailOutboxPublisherTest {
         assertTrue(Duration.between(LocalDateTime.now(), expires.getValue()).toHours() >= 7 * 24 - 1);
     }
 
+    // Railway dev, 2026-09-24: API_PUBLIC_URL had been entered as http://. Desktop mail
+    // clients followed Cloudflare's 301 to https, the phone did not, and either way the
+    // single-use token had crossed the network in cleartext first. A public host is
+    // always https, whatever the variable says; only local development stays http.
+    @Test
+    void publicApiUrl_isForcedToHttps_inEveryLink() throws Exception {
+        EmailOutboxPublisher misconfigured = new EmailOutboxPublisher(outbox, waitlist, emailService, "http://lpapi-dev.fredvested.com", 3, 7, 15);
+        when(emailService.send(anyString(), anyString(), anyString(), anyString())).thenReturn("re_1");
+        ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
+
+        assertTrue(misconfigured.publish(message));
+
+        verify(emailService).send(anyString(), anyString(), html.capture(), text.capture());
+        for (String body : new String[] { html.getValue(), text.getValue() }) {
+            assertTrue(body.contains("https://lpapi-dev.fredvested.com/api/waitlist/confirm?token="), body);
+            assertTrue(body.contains("https://lpapi-dev.fredvested.com/api/waitlist/unsubscribe?token="), body);
+            assertFalse(body.contains("http://"), "no cleartext link anywhere: " + body);
+        }
+    }
+
+    @Test
+    void localApiUrls_stayHttp_soLocalDevelopmentKeepsWorking() throws Exception {
+        for (String local : new String[] { "http://localhost:8081", "http://127.0.0.1:8081/", "http://192.168.1.20:8081" }) {
+            EmailService svc = mock(EmailService.class);
+            when(svc.send(anyString(), anyString(), anyString(), anyString())).thenReturn("re_l");
+            EmailOutboxPublisher p = new EmailOutboxPublisher(outbox, waitlist, svc, local, 3, 7, 15);
+            ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
+            message.setStatus(EmailMessage.STATUS_PENDING);
+            assertTrue(p.publish(message));
+            verify(svc).send(anyString(), anyString(), html.capture(), anyString());
+            String expected = local.replaceAll("/+$", "") + "/api/waitlist/confirm?token=";
+            assertTrue(html.getValue().contains(expected), local + " -> " + expected);
+        }
+    }
+
     @Test
     void welcomeTemplate_sendsTheWelcomeEmail_withoutAConfirmationToken() throws Exception {
         message.setTemplate(EmailMessage.TEMPLATE_WELCOME);

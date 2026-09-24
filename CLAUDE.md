@@ -75,6 +75,8 @@ Required env vars for dev: `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER
 Required for prod: above + `CLOUDFLARE_TURNSTILE_SECRET`, `CORS_ALLOWED_ORIGINS`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`
 Optional (defaults in `application*.properties`): `WAITLIST_DOUBLE_OPT_IN` (true), `API_PUBLIC_URL` (the API's own origin, used in email links), `EMAIL_FROM`, `WAITLIST_US_ONLY`
 
+`API_PUBLIC_URL` must be the https origin (`https://lpapi-dev.fredvested.com`, `https://lpapi.fredvested.com`). If it is given as `http://` for a non-local host, `EmailOutboxPublisher` upgrades emailed links to https and logs a WARN (Railway dev had it as http on 2026-09-24: the phone mail client never followed the edge's 301, and the single-use token had crossed the network in cleartext). Local hosts (localhost, 127.0.0.1, LAN ranges) keep http.
+
 A variable that exists but is blank is treated as unset (`BlankEnvironmentVariables`, an `EnvironmentPostProcessor`): the default applies and startup logs a WARN naming the variable. Spring's own `${VAR:default}` only falls back when the variable is absent, and a blank boolean took Railway dev down on 2026-09-24. Variables without a default (`CLOUDFLARE_TURNSTILE_SECRET`, the MySQL ones, prod's `RESEND_WEBHOOK_SECRET`) still fail startup when blank, on purpose.
 
 ### Email funnel (double opt-in)
