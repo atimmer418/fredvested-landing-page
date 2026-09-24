@@ -127,7 +127,7 @@ You're receiving this because you signed up at fredvested.com.
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
           <tr>
             <td style="background-color:#ffffff;padding:32px 40px;text-align:center;border-bottom:3px solid #135bec;">
-              <span style="font-family:'Arial Black',Arial,Helvetica,sans-serif;font-size:42px;font-weight:900;font-style:italic;color:#135bec;letter-spacing:-1px;line-height:1;">FRED</span>
+              <span style="font-family:'Arial Black','Avenir Next',Arial,Helvetica,sans-serif;font-size:42px;font-weight:900;font-style:italic;color:#135bec;letter-spacing:-1px;line-height:1;">FRED</span>
             </td>
           </tr>
           <tr>
