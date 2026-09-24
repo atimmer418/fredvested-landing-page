@@ -9,7 +9,16 @@
     || location.protocol === 'file:'
     || isLanHost;
 
+  // Cloudflare Pages previews (develop.<project>.pages.dev, the per-deployment
+  // hashes, and the bare project domain) are dev: they talk to lpapi-dev with the
+  // Turnstile test key, so a preview signup never lands in the production
+  // database. Only the real domain is production.
+  const PAGES_PROJECT = 'fredvested-landing-page.pages.dev';
+  const isPreview = location.hostname === PAGES_PROJECT
+    || location.hostname.endsWith('.' + PAGES_PROJECT);
+
   const isDev = isLocal
+    || isPreview
     || location.hostname.endsWith('.ngrok-free.app')
     || location.hostname.endsWith('.ngrok.io');
 
@@ -166,6 +175,8 @@
 
   global.FredWaitlist = {
     isDev,
+    API_BASE,
+    TURNSTILE_SITEKEY,
     STAT_TILE_MIN_N,
     isValidEmail,
     getSavedStatus,
