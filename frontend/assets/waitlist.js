@@ -17,10 +17,16 @@
   const isPreview = location.hostname === PAGES_PROJECT
     || location.hostname.endsWith('.' + PAGES_PROJECT);
 
-  const isDev = isLocal
-    || isPreview
-    || location.hostname.endsWith('.ngrok-free.app')
+  const isNgrok = location.hostname.endsWith('.ngrok-free.app')
     || location.hostname.endsWith('.ngrok.io');
+
+  const isDev = isLocal || isPreview || isNgrok;
+
+  // Clean paths (/about, /privacy, /terms) need the .html suffix only where nothing
+  // maps clean URLs: this machine's static server, also when reached through ngrok.
+  // Cloudflare Pages maps them itself, on previews as much as in production, and
+  // redirects /privacy.html to /privacy; links must never point at the .html form there.
+  const needsHtmlLinks = isLocal || isNgrok;
 
   // Cloudflare test key (always passes) in dev; real sitekey in production
   const TURNSTILE_SITEKEY = isDev
@@ -52,6 +58,19 @@
   }
   function saveStatus(status) {
     try { localStorage.setItem('waitlist_status', status); } catch (e) { /* storage blocked */ }
+  }
+
+  // Double opt-in: the address a confirmation was just sent to, so a reload keeps
+  // showing "check your email" with the address, and confirmed.html clears it.
+  // Stays in this browser only; never sent anywhere.
+  function savePendingEmail(email) {
+    try { localStorage.setItem('waitlist_pending_email', email); } catch (e) { /* storage blocked */ }
+  }
+  function getPendingEmail() {
+    try { return localStorage.getItem('waitlist_pending_email'); } catch (e) { return null; }
+  }
+  function clearPendingEmail() {
+    try { localStorage.removeItem('waitlist_pending_email'); } catch (e) { /* storage blocked */ }
   }
 
   // The freedom date computed at signup, so other pages can show it back.
@@ -166,7 +185,7 @@
   // Clean URLs (/about, /privacy) resolve to .html files when developing
   // locally; production hosting maps the clean paths itself.
   function devLinkMap(map) {
-    if (!isDev) return;
+    if (!needsHtmlLinks) return;
     document.querySelectorAll('a[href]').forEach((a) => {
       const href = a.getAttribute('href');
       if (map[href]) a.href = map[href];
@@ -181,6 +200,9 @@
     isValidEmail,
     getSavedStatus,
     saveStatus,
+    savePendingEmail,
+    getPendingEmail,
+    clearPendingEmail,
     saveFreedomDate,
     getFreedomDate,
     fetchStats,

@@ -775,6 +775,16 @@
         <p class="text-sm font-medium text-green-700"><b>You&rsquo;re in!</b> <span id="success-note"></span></p>
       </div>
     </div>
+
+    <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
+    <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300">
+      <div class="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-left">
+        <p class="text-sm font-bold text-navy">One more step: check your email.</p>
+        <p class="mt-1 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
+        <p class="mt-2 text-[13px] text-slate-text">Didn&rsquo;t get it? Check your spam folder, or <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">resend the email</button>.</p>
+        <div id="pending-msg" aria-live="polite"></div>
+      </div>
+    </div>
   </div>
 
   <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
@@ -863,7 +873,7 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 (function () {
-  const { isValidEmail, getSavedStatus, saveStatus, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
+  const { isValidEmail, getSavedStatus, saveStatus, savePendingEmail, getPendingEmail, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
 
@@ -881,6 +891,8 @@
     WAITLISTFOUNDER: "You’re in line for a Founder invite.",
     WAITLISTNORMAL: "You’re on the priority waitlist for a Founder spot.",
     already_joined: "You’re already on the list.",
+    // Set by confirmed.html once the emailed link is clicked (same sentence as that page).
+    confirmed: "Your spot on the FRED waitlist is secured. We’ll email you when your wave opens.",
   };
 
   // --- Head-start stat + its disclosure ---
@@ -1000,8 +1012,51 @@
       (displayStatus === "WAITLISTNORMAL" ? "You’re on the priority waitlist" : "Your spot in line is reserved");
   }
 
+  // Double opt-in: shown after a new signup until the emailed link is clicked
+  // (confirmed.html then stores "confirmed" and clears the pending address). The
+  // price card CTA is left alone: nothing is reserved until the click.
+  const pendingBlock = document.getElementById("pending-block");
+  function showPending(email, fadeIn) {
+    form.style.display = "none";
+    document.getElementById("pending-email").textContent = email || "the address you entered";
+    pendingBlock.classList.remove("hidden");
+    if (fadeIn) {
+      requestAnimationFrame(() => pendingBlock.classList.remove("opacity-0"));
+      pendingBlock.focus();
+    } else {
+      pendingBlock.classList.remove("opacity-0");
+    }
+    navCta.textContent = "Check your email";
+    navCta.setAttribute("href", "#join");
+  }
+  document.getElementById("pending-resend").addEventListener("click", async () => {
+    const out = document.getElementById("pending-msg");
+    const pendingEmail = getPendingEmail();
+    if (!pendingEmail) {
+      // Storage was blocked, so the address is gone: bring the form back for it.
+      pendingBlock.classList.add("hidden");
+      form.style.display = "";
+      showMsg("warn", "Enter your email again and we’ll send a new link.");
+      return;
+    }
+    const btn = document.getElementById("pending-resend");
+    btn.disabled = true;
+    try {
+      // Any completed request, whatever its status, gets the same answer: the
+      // response must not reveal whether the address is on the list.
+      await resendConfirmation(pendingEmail);
+      out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-blue-50 border-blue-200 text-blue-800">If that address is on our waitlist, a new confirmation link is on its way. Check your inbox.</div>';
+    } catch (err) {
+      out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-red-50 border-red-200 text-red-700">Could not reach FRED. Please check your connection and try again.</div>';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   const savedStatus = getSavedStatus();
-  if (savedStatus) {
+  if (savedStatus === "pending_confirmation") {
+    showPending(getPendingEmail(), false);
+  } else if (savedStatus) {
     showSuccess(savedStatus, false);
     // If this browser computed a date before signing up, show it back in the hero
     // instead of the calculator CTA.
@@ -1103,12 +1158,16 @@
       const elapsed = Date.now() - loadingStartedAt;
       await new Promise((r) => setTimeout(r, Math.max(0, 3000 - elapsed)));
 
-      saveStatus(data.realStatus || data.status);
+      // Double opt-in: a new signup is pending until the emailed link is clicked.
+      // For already_joined, persist the real status so refreshes show the right card.
+      const pending = data.requiresConfirmation === true && data.status !== "already_joined";
+      saveStatus(pending ? "pending_confirmation" : (data.realStatus || data.status));
+      if (pending) savePendingEmail(email);
 
       joinBtn.style.opacity = "0";
       joinBtn.style.transition = "opacity 300ms ease";
       await new Promise((r) => setTimeout(r, 300));
-      showSuccess(data.status, true);
+      if (pending) showPending(email, true); else showSuccess(data.status, true);
       updateStats(data);
     } catch (err) {
       resetForm();

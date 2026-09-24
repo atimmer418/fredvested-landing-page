@@ -150,6 +150,12 @@
   document.getElementById("s-" + state).hidden = false;
   if (state === "confirmed") {
     document.getElementById("c-confirmed").hidden = false;
+    // The signup is complete: index.html and about.html stop showing "check your
+    // email" and show the confirmed note instead. This browser only; never sent anywhere.
+    try {
+      localStorage.setItem("waitlist_status", "confirmed");
+      localStorage.removeItem("waitlist_pending_email");
+    } catch (e) { /* storage blocked: nothing to update */ }
     // The backend passes the banded hours-to-confirm; only an exact band value is forwarded.
     // Every analytics call goes through assets/analytics.js; nothing here calls plausible() directly.
     const hours = params.get("hours");
