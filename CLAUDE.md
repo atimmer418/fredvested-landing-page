@@ -75,6 +75,8 @@ Required env vars for dev: `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER
 Required for prod: above + `CLOUDFLARE_TURNSTILE_SECRET`, `CORS_ALLOWED_ORIGINS`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`
 Optional (defaults in `application*.properties`): `WAITLIST_DOUBLE_OPT_IN` (true), `API_PUBLIC_URL` (the API's own origin, used in email links), `EMAIL_FROM`, `WAITLIST_US_ONLY`
 
+A variable that exists but is blank is treated as unset (`BlankEnvironmentVariables`, an `EnvironmentPostProcessor`): the default applies and startup logs a WARN naming the variable. Spring's own `${VAR:default}` only falls back when the variable is absent, and a blank boolean took Railway dev down on 2026-09-24. Variables without a default (`CLOUDFLARE_TURNSTILE_SECRET`, the MySQL ones, prod's `RESEND_WEBHOOK_SECRET`) still fail startup when blank, on purpose.
+
 ### Email funnel (double opt-in)
 - Signup writes the waitlist row and a pending `email_message` row in one transaction; `EmailOutboxPublisher` (scheduled, single instance) sends it via Resend, refusing suppressed addresses, and mints the confirmation/unsubscribe tokens at send time so only their SHA-256 hashes are ever stored.
 - `GET /api/waitlist/confirm?token=` confirms once and redirects to the landing site's `/confirmed` page (`status=confirmed|expired|invalid`); unknown and already-used tokens are indistinguishable. `POST /api/waitlist/resend-confirmation` is rate limited per address (1/10 min, 3/day) and answers identically whether or not the address exists. `GET /api/waitlist/unsubscribe?token=` suppresses the address.
