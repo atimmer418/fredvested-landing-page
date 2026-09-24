@@ -29,12 +29,15 @@ import static com.fredvested.web.controller.ApiErrorHandler.error;
  * already-used tokens produce byte-identical redirects, and a resend request
  * answers the same way whether or not the address exists.
  *
- * Unsubscribe is a two-step: the emailed link is a GET that only shows a
- * button, and the POST behind that button does the work. Mail security
+ * Both emailed links are two-step. The GET renders a small self-contained page
+ * and has no side effect; the POST behind it does the work. Mail security
  * scanners fetch every link in an inbound message, and a bare GET would have
- * silently and permanently unsubscribed those recipients. HEAD on the confirm
- * link is a no-op for the same reason (HEAD-only scanners); the confirm GET
- * itself still acts, as the single-use token rule requires.
+ * consumed the single-use confirmation token (the human then lands on
+ * "invalid") or silently unsubscribed the recipient. The page's inline script
+ * submits the form on load, so a human still gets one-click behaviour;
+ * scanners fetch HTML and almost never execute JavaScript, so the token
+ * survives them. A visible button inside noscript is the fallback for anyone
+ * with JavaScript off. HEAD is a no-op too.
  */
 @RestController
 @RequestMapping("/api/waitlist")
@@ -61,7 +64,21 @@ public class WaitlistConfirmationController {
         private String email;
     }
 
-    @GetMapping("/confirm")
+    /**
+     * Step one: no side effect, and the same page for every token (it never
+     * looks the token up, so it reveals nothing). The script posts the form on
+     * load; the button inside noscript is the only other way to submit it.
+     */
+    @GetMapping(value = "/confirm", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> confirmPage(@RequestParam(value = "token", required = false) String token) {
+        return autoPostPage("Confirm your email",
+                "<p id=\"auto\">Confirming your email address&hellip;</p>",
+                "/api/waitlist/confirm", token,
+                "<p>Click the button to confirm your email address.</p>", "Confirm my spot");
+    }
+
+    /** Step two: the act. Unknown and already-used tokens are indistinguishable here. */
+    @PostMapping(value = "/confirm", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Void> confirm(@RequestParam(value = "token", required = false) String token,
                                         HttpServletRequest request) {
         SignupService.Confirmation result = signupService.confirm(token);
@@ -92,23 +109,42 @@ public class WaitlistConfirmationController {
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
 
-    /** Step one: no side effect. Shows an Unsubscribe button for a known token, a plain notice otherwise. */
+    /** Step one: no side effect. Auto-submits for a known token; a plain notice otherwise. */
     @GetMapping(value = "/unsubscribe", produces = MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<String> unsubscribePage(@RequestParam(value = "token", required = false) String token,
-                                                  HttpServletRequest request) {
-        boolean known = signupService.hasUnsubscribeToken(token);
-        String body = known
-                ? "<p>Click below to stop receiving emails from FRED at this address.</p>"
-                  + "<form method=\"post\" action=\"/api/waitlist/unsubscribe\">"
-                  + "<input type=\"hidden\" name=\"token\" value=\"" + escape(token) + "\">"
-                  + "<button type=\"submit\">Unsubscribe</button></form>"
-                  + "<p class=\"muted\"><a href=\"" + escape(landingUrls.origin(request)) + "/\">Cancel</a></p>"
-                : "<p>This unsubscribe link isn't valid. It may have been cut short by your email app.</p>"
-                  + "<p class=\"muted\">Need help? Write to help@fredvested.com.</p>";
+    public ResponseEntity<String> unsubscribePage(@RequestParam(value = "token", required = false) String token) {
+        if (!signupService.hasUnsubscribeToken(token)) {
+            return htmlPage("Unsubscribe link not valid",
+                    "<p>This unsubscribe link isn't valid. It may have been cut short by your email app.</p>"
+                    + "<p class=\"muted\">Need help? Write to help@fredvested.com.</p>");
+        }
+        return autoPostPage("Unsubscribe from FRED emails",
+                "<p id=\"auto\">Unsubscribing this address&hellip;</p>",
+                "/api/waitlist/unsubscribe", token,
+                "<p>Click the button to stop receiving emails from FRED at this address.</p>", "Unsubscribe");
+    }
+
+    /**
+     * The shared two-step page: a form the inline script submits on load, with the
+     * fallback button (the only control) inside noscript. The "working" line ships
+     * hidden and the script reveals it, so with scripts off the page shows only
+     * the intro and the button.
+     */
+    private static ResponseEntity<String> autoPostPage(String title, String workingLine, String action, String token,
+                                                       String noscriptIntro, String buttonLabel) {
+        String body = workingLine.replace("<p id=\"auto\">", "<p id=\"auto\" hidden>")
+                + "<form id=\"f\" method=\"post\" action=\"" + action + "\">"
+                + "<input type=\"hidden\" name=\"token\" value=\"" + escape(token) + "\">"
+                + "<noscript>" + noscriptIntro + "<button type=\"submit\">" + buttonLabel + "</button></noscript>"
+                + "</form>"
+                + "<script>document.getElementById('auto').hidden=false;document.getElementById('f').submit();</script>";
+        return htmlPage(title, body);
+    }
+
+    private static ResponseEntity<String> htmlPage(String title, String body) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
                 .contentType(MediaType.TEXT_HTML)
-                .body(page(known ? "Unsubscribe from FRED emails" : "Unsubscribe link not valid", body));
+                .body(page(title, body));
     }
 
     /** Step two: the human clicked the button. */

@@ -14,9 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
@@ -40,30 +39,75 @@ class WaitlistConfirmationControllerTest {
         when(addressLimiter.allow(anyString())).thenReturn(true);
     }
 
+    // --- GET /confirm: a page, never a side effect (mail scanners fetch every link) ---
+
     @Test
-    void confirmed_redirectsToTheConfirmedPage_withTheHoursBand() throws Exception {
+    void confirmGet_rendersAnAutoSubmittingPage_andNeverConsumesTheToken() throws Exception {
+        String page = mockMvc.perform(get("/api/waitlist/confirm").param("token", "tok"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(page.contains("method=\"post\"") && page.contains("action=\"/api/waitlist/confirm\""), page);
+        assertTrue(page.contains("name=\"token\" value=\"tok\""), page);
+        // JavaScript submits the form on load; the only control inside <noscript> is the fallback button.
+        assertTrue(page.contains("<script>") && page.contains(".submit()"), page);
+        String noscript = page.substring(page.indexOf("<noscript>"), page.indexOf("</noscript>"));
+        assertTrue(noscript.contains("<button") && noscript.contains("Confirm my spot"), noscript);
+        assertEquals(1, noscript.split("<button").length - 1, "exactly one control inside noscript");
+        assertFalse(page.contains("<link") || page.contains("src="), "self-contained page");
+        verify(signupService, never()).confirm(any());
+    }
+
+    @Test
+    void confirmGet_looksTheSame_forAnyToken_soItRevealsNothing() throws Exception {
+        String a = mockMvc.perform(get("/api/waitlist/confirm").param("token", "aaaa")).andReturn().getResponse().getContentAsString();
+        String b = mockMvc.perform(get("/api/waitlist/confirm").param("token", "bbbb")).andReturn().getResponse().getContentAsString();
+        assertEquals(a.replace("aaaa", "X"), b.replace("bbbb", "X"));
+        verify(signupService, never()).confirm(any());
+        verify(signupService, never()).hasUnsubscribeToken(any());
+    }
+
+    @Test
+    void confirmGet_escapesTheToken_soItCannotInjectMarkup() throws Exception {
+        String page = mockMvc.perform(get("/api/waitlist/confirm").param("token", "\"><script>x</script>"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertFalse(page.contains("<script>x</script>"));
+        assertTrue(page.contains("&quot;&gt;&lt;script&gt;"), page);
+    }
+
+    @Test
+    void headOnConfirm_isANoOp_forLinkScanners() throws Exception {
+        mockMvc.perform(head("/api/waitlist/confirm").param("token", "tok")).andExpect(status().isOk());
+        verify(signupService, never()).confirm(anyString());
+    }
+
+    // --- POST /confirm: the act ---
+
+    @Test
+    void confirmPost_redirectsToTheConfirmedPage_withTheHoursBand() throws Exception {
         when(signupService.confirm("tok")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "<1"));
-        mockMvc.perform(get("/api/waitlist/confirm").param("token", "tok"))
+        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok"))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1"));
         when(signupService.confirm("tok2")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "72+"));
-        mockMvc.perform(get("/api/waitlist/confirm").param("token", "tok2"))
+        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok2"))
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=72%2B"));
     }
 
     @Test
-    void expired_redirectsToTheExpiredState() throws Exception {
+    void confirmPost_expired_redirectsToTheExpiredState() throws Exception {
         when(signupService.confirm("old")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.EXPIRED, null));
-        mockMvc.perform(get("/api/waitlist/confirm").param("token", "old"))
+        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "old"))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=expired"));
     }
 
     @Test
-    void unknownAndAlreadyUsedTokens_produceByteIdenticalResponses() throws Exception {
+    void confirmPost_unknownAndAlreadyUsedTokens_produceByteIdenticalResponses() throws Exception {
         when(signupService.confirm(anyString())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null));
-        MockHttpServletResponse unknown = mockMvc.perform(get("/api/waitlist/confirm").param("token", "never-issued")).andReturn().getResponse();
-        MockHttpServletResponse used = mockMvc.perform(get("/api/waitlist/confirm").param("token", "used-before")).andReturn().getResponse();
+        MockHttpServletResponse unknown = mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "never-issued")).andReturn().getResponse();
+        MockHttpServletResponse used = mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "used-before")).andReturn().getResponse();
         assertEquals(unknown.getStatus(), used.getStatus());
         assertEquals(unknown.getHeaderNames(), used.getHeaderNames());
         for (String h : unknown.getHeaderNames()) assertEquals(unknown.getHeaders(h), used.getHeaders(h), h);
@@ -72,12 +116,14 @@ class WaitlistConfirmationControllerTest {
     }
 
     @Test
-    void missingToken_isTheSameInvalidResponse() throws Exception {
+    void confirmPost_missingToken_isTheSameInvalidResponse() throws Exception {
         when(signupService.confirm(isNull())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null));
-        mockMvc.perform(get("/api/waitlist/confirm"))
+        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=invalid"));
     }
+
+    // --- resend ---
 
     @Test
     void resend_answersIdentically_forKnownAndUnknownAddresses() throws Exception {
@@ -115,25 +161,22 @@ class WaitlistConfirmationControllerTest {
         verify(signupService, never()).requestResend(anyString());
     }
 
-    @Test
-    void headOnConfirm_isANoOp_forLinkScanners() throws Exception {
-        mockMvc.perform(head("/api/waitlist/confirm").param("token", "tok"))
-                .andExpect(status().isOk());
-        verify(signupService, never()).confirm(anyString());
-    }
+    // --- unsubscribe: same auto-POST-with-fallback pattern ---
 
     @Test
-    void unsubscribeGet_onlyShowsAButton_andNeverSuppresses() throws Exception {
+    void unsubscribeGet_autoSubmits_withAFallbackButton_andNeverSuppresses() throws Exception {
         when(signupService.hasUnsubscribeToken("good")).thenReturn(true);
         String page = mockMvc.perform(get("/api/waitlist/unsubscribe").param("token", "good"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect(header().string("Cache-Control", "no-store"))
                 .andReturn().getResponse().getContentAsString();
-        assertTrue(page.contains("method=\"post\""));
-        assertTrue(page.contains("name=\"token\" value=\"good\""));
-        assertTrue(page.contains("Unsubscribe"));
-        assertFalse(page.contains("<link") || page.contains("<script") || page.contains("googleapis"), "self-contained page");
+        assertTrue(page.contains("method=\"post\"") && page.contains("action=\"/api/waitlist/unsubscribe\""), page);
+        assertTrue(page.contains("name=\"token\" value=\"good\""), page);
+        assertTrue(page.contains("<script>") && page.contains(".submit()"), page);
+        String noscript = page.substring(page.indexOf("<noscript>"), page.indexOf("</noscript>"));
+        assertTrue(noscript.contains("<button") && noscript.contains("Unsubscribe"), noscript);
+        assertFalse(page.contains("<link") || page.contains("src=") || page.contains("googleapis"), "self-contained page");
         verify(signupService, never()).unsubscribe(anyString());
     }
 
@@ -145,7 +188,7 @@ class WaitlistConfirmationControllerTest {
                 .andReturn().getResponse().getContentAsString();
         assertTrue(page.contains("isn't valid"));
         assertFalse(page.contains("<form"));
-        assertFalse(page.contains("<script>"), "token is never reflected unescaped");
+        assertFalse(page.contains("<script>x") || page.contains("bad<script>"), "token is never reflected unescaped");
     }
 
     @Test
