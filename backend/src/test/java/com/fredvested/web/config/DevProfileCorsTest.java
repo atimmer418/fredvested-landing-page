@@ -56,6 +56,13 @@ class DevProfileCorsTest {
         preflight("http://127.0.0.1:5500", true);
     }
 
+    // The API's own origin (api.public-url, dev default lpapi-dev): the confirm and
+    // unsubscribe pages it serves POST back to it with that Origin.
+    @Test
+    void theApiOwnOrigin_isAllowed() throws Exception {
+        preflight("https://lpapi-dev.fredvested.com", true);
+    }
+
     @Test
     void everythingElse_isRefused() throws Exception {
         preflight("https://fredvested.com", false);

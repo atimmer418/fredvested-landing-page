@@ -76,12 +76,9 @@ class EmailOutboxPublisherTest {
         assertTrue(publisher.publish(message));
 
         verify(emailService).send(eq("a@example.com"), eq("Confirm your email for FRED's waitlist"), html.capture(), anyString(), headers.capture());
-        // RFC 8058 one-click unsubscribe for mail clients (the safe substitute for an
-        // auto-submitting unsubscribe page): the same token as the footer link.
-        String unsubRawFromHeader = between(headers.getValue().get("List-Unsubscribe"), "/api/waitlist/unsubscribe?token=", ">");
-        assertEquals("List-Unsubscribe=One-Click", headers.getValue().get("List-Unsubscribe-Post"));
-        assertTrue(headers.getValue().get("List-Unsubscribe").startsWith("<https://lpapi.fredvested.com/api/waitlist/unsubscribe?token="), headers.getValue().toString());
-        assertEquals(message.getUnsubscribeTokenHash(), ConfirmationTokens.hash(unsubRawFromHeader));
+        // No List-Unsubscribe headers on any email (Andrew, 2026-09-25): mail clients label
+        // such messages as list mail; the footer unsubscribe link is the opt-out.
+        assertTrue(headers.getValue().isEmpty(), "no list headers on any email: " + headers.getValue());
         assertEquals("re_abc", message.getResendEmailId());
         assertEquals(EmailMessage.STATUS_SENT, message.getStatus());
         assertEquals((short) 1, message.getAttempts());
@@ -120,7 +117,6 @@ class EmailOutboxPublisherTest {
         assertTrue(misconfigured.publish(message));
 
         verify(emailService).send(anyString(), anyString(), html.capture(), text.capture(), headers.capture());
-        assertTrue(headers.getValue().get("List-Unsubscribe").startsWith("<https://"), "the header link is https too");
         for (String body : new String[] { html.getValue(), text.getValue() }) {
             assertTrue(body.contains("https://lpapi-dev.fredvested.com/api/waitlist/confirm?token="), body);
             assertTrue(body.contains("https://lpapi-dev.fredvested.com/api/waitlist/unsubscribe?token="), body);
@@ -150,7 +146,10 @@ class EmailOutboxPublisherTest {
 
         publisher.publish(message);
 
-        verify(emailService).send(eq("a@example.com"), eq("You're in"), anyString(), anyString(), anyMap());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, String>> headers = ArgumentCaptor.forClass(Map.class);
+        verify(emailService).send(eq("a@example.com"), eq("You're in"), anyString(), anyString(), headers.capture());
+        assertTrue(headers.getValue().isEmpty(), "no list headers on the welcome email either: " + headers.getValue());
         verify(waitlist, never()).setConfirmationToken(any(), any(), any());
         verify(waitlist, never()).markConfirmationSent(any(), any(), any());
         verify(waitlist).setEmailStatus(7L, EmailMessage.STATUS_SENT);

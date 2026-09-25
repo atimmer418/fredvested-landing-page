@@ -157,11 +157,13 @@ public class EmailOutboxPublisher {
         }
 
         try {
-            // RFC 8058 one-click unsubscribe for mail clients: the same per-email token as
-            // the footer link. Mail clients POST "List-Unsubscribe=One-Click" to the URL.
-            Map<String, String> headers = Map.of(
-                    "List-Unsubscribe", "<" + unsubscribeUrl + ">",
-                    "List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+            // No List-Unsubscribe headers on any email (Andrew, 2026-09-25): mail clients
+            // label any message carrying them as list mail (Apple Mail's "this message is
+            // from a mailing list" strip), and the footer unsubscribe link is the opt-out.
+            // The RFC 8058 header pair is what Gmail and Yahoo require above roughly 5,000
+            // messages a day; if volume ever gets there, add it back here per template
+            // (POST /api/waitlist/unsubscribe already honours the one-click body).
+            Map<String, String> headers = Map.of();
             String resendId = emailService.send(entry.getEmail(), rendered.subject(), rendered.html(), rendered.text(), headers);
             LocalDateTime sentAt = now();
             message.setResendEmailId(resendId);
