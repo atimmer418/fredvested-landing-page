@@ -88,7 +88,11 @@
       if (!saved || !saved.email) return null;
       if (Date.now() - (saved.at || 0) > PENDING_MAX_AGE_MS) { clearPendingEmail(); return null; }
       return saved.email;
-    } catch (e) { return null; }
+    } catch (e) {
+      // Unreadable record (or storage blocked, in which case this is a no-op too).
+      clearPendingEmail();
+      return null;
+    }
   }
   function clearPendingEmail() {
     try { localStorage.removeItem(PENDING_KEY); } catch (e) { /* storage blocked */ }

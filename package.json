@@ -1,0 +1,13 @@
+{
+  "name": "fredvested-landing-page-tests",
+  "private": true,
+  "description": "Playwright end-to-end tests for the FRED landing page (frontend served by frontend/serve.py; the API is mocked in the browser).",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

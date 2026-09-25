@@ -662,8 +662,12 @@
     const styles = kind === "error"
       ? "bg-red-50 border-red-200 text-red-700"
       : "bg-yellow-50 border-yellow-200 text-yellow-700";
-    msg.innerHTML =
-      '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium ' + styles + '">' + text + "</div>";
+    // Text, never markup: the message can come from the API's JSON, which must not
+    // be able to inject HTML into the page.
+    const box = document.createElement("div");
+    box.className = "mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium " + styles;
+    box.textContent = text;
+    msg.replaceChildren(box);
   }
 
   function showSuccess(displayStatus, fadeIn) {

@@ -46,3 +46,7 @@ backend/src/main/resources/application-local.properties
 # Logs
 *.log
 logs/
+# Playwright (end-to-end tests at the repo root)
+node_modules/
+test-results/
+playwright-report/

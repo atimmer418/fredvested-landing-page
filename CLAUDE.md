@@ -28,12 +28,27 @@ cd backend
 # Run with dev profile (connects to MySQL via env vars, verbose logging)
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 
-# Run tests
+# Run tests (slice and unit tests; no database needed)
 ./gradlew test
+
+# Also run the real-MySQL integration test (WaitlistFunnelIntegrationTest: Flyway V1..Vn on an
+# empty scratch schema, Hibernate validate, signup -> outbox -> confirm -> stats, webhook ordering
+# and suppression). The schema is WIPED; point it at a scratch database, never a real one.
+FRED_IT_JDBC_URL='jdbc:mysql://localhost:3306/fred_it?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC' \
+FRED_IT_DB_USER=root FRED_IT_DB_PASSWORD=... ./gradlew test
 
 # Build JAR
 ./gradlew build
 ```
+
+## End-to-end tests (Playwright, repo root)
+
+```bash
+npm install && npx playwright install chromium   # once
+npm run test:e2e                                 # starts frontend/serve.py itself; API and Plausible mocked in the browser
+```
+
+The suite lives in `tests/` (helpers.js is the harness). It fails on any request to a host other than our own origin and `challenges.cloudflare.com`, and covers the event schema, the double opt-in pending state, the confirmed page and the about-page wording. Turnstile is real (test sitekey on localhost), everything else is intercepted, so no backend runs.
 
 ## Architecture
 
@@ -81,7 +96,7 @@ A variable that exists but is blank is treated as unset (`BlankEnvironmentVariab
 
 ### Email funnel (double opt-in)
 - Signup writes the waitlist row and a pending `email_message` row in one transaction; `EmailOutboxPublisher` (scheduled, single instance) sends it via Resend, refusing suppressed addresses, and mints the confirmation/unsubscribe tokens at send time so only their SHA-256 hashes are ever stored.
-- Both emailed links are two-step so mail security scanners (which GET every link) cannot act on them. `GET /api/waitlist/confirm?token=` renders a self-contained page whose inline script POSTs the token on load (scanners almost never run JavaScript; a consumed token is recoverable through resend), with a visible button inside `<noscript>` as the only other control. `GET /api/waitlist/unsubscribe?token=` renders a button and NO script, deliberately: a suppression is never cleared, so a sandbox that does run JavaScript must not be able to unsubscribe someone on delivery. One-click unsubscribe for mail clients is the RFC 8058 pair on every email (`List-Unsubscribe: <url>`, `List-Unsubscribe-Post: List-Unsubscribe=One-Click`); a POST with body `List-Unsubscribe=One-Click` is answered 200 with no redirect. `POST /confirm` confirms once and redirects to the landing site's `/confirmed` page (`status=confirmed&hours=<band>&tier=founder|normal` | `expired` | `invalid`); unknown and already-used tokens are byte-identical. `POST /api/waitlist/resend-confirmation` is rate limited per address (1/10 min, 3/day) and answers identically whether or not the address exists.
+- Both emailed links are two-step so mail security scanners (which GET every link) cannot act on them. `GET /api/waitlist/confirm?token=` renders a self-contained page whose inline script POSTs the token on load (scanners almost never run JavaScript; a consumed token is recoverable through resend), with a visible button inside `<noscript>` as the only other control. `GET /api/waitlist/unsubscribe?token=` renders a button and NO script, deliberately: a suppression is never cleared, so a sandbox that does run JavaScript must not be able to unsubscribe someone on delivery. No `List-Unsubscribe` headers on any email (Andrew, 2026-09-25: mail clients label such messages as list mail); the footer link is the opt-out. `POST /unsubscribe` still honours an RFC 8058 one-click body (`List-Unsubscribe=One-Click`, answered 200 with no redirect) so the header pair can return per template if volume ever nears the Gmail/Yahoo threshold (about 5,000 a day). The confirm and unsubscribe pages POST back to the API's own origin: `server.forward-headers-strategy=framework` makes that same-origin behind the edge, and `api.public-url` is on the CORS allow-list as a second line. `POST /confirm` confirms once and redirects to the landing site's `/confirmed` page (`status=confirmed&hours=<band>&tier=founder|normal` | `expired` | `invalid`); unknown and already-used tokens are byte-identical. `POST /api/waitlist/resend-confirmation` is rate limited per address (1/10 min, 3/day) and answers identically whether or not the address exists.
 - Re-submitting an address that is on the list but unconfirmed (double opt-in) is answered exactly like a fresh signup (`status=WAITLISTNORMAL`, `requiresConfirmation=true`, no `realStatus`) and queues a fresh confirmation when the address limiter allows; only a confirmed duplicate gets `already_joined` + `realStatus`.
 - The confirmation email is consent-only (counsel, 2026-09-24): why they are receiving it, the link, the expiry, the unsubscribe link and the postal address, nothing promotional (`EmailTemplatesTest` holds the deny-list). Every email carries the unsubscribe link and `POSTAL_ADDRESS`, which prod REQUIRES (no default: startup fails without it, so the `[PO Box pending]` placeholder can never reach a real recipient).
 - `POST /api/webhooks/resend` verifies the Svix signature over the raw body, rejects stale timestamps, is idempotent on `svix-id` (UNIQUE on `email_event`), ignores older events for a message that already has a newer status, and suppresses on bounce/complaint. Unknown message ids get a 200 and are ignored. **Opens are not tracked**: open tracking is off on the sending domain, `email.opened` is not subscribed, and if one arrives anyway it (like any type outside `EmailEventProcessor.HANDLED`) is answered 200 and never stored. Click tracking stays (record only, with the click block stripped).
