@@ -19,11 +19,14 @@ public class EmailService {
 
     private final Resend resend;
     private final String from;
+    private final String replyTo;
 
     public EmailService(@Value("${resend.api-key}") String apiKey,
-                        @Value("${email.from:FRED <fred@fredvested.com>}") String from) {
+                        @Value("${email.from:FRED <fred@fredvested.com>}") String from,
+                        @Value("${email.reply-to:help@fredvested.com}") String replyTo) {
         this.resend = new Resend(apiKey);
         this.from = from;
+        this.replyTo = replyTo;
     }
 
     /**
@@ -32,15 +35,23 @@ public class EmailService {
      * List-Unsubscribe-Post) so mail clients can unsubscribe without a page.
      */
     public String send(String to, String subject, String html, String text, Map<String, String> headers) throws ResendException {
+        CreateEmailResponse response = resend.emails().send(options(to, subject, html, text, headers));
+        return response.getId();
+    }
+
+    /**
+     * Every message replies to the help mailbox (email.reply-to), so sending from a
+     * subdomain such as mail.fredvested.com never strands a reply (decision 2026-09-25).
+     */
+    CreateEmailOptions options(String to, String subject, String html, String text, Map<String, String> headers) {
         CreateEmailOptions.Builder builder = CreateEmailOptions.builder()
                 .from(from)
                 .to(to)
                 .subject(subject)
                 .html(html)
                 .text(text);
+        if (replyTo != null && !replyTo.isBlank()) builder.replyTo(replyTo.trim());
         if (headers != null && !headers.isEmpty()) builder.headers(headers);
-        CreateEmailOptions params = builder.build();
-        CreateEmailResponse response = resend.emails().send(params);
-        return response.getId();
+        return builder.build();
     }
 }

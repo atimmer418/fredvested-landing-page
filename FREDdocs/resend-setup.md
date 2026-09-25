@@ -17,7 +17,7 @@ Written 2026-09-24 against the working tree of `develop`. Everything in the "wha
 | Double opt-in flag | `backend/src/main/java/com/fredvested/web/service/SignupService.java`, `@Value("${waitlist.double-opt-in.enabled:true}")` | `waitlist.double-opt-in.enabled` | `${WAITLIST_DOUBLE_OPT_IN:true}` |
 | CORS | `backend/src/main/java/com/fredvested/web/config/WebConfig.java`, `@Value("${cors.allowed.origins}")` | `cors.allowed.origins` | base: `${CORS_ALLOWED_ORIGINS:http://localhost:3000}`; dev: `${CORS_ALLOWED_ORIGINS:http://127.0.0.1:5500,https://*.fredvested-landing-page.pages.dev}`; prod: `${CORS_ALLOWED_ORIGINS}`, no default |
 
-The SDK is `com.resend:resend-java:3.1.0` (`backend/build.gradle`). `EmailService.send(to, subject, html, text, headers)` sets `from`, `to`, `subject`, `html`, `text` and, when the map is not empty, `headers` on the Resend request. `EmailOutboxPublisher.publish` passes the same two headers on every email, the RFC 8058 one-click unsubscribe pair: `List-Unsubscribe: <unsubscribe url>` (the same per-email token as the footer link) and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. Nothing sets a Reply-To or tags.
+The SDK is `com.resend:resend-java:3.1.0` (`backend/build.gradle`). `EmailService.send(to, subject, html, text, headers)` sets `from`, `to`, `subject`, `html`, `text` and, when the map is not empty, `headers` on the Resend request. `EmailOutboxPublisher.publish` passes the same two headers on every email, the RFC 8058 one-click unsubscribe pair: `List-Unsubscribe: <unsubscribe url>` (the same per-email token as the footer link) and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. `EmailService.options` also sets Reply-To on every message from `email.reply-to` (`EMAIL_REPLY_TO`, default `help@fredvested.com`), so replies never land on the sending subdomain. Nothing sets tags.
 
 How a send happens, in short:
 
@@ -101,7 +101,7 @@ Back on the Resend domain page, click the verify action (a button whose purpose 
   ```
 
   Leave the display name `FRED`; only the domain part changes. If Andrew keeps the root domain verified and sends from it, `EMAIL_FROM` can stay unset.
-- Replies: no Reply-To header is set (the only headers `EmailService.send` adds are the two `List-Unsubscribe` ones from `EmailOutboxPublisher`), so a recipient who hits Reply writes to the From address. The email body and footer name `help@fredvested.com` as the contact address (`EmailTemplates`), but that does not redirect replies. With `fred@mail.fredvested.com` as the From address there is no mailbox behind it unless Andrew routes the subdomain (Zoho alias, or Cloudflare Email Routing if it covers the subdomain on his plan) or a Reply-To is added in code. This is an open question below.
+- Replies: every message carries `Reply-To: help@fredvested.com` (`email.reply-to`, env `EMAIL_REPLY_TO`; decided 2026-09-25), so a recipient who hits Reply writes to the help mailbox even when the From address is on the sending subdomain and has no mailbox behind it. The email body and footer name the same address.
 
 ## 3. API keys
 
@@ -323,7 +323,7 @@ These are in the code today and this setup does not change them.
 ## Open questions
 
 1. **Root vs subdomain acceptance in Resend.** This document assumes the From address must be on exactly the domain verified in Resend. Whether Resend accepts a From address on a subdomain of a verified root (or on the root when only a subdomain is verified) is a Resend rule to confirm in the dashboard or docs before deciding between `fred@fredvested.com` and `fred@mail.fredvested.com`.
-2. **Replies.** `EmailService` sets no Reply-To. With `fred@mail.fredvested.com` as From, replies go to a mailbox that does not exist unless Andrew routes the subdomain or a Reply-To (`help@fredvested.com`) is added in code. Decide before the first real send from the subdomain.
+2. **Replies.** Resolved 2026-09-25: `EmailService.options` sets `Reply-To: help@fredvested.com` (`EMAIL_REPLY_TO`) on every message, so nothing needs routing on the subdomain for replies.
 3. **Privacy policy vendor list.** `frontend/privacy.html` in the working tree names Cloudflare (Turnstile), Railway and Plausible as third parties; a search for "Resend" in that file finds nothing, while `CLAUDE.md` says the policy names Resend. Counsel and Andrew to decide whether an entry is needed before confirmation emails go out at volume.
 4. **Existing Resend state.** The root-domain verification and the `send` subdomain records described under "Current state" come from a session note, not from code or DNS. Confirm in the dashboard, and decide when to remove the root domain from Resend after the switch.
 5. **Root DMARC and Zoho.** Whether `_dmarc.fredvested.com` exists, and whether Zoho's outbound mail signs DKIM for the root, determines how far the root policy can be tightened. Not needed for the subdomain, but the reports will raise it.

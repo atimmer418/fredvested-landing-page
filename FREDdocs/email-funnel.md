@@ -299,6 +299,16 @@ Open tracking is off on the sending domain, `email.opened` is not subscribed, an
 
 `SignupService`, `EmailOutboxPublisher`, `EmailEventProcessor` and `ResendWebhookController` all write `LocalDateTime.now(ZoneId.of("America/New_York"))`, and `WaitlistEntry.onCreate` does the same for `created_at`; webhook `created_at` instants are converted to Eastern. The columns are `DATETIME(6)` and the JDBC URL says `serverTimezone=UTC`, so what is stored is Eastern wall-clock with no zone. Raw SQL that uses `NOW()` or `CURRENT_TIMESTAMP` writes the MySQL session's time, which does not mix with app-written values; V5's `IFNULL(created_at, CURRENT_TIMESTAMP(6))` fallback is such a value, for rows that had no `created_at`. `hoursBand` is a `Duration` between two wall-clock values, so a confirmation that spans a DST change is off by one hour. Webhook timestamp tolerance uses `Instant` and is unaffected.
 
+## Why confirm auto-posts and unsubscribe does not (do not "fix" this)
+
+Decision, Andrew, 2026-09-25, after the adversarial review. The two emailed links look alike but their failure modes are opposite, so they are deliberately built differently:
+
+- A scanner-triggered **confirm** is recoverable and mostly harmless: if a mail sandbox that executes JavaScript posts the confirm form, the row is confirmed without a human click (what is lost is the evidence of the click, not the signup); if a scanner only GETs, nothing happens and the human's click still works. So the confirm page auto-posts for one-click behaviour, with the `<noscript>` button as the fallback.
+- A scanner-triggered **unsubscribe** is irreversible: `suppressed_at` is never cleared, the outbox refuses every later email to that address, and `requestResend` silently does nothing. One auto-posting unsubscribe page would lose every corporate recipient behind Defender Safe Links, Proofpoint or Mimecast on first contact, silently. So `GET /api/waitlist/unsubscribe` renders a button and no script, and a human must click it.
+- One-click unsubscribe for mail clients is provided the standard way instead: RFC 8058 `List-Unsubscribe` and `List-Unsubscribe-Post` headers on every message, honoured by a POST whose body is `List-Unsubscribe=One-Click`.
+
+If someone proposes making unsubscribe auto-post "for consistency", this section is the answer.
+
 ## Known gaps
 
 1. **Token re-mint after an ambiguous send.** The confirmation token is written before the Resend call, and every retry mints a new one that overwrites the hash. If a send throws after Resend has accepted the message (or the publisher dies between the send and recording it, which the stale-recovery path retries after 15 minutes), the earlier email may still be delivered with a token that no longer matches; that link lands on `status=invalid`. The recipient must use the newer email or request a resend. Not handled in code.

@@ -791,6 +791,9 @@
   <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
 
   <p class="text-[13px] text-slate-text mt-4">If invited, you can choose <span class="hidden sm:inline">whether </span>to claim Founder Access.</p>
+  <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
+       attorney review pending; same text as the index.html form. -->
+  <p id="consent-note" class="mt-3 text-[11px] leading-relaxed text-slate-text text-left" role="note"></p>
 </div>
 
 <!-- Disclosures: full text behind the short superscript lines above. Numbers are fixed (not list
@@ -874,7 +877,8 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 (function () {
-  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, STAT_TILE_MIN_N } = window.FredWaitlist;
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N } = window.FredWaitlist;
+  renderConsent("consent-note");
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
 

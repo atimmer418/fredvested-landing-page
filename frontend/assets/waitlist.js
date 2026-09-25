@@ -47,6 +47,18 @@
   // or above this sample size; below it the elements stay hidden entirely.
   const STAT_TILE_MIN_N = 25;
 
+  // ATTORNEY REVIEW PENDING: interim consent language, Group C answers control the
+  // final version. ONE constant, rendered under every waitlist form (index.html and
+  // about.html), so the final wording lands in one place. Do not finalise here.
+  const CONSENT_SENTENCE_HTML =
+    'By joining the waitlist, you consent to receive email updates from FRED and to our storing your email address and the calculator inputs you entered, as described in our <a href="/privacy" class="underline hover:text-primary">Privacy Policy</a>. You can unsubscribe at any time. Joining the waitlist does not create an advisory relationship and does not guarantee access to FRED, founding member pricing, or any investment outcome.';
+
+  // Renders the consent sentence into the element with this id, if the page has one.
+  function renderConsent(id) {
+    const el = document.getElementById(id || 'consent-note');
+    if (el) el.innerHTML = CONSENT_SENTENCE_HTML;
+  }
+
   function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
@@ -209,6 +221,8 @@
     API_BASE,
     TURNSTILE_SITEKEY,
     STAT_TILE_MIN_N,
+    CONSENT_SENTENCE_HTML,
+    renderConsent,
     isValidEmail,
     getSavedStatus,
     saveStatus,
