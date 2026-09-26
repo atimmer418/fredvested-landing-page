@@ -168,6 +168,18 @@ class WaitlistFunnelIntegrationTest {
 
         // Public numbers now count the confirmed row; the cache was invalidated by the confirmation.
         mvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(1)).andExpect(jsonPath("$.founderCount").value(1));
+
+        // The click queued the welcome email; the outbox sends it with its own unsubscribe token.
+        List<EmailMessage> welcome = outbox.findByWaitlistIdAndTemplateAndStatus(row.getId(), EmailMessage.TEMPLATE_WELCOME, EmailMessage.STATUS_PENDING);
+        assertEquals(1, welcome.size(), "exactly one welcome queued by the confirmation");
+        clearInvocations(emailService);
+        when(emailService.send(anyString(), anyString(), anyString(), anyString(), anyMap())).thenReturn("re_it_welcome");
+        assertTrue(publisher.publish(welcome.get(0)));
+        ArgumentCaptor<String> welcomeHtml = ArgumentCaptor.forClass(String.class);
+        verify(emailService).send(eq("it-one@example.com"), eq("You're in"), welcomeHtml.capture(), anyString(), anyMap());
+        assertTrue(welcomeHtml.getValue().contains("/api/waitlist/unsubscribe?token="));
+        assertFalse(welcomeHtml.getValue().contains("/api/waitlist/confirm?token="), "no confirm link in the welcome");
+        assertEquals(EmailMessage.STATUS_SENT, outbox.findById(welcome.get(0).getId()).orElseThrow().getStatus());
     }
 
     @Test

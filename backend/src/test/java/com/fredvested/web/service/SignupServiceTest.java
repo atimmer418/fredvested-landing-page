@@ -83,6 +83,37 @@ class SignupServiceTest {
         verify(waitlist, times(1)).save(entry);
     }
 
+    // 2026-09-26 (Andrew): the welcome email goes out after the click, not instead of the
+    // confirmation. Queued in the confirmation's own transaction, sent by the outbox.
+    @Test
+    void confirm_queuesTheWelcomeEmail_once_inTheSameTransaction() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+
+        assertEquals(SignupService.ConfirmOutcome.CONFIRMED, service.confirm(token.raw()).outcome());
+
+        ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(outbox, times(1)).save(captor.capture());
+        assertEquals(EmailMessage.TEMPLATE_WELCOME, captor.getValue().getTemplate());
+        assertEquals(EmailMessage.STATUS_PENDING, captor.getValue().getStatus());
+        assertEquals(7L, captor.getValue().getWaitlistId());
+
+        // A replay confirms nothing and queues nothing more.
+        service.confirm(token.raw());
+        verify(outbox, times(1)).save(any());
+    }
+
+    @Test
+    void expiredOrUnknownTokens_queueNoWelcome() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().minusMinutes(1));
+        service.confirm(token.raw());
+        service.confirm(ConfirmationTokens.generate().raw());
+        verify(outbox, never()).save(any());
+    }
+
     @Test
     void confirm_expiredToken_isExpired_andStaysUsable_forTheResendFlow() {
         ConfirmationTokens.Generated token = ConfirmationTokens.generate();

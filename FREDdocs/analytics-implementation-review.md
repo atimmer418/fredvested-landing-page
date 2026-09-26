@@ -143,6 +143,12 @@ State at review time: `develop` at the commit named at the end, all work committ
 | 6. `POSTAL_ADDRESS`: keep fail-on-missing in prod | `application-prod.properties` | | done |
 | 7. Phase 8 suite incl. third-party check, pending state, confirmed page, the failure paths, webhook and confirmation beyond unit level; then this review | `tests/`, `WaitlistFunnelIntegrationTest`, this document | Phase 8 section | done |
 
+## Message 18: the welcome email after confirmation (2026-09-26)
+
+| Item | Where | Proof | Status |
+|---|---|---|---|
+| Send the welcome email after a successful confirmation | `SignupService.confirm` queues `waitlist_welcome` in the confirmation's transaction; the outbox sends it (suppression applies, its own unsubscribe token). Before this it was only sent on the single-opt-in path: an omission. | `SignupServiceTest.confirm_queuesTheWelcomeEmail_once_inTheSameTransaction` (and none for expired/unknown tokens); `WaitlistFunnelIntegrationTest` publishes the queued welcome on real rows and checks the subject, the unsubscribe link and the absence of a confirm link | done |
+
 ## Phase 8: what the tests cover
 
 Backend (`cd backend && ./gradlew test`): 156 tests.

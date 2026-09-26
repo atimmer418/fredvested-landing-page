@@ -132,6 +132,10 @@ public class SignupService {
         entry.setConfirmationExpiresAt(null);
         entry.setStatus(decided);
         waitlist.save(entry);
+        // The welcome email follows the click (Andrew, 2026-09-26): queued here, in the
+        // confirmation's own transaction, so a confirmed row can never miss it, and sent
+        // by the outbox publisher like every other message (suppression still applies).
+        enqueue(entry, EmailMessage.TEMPLATE_WELCOME);
         events.publishEvent(new WaitlistCountsChanged());
 
         LocalDateTime from = entry.getConfirmationSentAt() != null ? entry.getConfirmationSentAt() : entry.getCreatedAt();

@@ -31,7 +31,7 @@ From `backend/src/main/resources/application.properties` and the profile files. 
 
 | Property | Env var | Default | Notes |
 |---|---|---|---|
-| `waitlist.double-opt-in.enabled` | `WAITLIST_DOUBLE_OPT_IN` | `true` | `false` = single opt-in: row confirmed at signup, welcome email instead of confirmation |
+| `waitlist.double-opt-in.enabled` | `WAITLIST_DOUBLE_OPT_IN` | `true` | `true` = confirmation email at signup, welcome email after the click; `false` = single opt-in: row confirmed at signup, welcome email at signup, no confirmation |
 | `waitlist.confirmation.ttl-days` | (none) | `7` | Confirmation link lifetime; also printed in the email |
 | `api.public-url` | `API_PUBLIC_URL` | base `http://localhost:8081`, dev `https://lpapi-dev.fredvested.com`, prod `https://lpapi.fredvested.com` | Origin of every emailed link. Trailing slashes dropped. A public host is forced to `https` whatever the value says; only `localhost`, `127.0.0.1`, `::1`, `[::1]` and the private LAN ranges `192.168.*`, `10.*` and `172.16-31.*` keep `http` (`EmailOutboxPublisher.publicBaseUrl`) |
 | `email.from` | `EMAIL_FROM` | `FRED <fred@fredvested.com>` | Resend from header |
@@ -77,10 +77,12 @@ sequenceDiagram
     MAIL->>API: GET /api/waitlist/confirm?token=RAW (no side effect. HEAD is a no-op)
     API-->>MAIL: self-contained HTML: hidden form, inline script that submits it, noscript button
     MAIL->>API: POST /api/waitlist/confirm token=RAW (the script on load, or the noscript button)
-    API->>DB: find by token hash. Decide the founder slot first, then set confirmed_at, confirmed_source double_opt_in, clear the hash, save. Publish WaitlistCountsChanged
+    API->>DB: find by token hash. Decide the founder slot first, then set confirmed_at, confirmed_source double_opt_in, clear the hash, save. Queue email_message (pending, waitlist_welcome) in the same transaction. Publish WaitlistCountsChanged
     API-->>MAIL: 302 to LANDING/confirmed?status=confirmed&hours=BAND&tier=founder|normal
     MAIL->>CP: GET /confirmed?status=confirmed&hours=BAND&tier=TIER
     Note over CP: "You're confirmed." Because hours is present: localStorage waitlist_status = WAITLISTFOUNDER|WAITLISTNORMAL, waitlist_pending removed, Waitlist Confirmed fired on production hosts, then hours and tier stripped from the URL
+    PUB->>RS: next outbox run: welcome email "You're in", its own unsubscribe token, suppression still applies
+    RS->>MAIL: welcome email, within seconds of the click
 
     RS->>API: POST /api/webhooks/resend with svix-id, svix-timestamp, svix-signature
     API->>DB: verify HMAC over the raw body. INSERT email_event (UNIQUE svix_id). Apply under a row lock on email_message
@@ -149,7 +151,7 @@ Per message:
 
 Both parts (HTML and plain text) carry the unsubscribe link and the postal address. The recipient's address does not appear in the body. The HTML uses web-safe and system font stacks only, no images, no stylesheet links, and the "FRED" wordmark is text. It carries no `http://` links when `api.public-url` is an https origin, which `publicBaseUrl` guarantees for every public host; only the local profile (`http://localhost:8081`) produces http links. Links are `<api.public-url>/api/waitlist/confirm?token=<raw>` and `<api.public-url>/api/waitlist/unsubscribe?token=<raw>`. The only headers beyond the standard ones are `Reply-To: help@fredvested.com`; no `List-Unsubscribe` (section 2, step 6).
 
-The welcome email (`EmailTemplates.welcome`, subject `You're in`) is used only when double opt-in is off. It carries the "what happens next" block and the same footer.
+The welcome email (`EmailTemplates.welcome`, subject `You're in`) follows the confirmation click: `SignupService.confirm` queues it (`template = 'waitlist_welcome'`) in the same transaction that marks the row confirmed, and the outbox publisher sends it like any other message, with its own unsubscribe token and subject to suppression (Andrew, 2026-09-26; it had only been sent on the single-opt-in path before). With the flag off it is sent at signup instead of a confirmation. It carries the "what happens next" block and the same footer. Because it comes after consent, its copy is not bound by the consent-only rule that applies to the confirmation.
 
 ## 4. Confirm and unsubscribe links (two-step)
 
@@ -184,7 +186,7 @@ On `CONFIRMED`, in this order: the founder slot is decided (section 8) before an
 
 The `One-Click` check is an exact match on the `List-Unsubscribe` form parameter; `SignupService.unsubscribe` runs first in both cases.
 
-**Landing.** `frontend/confirmed.html` shows one state block for `status` in `confirmed`, `expired`, `invalid`, `unsubscribed`, else a default "Confirm your email." For `confirmed`, everything else is gated on the redirect's `hours` parameter being present (`params.get("hours") !== null`): only the backend's redirect carries it, so a shared or retyped `/confirmed?status=confirmed` URL shows the confirmed copy and changes nothing in the browser. With `hours` present the page stores `waitlist_status` as `WAITLISTFOUNDER` for `tier=founder`, `WAITLISTNORMAL` for `tier=normal`, or the bare string `"confirmed"` when `tier` is missing; removes the `localStorage` key `waitlist_pending`; if `hours` is one of the five bands, calls `FredAnalytics.track("Waitlist Confirmed", { hours_to_confirm_band })`; then strips both `hours` and `tier` from the address bar with `history.replaceState` so a reload can neither fire the event again nor re-store the status. On the next visit `index.html` and `about.html` show the success card for the stored value (`STATUS_NOTES`; the bare `"confirmed"` gets the same sentence as this page), and `about.html`'s price-card CTA reads "Your spot in line is reserved" only for `WAITLISTFOUNDER`; `WAITLISTNORMAL`, `already_joined` and `"confirmed"` all read "You’re on the priority waitlist". `analytics.js` sends only on `fredvested.com` and `www.fredvested.com` (or `localStorage.fred_analytics_force === '1'`), so dev confirmations, which redirect to the preview host, are not recorded. For `expired`, `invalid` and the default state the page shows the resend form.
+**Landing.** `frontend/confirmed.html` shows one state block for `status` in `confirmed`, `expired`, `invalid`, `unsubscribed`, else a default "Confirm your email." For `confirmed`, everything else is gated on the redirect's `hours` parameter being present (`params.get("hours") !== null`): only the backend's redirect carries it, so a shared or retyped `/confirmed?status=confirmed` URL shows the confirmed copy and changes nothing in the browser. With `hours` present the page stores `waitlist_status` as `WAITLISTFOUNDER` for `tier=founder`, `WAITLISTNORMAL` for `tier=normal`, or the bare string `"confirmed"` when `tier` is missing; removes the `localStorage` key `waitlist_pending`; if `hours` is one of the five bands, calls `FredAnalytics.track("Waitlist Confirmed", { hours_to_confirm_band })`; then strips both `hours` and `tier` from the address bar with `history.replaceState` so a reload can neither fire the event again nor re-store the status. On the next visit `index.html` and `about.html` show the success card for the stored value (`STATUS_NOTES`; the bare `"confirmed"` gets the same sentence as this page), and `about.html`'s price-card CTA reads "Your spot in line is reserved" only for `WAITLISTFOUNDER`; `WAITLISTNORMAL`, `already_joined` and `"confirmed"` all read "You’re on the priority waitlist". `analytics.js` sends only on `fredvested.com` and `www.fredvested.com` (or `localStorage.fred_analytics_force === '1'`), so dev confirmations, which redirect to the preview host, are not recorded. For `expired`, `invalid` and the default state the page shows the resend form. Within seconds of a successful click the welcome email (`You're in`, section 3) arrives as well: the confirmation queued it, the outbox sends it.
 
 ## 5. Resend
 
