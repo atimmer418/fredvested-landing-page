@@ -37,7 +37,7 @@ FREDvested LLC, %s
 """.formatted(confirmUrl, ttlDays, unsubscribeUrl, postalAddress);
 
         String html = shell("Confirm your email", """
-              <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#0F172A;">
+              <p style="margin:0 0 24px;font-size:16px;line-height:1.4;color:#0F172A;">
                 You&#39;re receiving this email because this address was entered on the waitlist form at fredvested.com. To finish signing up, confirm your email.
               </p>
               <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
@@ -47,7 +47,7 @@ FREDvested LLC, %s
                   </td>
                 </tr>
               </table>
-              <p style="margin:0;font-size:13px;line-height:1.6;color:#64748B;">
+              <p style="margin:0;font-size:13px;line-height:1.4;color:#64748B;">
                 This link expires in %d days. If you didn&#39;t sign up, you can ignore this email and nothing will happen.
               </p>
 """.formatted(confirmUrl, ttlDays), unsubscribeUrl, postalAddress);
@@ -79,15 +79,15 @@ FREDvested LLC, %s
 """.formatted(unsubscribeUrl, postalAddress);
 
         String html = shell("You&#39;re in", """
-              <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#0F172A;">
+              <p style="margin:0 0 24px;font-size:16px;line-height:1.4;color:#0F172A;">
                 You&#39;re on <strong>FRED's private beta waitlist</strong>.
               </p>
-              <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#334155;">
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.4;color:#334155;">
                 FRED is built to help you automatically invest part of every paycheck so you can clock out early. For good.
               </p>
 """ + NEXT_STEPS + """
               <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0;">
-              <p style="margin:0;font-size:15px;line-height:1.7;color:#334155;">
+              <p style="margin:0;font-size:15px;line-height:1.4;color:#334155;">
                 You don&#39;t need to do anything else right now. You&#39;re in line.
               </p>
 """, unsubscribeUrl, postalAddress);

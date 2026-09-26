@@ -104,11 +104,10 @@
     opacity: 0;
     visibility: hidden;
     overflow: hidden;
-    /* Layout containment stops the collapsed zone's clipped content from propagating
-       scrollable overflow to the viewport (which otherwise adds phantom scroll space
-       below the footer). It does not contain size or paint, so the open state and its
-       shadows are unaffected. */
-    contain: layout;
+    /* No contain/position/z-index here: a stacking context around the Turnstile iframe gives
+       the zone its own compositor layer, and Chrome can keep drawing the old clipped layer
+       after the overflow flip below (shadows doubled inside the zone's box). The sr-only
+       email label is already contained by its .relative wrapper, so there is no phantom scroll. */
     transition: max-height 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.5s ease 0.1s;
   }
   .reveal-zone.open {
@@ -140,7 +139,7 @@
   }
 </style>
 </head>
-<body class="font-display text-navy antialiased min-h-screen flex flex-col items-center px-4 pt-4 sm:pt-7 pb-12 sm:px-5 selection:bg-primary/20 selection:text-primary">
+<body class="font-display text-navy antialiased min-h-screen flex flex-col items-center px-4 pt-4 sm:pt-7 pb-6 sm:pb-12 sm:px-5 selection:bg-primary/20 selection:text-primary">
 
 <!-- Logo -->
 <header class="mb-4 sm:mb-8">
@@ -352,7 +351,9 @@
   <p>&copy; 2026 FREDvested LLC</p>
   <!-- ATTORNEY: status sentence pending final confirmation -->
   <div class="mt-4 text-[10px] leading-relaxed text-gray-600">
-    FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br>
+    <span class="sm:hidden">FREDvested LLC does not provide individualized investment advice.<br>
+    FREDvested LLC is not a registered investment adviser.<br></span>
+    <span class="hidden sm:inline">FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br></span>
     Investing involves risk, including possible loss of principal.
   </div>
 </footer>
