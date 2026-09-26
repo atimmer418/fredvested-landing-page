@@ -43,7 +43,7 @@ FREDvested LLC, %s
               <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                 <tr>
                   <td style="background-color:#135bec;border-radius:10px;">
-                    <a href="%s" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;">Confirm my email</a>
+                    <a href="%s" style="display:inline-block;border-radius:10px;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;">Confirm my email</a>
                   </td>
                 </tr>
               </table>
