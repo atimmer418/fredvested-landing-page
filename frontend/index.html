@@ -100,14 +100,22 @@
 
   /* Result + capture stay collapsed until the reveal button is clicked */
   .reveal-zone {
+    display: flow-root;
     max-height: 0;
     opacity: 0;
     visibility: hidden;
-    overflow: hidden;
+    /* Clip only vertically, and never change it at runtime. Side shadows are never clipped,
+       so there is no clipped-to-unclipped switch after opening; that switch left Chrome drawing
+       a stale clipped copy (shadows doubled inside the zone's box). overflow-y: clip (unlike
+       hidden) is not a scroll container, so x can stay visible. The bottom padding, cancelled
+       by the negative margin, keeps the capture block's shadow inside the clip. */
+    overflow-x: visible;
+    overflow-y: clip;
+    padding-bottom: 32px;
+    margin-bottom: -32px;
     /* No contain/position/z-index here: a stacking context around the Turnstile iframe gives
-       the zone its own compositor layer, and Chrome can keep drawing the old clipped layer
-       after the overflow flip below (shadows doubled inside the zone's box). The sr-only
-       email label is already contained by its .relative wrapper, so there is no phantom scroll. */
+       the zone its own compositor layer. The sr-only email label is already contained by its
+       .relative wrapper, so there is no phantom scroll. */
     transition: max-height 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.5s ease 0.1s;
   }
   .reveal-zone.open {
@@ -350,7 +358,7 @@
   </div>
   <p>&copy; 2026 FREDvested LLC</p>
   <!-- ATTORNEY: status sentence pending final confirmation -->
-  <div class="mt-4 text-[10px] leading-relaxed text-gray-600">
+  <div class="mt-4 text-[10px] leading-relaxed text-gray-400">
     <span class="sm:hidden">FREDvested LLC does not provide individualized investment advice.<br>
     FREDvested LLC is not a registered investment adviser.<br></span>
     <span class="hidden sm:inline">FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br></span>
@@ -622,10 +630,10 @@
       age: inputs.age, invest: inputs.invest, retire: inputs.retire,
       return_scenario: selectedReturn, freedom_age: lastFreedomAge,
     });
-    // Once fully open, stop clipping so the card shadows render past the container.
+    // Once fully open, drop the height cap so the accordion can grow the zone past it.
+    // Overflow is deliberately left alone (see .reveal-zone).
     setTimeout(() => {
       revealZone.style.maxHeight = "none";
-      revealZone.style.overflow = "visible";
     }, 750);
     setTimeout(() => {
       revealZone.scrollIntoView({

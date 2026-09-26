@@ -48,9 +48,9 @@
         <a href="/" class="flex-shrink-0 flex items-center gap-2">
           <span class="font-montserrat text-[48px] font-black italic text-primary tracking-[0px] leading-none">FRED</span>
         </a>
-        <a href="index.html#join" class="flex items-center gap-1 text-sm font-medium text-slate-text hover:text-primary transition-colors">
+        <a id="back-link" href="/about" class="flex items-center gap-1 text-sm font-medium text-slate-text hover:text-primary transition-colors">
           <svg class="text-base" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-arrow_back"/></svg>
-          Back to Home
+          <span id="back-link-label">Back to Home</span>
         </a>
       </div>
     </div>
@@ -290,8 +290,8 @@
   </div>
 
   <!-- Footer -->
-<section class="bg-background-light pt-0 pb-16 scroll-mt-16 lg:scroll-mt-0">
-<div class="max-w-md mx-auto px-4 text-center">
+<section class="bg-background-light pt-0 pb-6 sm:pb-12 scroll-mt-16 lg:scroll-mt-0">
+<div class="max-w-[640px] mx-auto px-4 sm:px-5 text-center">
 <div class="pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
 <div class="flex justify-center space-x-6 mb-4">
 <a class="hover:text-primary" href="/privacy">Privacy</a>
@@ -299,9 +299,10 @@
 <a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
 </div>
 <p>© 2026 FREDvested LLC</p>
-<div class="mt-4 text-[10px] leading-relaxed text-gray-400 -mx-4 sm:mx-auto sm:max-w-xl">
-FREDvested LLC is not a broker-dealer and does not provide investment advice.<br>
-  Brokerage services provided by Alpaca Securities LLC, member FINRA/SIPC.<br>
+<div class="mt-4 text-[10px] leading-relaxed text-gray-400">
+<span class="sm:hidden">FREDvested LLC does not provide individualized investment advice.<br>
+  FREDvested LLC is not a registered investment adviser.<br></span>
+  <span class="hidden sm:inline">FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br></span>
   Investing involves risk, including possible loss of principal.
 </div>
 </div>
@@ -314,10 +315,22 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
 <script src="assets/attribution.js"></script>
 <script src="assets/analytics.js"></script>
 <script>
+  // Visitors who came here from the calculator (index) go back to it; everyone else goes to /about.
+  (function() {
+    try {
+      var r = new URL(document.referrer);
+      if (r.origin !== location.origin || (r.pathname !== '/' && r.pathname !== '/index.html')) return;
+    } catch (e) { return; }
+    var a = document.getElementById('back-link');
+    a.setAttribute('href', '/');
+    document.getElementById('back-link-label').textContent = 'Back to Calculator';
+  })();
+</script>
+<script>
   (function() {
     var isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('ngrok');
     if (!isDev) return;
-    var map = { '/': 'index.html', '/privacy': 'privacy.html', '/terms': 'terms.html' };
+    var map = { '/': 'index.html', '/about': 'about.html', '/privacy': 'privacy.html', '/terms': 'terms.html' };
     document.querySelectorAll('a[href]').forEach(function(a) {
       if (map[a.getAttribute('href')]) a.href = map[a.getAttribute('href')];
     });
