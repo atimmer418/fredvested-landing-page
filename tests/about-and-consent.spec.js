@@ -96,14 +96,14 @@ test('about.html with a saved status and a saved freedom date shows the date in 
   await expect(page.locator('#hero-cta-note')).toBeHidden();
 });
 
-test('index.html with a saved WAITLISTNORMAL status shows the priority waitlist note in place of the form once revealed', async ({ page }) => {
+test('index.html with a saved WAITLISTNORMAL status shows the priority waitlist note in place of the form at once', async ({ page }) => {
   await seedStorage(page, { waitlist_status: 'WAITLISTNORMAL' });
   await installMocks(page);
   await page.goto('/index.html');
-  // The capture block lives inside the reveal zone, which stays visibility:hidden
-  // until the reveal button opens it (calculator first, by design).
-  await expect(page.locator('#success-block')).toBeHidden();
-  await page.click('#reveal-btn');
+  // A saved state opens the reveal zone itself (2026-09-26): no reveal click needed,
+  // and the calculator stays above it.
+  await expect(page.locator('#reveal-zone')).toHaveClass(/open/);
+  await expect(page.locator('#age-range')).toBeVisible();
   await expect(page.locator('#success-block')).toBeVisible();
   await expect(page.locator('#success-note')).toHaveText(NOTE_NORMAL);
   await expect(page.locator('#waitlist-form')).toBeHidden();

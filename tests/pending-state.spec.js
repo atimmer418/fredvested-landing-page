@@ -22,20 +22,15 @@ const NAV_PENDING = 'Check your email';
 
 const PAGES = [
   // On index.html the capture block sits inside the reveal zone (visibility:hidden
-  // until "Reveal my Freedom Date"), so a saved state is only on screen after the
-  // reveal click. about.html shows the form directly and has the nav CTA.
+  // until "Reveal my Freedom Date"); a saved state opens the zone itself on load
+  // (2026-09-26), so `collapsed` only matters for a fresh visitor. about.html shows
+  // the form directly and has the nav CTA.
   { name: 'index.html', path: '/index.html', collapsed: true, hasNav: false },
   { name: 'about.html', path: '/about.html', collapsed: false, hasNav: true },
 ];
 
 function sentLine(email) {
   return `We sent a confirmation link to ${email}. Click it to lock in your spot. The link expires in 7 days.`;
-}
-
-/** Opens the reveal zone on index.html without requiring the form to be visible (a no-op on about.html). */
-async function openCaptureArea(page) {
-  const reveal = page.locator('#reveal-btn');
-  if (await reveal.count()) await reveal.click();
 }
 
 /** The pending block with its exact copy and the address, and no form or success block beside it. */
@@ -107,9 +102,10 @@ for (const p of PAGES) {
       await page.reload();
       await expect(page.locator('#waitlist-form')).toBeHidden();
       if (p.collapsed) {
-        // The saved state is restored on load but stays inside the collapsed reveal zone.
-        await expect(page.locator('#pending-block')).toBeHidden();
-        await openCaptureArea(page);
+        // A saved state opens the reveal zone itself (2026-09-26): the pending block is on
+        // screen at once, with the calculator still above it and no reveal click needed.
+        await expect(page.locator('#reveal-zone')).toHaveClass(/open/);
+        await expect(page.locator('#age-range')).toBeVisible();
       }
       await expectPendingBlock(page, email);
       if (p.hasNav) await expect(page.locator('#nav-cta')).toHaveText(NAV_PENDING);
@@ -190,7 +186,8 @@ for (const p of PAGES) {
       await page.goto(p.path);
 
       await expect(page.locator('#waitlist-form')).toBeHidden();
-      await openCaptureArea(page);
+      // A saved state opens the reveal zone itself on index.html; no click needed on either page.
+      if (p.collapsed) await expect(page.locator('#reveal-zone')).toHaveClass(/open/);
       await expectPendingBlock(page, email);
       if (p.hasNav) await expect(page.locator('#nav-cta')).toHaveText(NAV_PENDING);
       expect(await storage(page, 'waitlist_status')).toBe('pending_confirmation');

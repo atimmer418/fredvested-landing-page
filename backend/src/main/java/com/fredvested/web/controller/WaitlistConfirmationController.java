@@ -122,8 +122,9 @@ public class WaitlistConfirmationController {
      * Step one: no side effect, and deliberately NO auto-submit here. A suppression is
      * never cleared, so a mail security sandbox that does execute JavaScript (Defender
      * Safe Links, Proofpoint, Mimecast) must not be able to unsubscribe the recipient
-     * on delivery; a human click is required. Mail clients get one-click unsubscribe
-     * through the RFC 8058 List-Unsubscribe headers on every email instead.
+     * on delivery; a human click is required. No List-Unsubscribe headers are sent
+     * (decision 2026-09-25: mail clients label such messages as list mail); the POST
+     * below still honours an RFC 8058 one-click body for the day volume requires them.
      * (A consumed confirmation token is recoverable via resend, so the confirm page
      * can afford the auto-submit; this one cannot.)
      */
@@ -190,7 +191,7 @@ public class WaitlistConfirmationController {
     private static String page(String title, String body) {
         return "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-                + "<meta name=\"robots\" content=\"noindex\"><title>" + escape(title) + " - FRED</title>"
+                + "<meta name=\"robots\" content=\"noindex\"><title>FRED: " + escape(title) + "</title>"
                 + "<style>body{margin:0;background:#f6f6f8;font-family:Helvetica,Arial,sans-serif;color:#0F172A}"
                 + "main{max-width:480px;margin:48px auto;padding:32px;background:#fff;border:1px solid #e2e8f0;border-radius:16px}"
                 + "h1{font-size:22px;margin:0 0 16px}p{line-height:1.6;color:#334155}.muted{font-size:13px;color:#64748B}"

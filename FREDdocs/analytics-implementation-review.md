@@ -2,7 +2,7 @@
 
 Completion review for the analytics and email-funnel work on the FRED landing page, sessions of 2026-09-16 to 2026-09-25. One row per numbered item in every message Andrew sent, in order, with where it lives and what proves it. Deviations, manual steps, known gaps and the runbook follow the table.
 
-State at review time: `develop` at the commit named at the end, all work committed, nothing force-pushed, history never rewritten. Backend suite: 156 tests green (unit, slice, and the real-MySQL integration test). End-to-end suite: 91 tests green; see the Phase 8 section.
+State at review time: `develop` at the commit named at the end, all work committed, nothing force-pushed, history never rewritten. Backend suite: 158 tests green (unit, slice, and the real-MySQL integration test). End-to-end suite: 95 tests green; see the Phase 8 section.
 
 ## How to read the table
 
@@ -149,6 +149,14 @@ State at review time: `develop` at the commit named at the end, all work committ
 |---|---|---|---|
 | Send the welcome email after a successful confirmation | `SignupService.confirm` queues `waitlist_welcome` in the confirmation's transaction; the outbox sends it (suppression applies, its own unsubscribe token). Before this it was only sent on the single-opt-in path: an omission. | `SignupServiceTest.confirm_queuesTheWelcomeEmail_once_inTheSameTransaction` (and none for expired/unknown tokens); `WaitlistFunnelIntegrationTest` publishes the queued welcome on real rows and checks the subject, the unsubscribe link and the absence of a confirm link | done |
 
+## Message 19: the returning visitor, the header decision, the go-live checklist (2026-09-26)
+
+| Item | Where | Proof | Status |
+|---|---|---|---|
+| 1. A returning visitor with a saved state sees it at once; the reveal zone opens itself, calculator kept above it | `index.html` `openZoneForSavedState()` (renders the current result, opens the zone, no scroll, no reveal event; the first click on that page load is still that load's `Freedom Date Revealed`) | `tests/returning-visitor.spec.js` (fresh visitor closed; pending and confirmed open on load with the calculator above; no event on the automatic open; first click reveals, second recalculates); the pending-state and about specs updated to the new behaviour | done |
+| 2. `List-Unsubscribe` stays off; keep the 5,000-a-day note | code and docs unchanged from message 17; the stale comment in `WaitlistConfirmationController` corrected | `EmailOutboxPublisherTest` asserts an empty headers map | done |
+| 3. `FREDdocs/go-live-checklist.md`; the review's manual steps point at it; task complete | this document's "Manual steps" and "Status" sections | a verifier agent checked the checklist's claims against the docs and code | done |
+
 ## Phase 8: what the tests cover
 
 Backend (`cd backend && ./gradlew test`): 156 tests.
@@ -162,7 +170,7 @@ End-to-end (`npm run test:e2e`, Chromium, pages served by `frontend/serve.py`, A
 - `tests/confirmed-page.spec.js`: every state of confirmed.html, `Waitlist Confirmed` with the exact band once, the tier stored only when the redirect carries `hours`, URL stripping, shared links storing nothing, the resend form's single answer.
 - `tests/about-and-consent.spec.js`: the founder wording only for a known founder, the consent sentence identical on both forms, the stat tile threshold.
 
-Results at review time (2026-09-25): backend 156 tests, 0 failures (including the 4 real-MySQL integration tests); end-to-end 91 tests, 0 failures, 0 skipped, in one invocation of `npm run test:e2e` (6 + 29 + 19 + 25 + 12 across the five files), each spec also run twice by its author to check for flakiness. Every spec was written by one agent and run to green by another that was allowed to change only the spec; none needed weakening. What the runners flagged and what happened to it: `showMsg()` on both pages rendered the API's `message` field with `innerHTML` (an injection sink if the API origin were ever compromised): switched to text. A malformed `waitlist_pending` record was left in storage: now cleared. Two Playwright invocations at once race on `test-results/`: run the suite from one invocation (documented in analytics-qa.md A4). The `409 -> duplicate` mapping in `waitlist.js` is unreachable (the backend answers duplicates with 200): left, documented. A product question, not a defect: on `index.html` a returning visitor with a saved pending or success state sees the calculator first, with the pending or success block inside the collapsed reveal zone until they click Reveal; that is the calculator-first design applied to a returning visitor, and it is Andrew's call whether the zone should open itself when a state is saved.
+Results at review time (2026-09-26): backend 158 tests, 0 failures (including the 4 real-MySQL integration tests); end-to-end 95 tests, 0 failures, 0 skipped, in one invocation of `npm run test:e2e` (6 + 29 + 19 + 25 + 12 + 4 across the six files, the sixth being `tests/returning-visitor.spec.js`), each of the first five specs also run twice by its author to check for flakiness. Every spec was written by one agent and run to green by another that was allowed to change only the spec; none needed weakening. What the runners flagged and what happened to it: `showMsg()` on both pages rendered the API's `message` field with `innerHTML` (an injection sink if the API origin were ever compromised): switched to text. A malformed `waitlist_pending` record was left in storage: now cleared. Two Playwright invocations at once race on `test-results/`: run the suite from one invocation (documented in analytics-qa.md A4). The `409 -> duplicate` mapping in `waitlist.js` is unreachable (the backend answers duplicates with 200): left, documented. A product question, not a defect: on `index.html` a returning visitor with a saved pending or success state sees the calculator first, with the pending or success block inside the collapsed reveal zone until they click Reveal; that is the calculator-first design applied to a returning visitor, and it is Andrew's call whether the zone should open itself when a state is saved.
 
 ## Message 17: the confirm click and the Apple Mail strip (2026-09-25)
 
@@ -182,11 +190,11 @@ Results at review time (2026-09-25): backend 156 tests, 0 failures (including th
 
 ## Manual steps that only Andrew can do
 
-- Railway prod, before the first deploy: `POSTAL_ADDRESS` (required), `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `API_PUBLIC_URL=https://lpapi.fredvested.com`, `CORS_ALLOWED_ORIGINS`, `CLOUDFLARE_TURNSTILE_SECRET`; then the snapshot dry-run of V1..V5 against a copy of prod's schema (CLAUDE.md "Schema Migrations"); then deploy and watch the Flyway lines.
-- Resend: sending subdomain with SPF, DKIM, DMARC; open tracking off, click tracking on; webhook per environment without `email.opened`; the Gmail and Microsoft 365 header test (`resend-setup.md`).
-- Plausible Business: site, goals, custom properties, funnels (`analytics-dashboard-setup.md`).
-- Counsel: privacy policy to name Resend and drop "cannot opt out of transactional emails"; the final consent sentence (one constant); the confirmation email copy sign-off.
-- `about.html` has the consent sentence now; counsel's final wording replaces the constant.
+All of them are sequenced, with owner, dependencies and verification, in **`FREDdocs/go-live-checklist.md`**: counsel items (consent sentence, final policy into `/privacy`, Terms of Use, PO box), Plausible Business plus the dashboard and the DPA, the sending subdomain DNS and the header-inspection test, the prod Railway variables, the Railway backup, snapshot and Flyway dry-run, merging `develop` to `main` with the Cloudflare Pages production settings, the first production signup, and the first-24-hours checks. Work that list top to bottom; nothing operational is recorded only here.
+
+## Status
+
+**Complete as of 2026-09-26.** Every numbered item in every message is implemented, tested and documented, or recorded above as a decision or a known gap. What remains is operational and lives in the go-live checklist.
 
 ## Known gaps
 

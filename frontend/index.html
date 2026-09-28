@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<title>FRED: Find the age you could quit your job</title>
+<title>FRED: Calculator</title>
 <meta name="description" content="Move three sliders and get the year you could walk away from work for good, in under 30 seconds.">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
@@ -301,7 +301,7 @@
       <div class="relative mt-5 min-h-[52px]">
         <form id="waitlist-form" class="flex flex-col gap-2.5 sm:flex-row" novalidate>
           <label class="sr-only" for="capture-email">Email address</label>
-          <input id="capture-email" type="email" placeholder="you@email.com" autocomplete="email" required
+          <input id="capture-email" name="email" type="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required
             class="min-w-0 flex-1 rounded-xl border-gray-200 px-4 py-[14px] text-[15px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
           <button type="submit" id="join-waitlist-btn"
             class="rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
@@ -753,13 +753,27 @@
     }
   });
 
+  // A returning visitor with a saved state must see it at once, not a calculator that
+  // looks like they never signed up (decision 2026-09-26). The reveal zone opens itself
+  // showing the current result, the calculator stays above it, and no scrolling. It is
+  // not a reveal: `revealed` stays false, so no event fires now and the visitor's first
+  // click on this page load is this page load's Freedom Date Revealed, as for anyone.
+  function openZoneForSavedState() {
+    render(false);
+    revealZone.removeAttribute("inert");
+    revealZone.classList.add("open");
+    revealZone.style.maxHeight = "none";
+    revealBtn.setAttribute("aria-expanded", "true");
+  }
+
   // If they already joined on a previous visit, skip the form entirely.
   const savedStatus = getSavedStatus();
   if (savedStatus === "pending_confirmation") {
     // An expired pending state (older than the link itself) reads as absent: the form comes back.
     const pendingEmail = getPendingEmail();
-    if (pendingEmail) showPending(pendingEmail, false); else clearStatus();
+    if (pendingEmail) { openZoneForSavedState(); showPending(pendingEmail, false); } else clearStatus();
   } else if (savedStatus) {
+    openZoneForSavedState();
     showSuccess(savedStatus, false);
   }
 
