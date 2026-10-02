@@ -148,11 +148,15 @@ test.describe('index.html: calculator events', () => {
     await page.click('#return-seg [data-return="conservative"]');
     expect(await events(page)).toEqual([{ name: 'Calc Engaged', props: { first_field: 'return_scenario' }, url: 'http://localhost:5500/index.html' }]);
 
+    // A scenario change is an edit, counted after the 400 ms debounce (EDIT_DEBOUNCE_MS in
+    // analytics.js). Wait for it, as the adjust-every-input test does: revealing inside the
+    // window read '0' on a fast machine and '1-3' under load, which made this test flaky.
+    await waitForEditsBand(page, '1-3');
     await reveal(page);
     await expect(page.locator('#result-age')).toHaveText('57');
     const revealed = await eventsNamed(page, 'Freedom Date Revealed');
     expect(revealed).toHaveLength(1);
-    expect(revealed[0].props).toEqual({ ...DEFAULT_REVEAL, return_scenario: 'conservative', freedom_age_band: '55-59' });
+    expect(revealed[0].props).toEqual({ ...DEFAULT_REVEAL, return_scenario: 'conservative', freedom_age_band: '55-59', input_edits_band: '1-3' });
   });
 
   test('the first reveal with untouched defaults fires Freedom Date Revealed once with the exact bands', async ({ page }) => {
