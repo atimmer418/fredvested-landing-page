@@ -47,11 +47,10 @@
   // or above this sample size; below it the elements stay hidden entirely.
   const STAT_TILE_MIN_N = 25;
 
-  // ATTORNEY REVIEW PENDING: interim consent language, Group C answers control the
-  // final version. ONE constant, rendered under every waitlist form (index.html and
-  // about.html), so the final wording lands in one place. Do not finalise here.
+  // Counsel-approved wording. ONE constant, rendered under every waitlist form
+  // (index.html and about.html), so the wording lives in one place.
   const CONSENT_SENTENCE_HTML =
-    'By joining the waitlist, you consent to receive email updates from FRED and to our storing your email address and the calculator inputs you entered, as described in our <a href="/privacy" class="underline hover:text-primary">Privacy Policy</a>. You can unsubscribe at any time. Joining the waitlist does not create an advisory relationship and does not guarantee access to FRED, founding member pricing, or any investment outcome.';
+    'By signing up for our waitlist, you recognize that your data (including your email address, stored calculator inputs, and internet browsing activity) will be stored by us and handled in accord with our <a href="/privacy" class="underline hover:text-primary">privacy policy</a> and that we will contact you to market our services to you. If at any time you wish to unsubscribe from the waitlist, you may do so through the unsubscribe link contained in our messages.';
 
   // Renders the consent sentence into the element with this id, if the page has one.
   function renderConsent(id) {

@@ -117,11 +117,11 @@ test('index.html with a saved WAITLISTNORMAL status shows the priority waitlist 
 async function expectConsentNote(page) {
   const note = page.locator('#consent-note');
   await expect(note).toBeVisible();
-  await expect(note).toContainText('By joining the waitlist, you consent');
-  await expect(note).toContainText('You can unsubscribe at any time.');
+  await expect(note).toContainText('By signing up for our waitlist, you recognize that your data');
+  await expect(note).toContainText('you may do so through the unsubscribe link contained in our messages.');
   const link = note.locator('a');
   await expect(link).toHaveCount(1);
-  await expect(link).toHaveText('Privacy Policy');
+  await expect(link).toHaveText('privacy policy');
   // The constant links to the clean /privacy path; on localhost devLinkMap
   // rewrites it to privacy.html because nothing maps clean URLs there.
   await expect(link).toHaveAttribute('href', /^(\/privacy|privacy\.html)$/);
@@ -129,6 +129,20 @@ async function expectConsentNote(page) {
   expect(text).not.toContain(EM_DASH);
   return text;
 }
+
+const COUNSEL_SENTENCE = 'By signing up for our waitlist, you recognize that your data (including your email address, stored calculator inputs, and internet browsing activity) will be stored by us and handled in accord with our privacy policy and that we will contact you to market our services to you. If at any time you wish to unsubscribe from the waitlist, you may do so through the unsubscribe link contained in our messages.';
+
+test('the index page consent sentence is counsel\'s exact wording and its link resolves to the privacy page', async ({ page }) => {
+  await installMocks(page);
+  await page.goto('/index.html');
+  await revealIfNeeded(page);
+  await expect(page.locator('#consent-note')).toHaveText(COUNSEL_SENTENCE);
+  await expect(page.locator('#waitlist-form input[type="checkbox"]')).toHaveCount(0);
+  const href = await page.locator('#consent-note a').evaluate((a) => a.href);
+  const res = await page.request.get(href);
+  expect(res.status()).toBe(200);
+  expect(await res.text()).toMatch(/privacy/i);
+});
 
 test('the consent sentence under both waitlist forms is one identical text that asks for consent and links to the privacy policy', async ({ page }) => {
   await installMocks(page);
@@ -142,6 +156,7 @@ test('the consent sentence under both waitlist forms is one identical text that 
   const aboutText = await expectConsentNote(page);
 
   expect(aboutText).toBe(indexText);
+  expect(indexText).toBe(COUNSEL_SENTENCE);
   // The source constant itself carries no em dash either (markup included).
   const constant = await page.evaluate(() => window.FredWaitlist.CONSENT_SENTENCE_HTML);
   expect(constant).not.toContain(EM_DASH);
