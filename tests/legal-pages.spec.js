@@ -11,7 +11,7 @@ const OWN_HOSTS = new Set(['localhost', '127.0.0.1']);
 
 const PAGES = [
   { path: '/privacy', h1: 'FRED Privacy Policy', firstH2: '1. Introduction' },
-  { path: '/terms', h1: 'Terms of Service', firstH2: '1. License.' },
+  { path: '/terms', h1: 'Terms of Use', firstH2: '1. License.' },
 ];
 
 for (const { path, h1, firstH2 } of PAGES) {
