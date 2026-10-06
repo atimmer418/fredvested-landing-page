@@ -147,3 +147,90 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
   border: none;
 }
+
+/* Legal pages (/privacy, /terms). Counsel's fragments (legal/*.html) carry
+   three things the card layout had no pattern for: a four-column data table,
+   <h3> subsections and <dfn> defined terms. Everything else reuses the
+   pages' existing utility classes. Text-transform is deliberately never
+   applied: sections 27 and 33 of the Terms are all-caps in the source. */
+.legal-content {
+  overflow-wrap: anywhere; /* long URLs in the policy must wrap, not scroll, at 375px */
+}
+
+.legal-content dfn {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.legal-table-wrap {
+  overflow-x: auto;
+}
+
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: var(--color-slate-text);
+}
+
+.legal-table th,
+.legal-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-gray-100);
+  overflow-wrap: normal; /* auto layout must size columns by whole words, not characters */
+}
+
+.legal-table th {
+  min-width: 8rem;
+}
+
+.legal-table th {
+  color: var(--color-navy);
+  background: var(--color-background-light);
+}
+
+.legal-table td p + p {
+  margin-top: 0.5rem;
+}
+
+/* Below md the table becomes one card per row: each cell shows its column
+   header (data-label) above its value, so nothing scrolls sideways. */
+@media (width < 48rem) {
+  .legal-table thead {
+    display: none;
+  }
+
+  .legal-table,
+  .legal-table tbody,
+  .legal-table tr,
+  .legal-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .legal-table tr {
+    border: 1px solid var(--color-gray-100);
+    border-radius: 0.75rem;
+    background: var(--color-background-light);
+    padding: 0.25rem 0;
+    margin-bottom: 1rem;
+  }
+
+  .legal-table td {
+    border-bottom: 0;
+    padding: 0.5rem 1rem;
+  }
+
+  .legal-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-weight: 600;
+    color: var(--color-navy);
+    margin-bottom: 0.125rem;
+  }
+}

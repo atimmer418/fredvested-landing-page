@@ -55,7 +55,7 @@ The suite lives in `tests/` (helpers.js is the harness). It fails on any request
 ### Frontend
 - Single `index.html` with inline JavaScript
 - Tailwind CSS v4 (no config file — uses CSS-based config in `src/input.css`)
-- Fonts: Inter (body), Montserrat (logo), **self-hosted** from `frontend/fonts/` via `@font-face` in `src/input.css`. Do not add Google Fonts (or any third-party origin) back: the only vendors the privacy policy may name are Plausible, Resend, Cloudflare and Railway, so any other third-party request is a launch blocker. (As of 2026-09-24 `frontend/privacy.html` names Plausible, Cloudflare and Railway but not Resend; adding the email provider is a counsel item before launch, not a code change.) Icons are inline SVG sprites, not an icon font.
+- Fonts: Inter (body), Montserrat (logo), **self-hosted** from `frontend/fonts/` via `@font-face` in `src/input.css`. Do not add Google Fonts (or any third-party origin) back: the only vendors the privacy policy may name are Plausible, Resend, Cloudflare and Railway, so any other third-party request is a launch blocker. (Since 2026-10-06 `frontend/privacy.html` is counsel's final policy, rendered verbatim from `legal/privacy-content.html`; it names all four. `legal/` is the source of record for the privacy and terms text; change the fragment, never the page's words.) Icons are inline SVG sprites, not an icon font.
 - Calls backend API at `/api/waitlist` for form submission and stats
 
 ### Backend
