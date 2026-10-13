@@ -54,7 +54,6 @@ class WaitlistControllerEmailTest {
         when(rateLimiterService.isAllowed(anyString())).thenReturn(true);
         when(turnstileService.verifyToken(anyString())).thenReturn(true);
         when(repository.existsByEmail("test@example.com")).thenReturn(false);
-        when(repository.countByStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(0L);
         when(repository.count()).thenReturn(1L);
         when(repository.save(any(WaitlistEntry.class))).thenAnswer(inv -> {
             WaitlistEntry e = inv.getArgument(0);

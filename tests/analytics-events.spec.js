@@ -339,7 +339,7 @@ test.describe('about.html: email events without a calculator', () => {
 
     await submitWaitlist(page, 'about@example.com');
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('#nav-cta')).toHaveText('Check your email');
+    await expect(page.locator('#nav-cta')).toHaveText('You got mail ✓');
 
     expect(calls.signup).toHaveLength(1);
     expect(calls.signup[0]).toMatchObject({ email: 'about@example.com', revealedBeforeSubmit: false });
@@ -352,10 +352,10 @@ test.describe('about.html: email events without a calculator', () => {
 test.describe('failure paths', () => {
   test('index: a confirmed duplicate (200 already_joined) fires Waitlist Failed reason duplicate and shows the already-on-the-list note', async ({ page }) => {
     await forceAnalytics(page);
-    await installMocks(page, { signup: confirmedDuplicate('WAITLISTFOUNDER') });
+    await installMocks(page, { signup: confirmedDuplicate('WAITLISTED') });
     await page.goto('/index.html');
 
-    await submitWaitlist(page, 'founder@example.com');
+    await submitWaitlist(page, 'again@example.com');
     await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#success-note')).toHaveText('You’re already on the list.');
     await expect(page.locator('#pending-block')).toBeHidden();
@@ -364,24 +364,25 @@ test.describe('failure paths', () => {
     expect((await eventsNamed(page, 'Waitlist Failed'))[0].props).toEqual({ reason: 'duplicate' });
     expect(await eventsNamed(page, 'Waitlist Submitted')).toEqual([]);
     // The row's real status is what the browser remembers, not "already_joined".
-    expect(await storage(page, 'waitlist_status')).toBe('WAITLISTFOUNDER');
+    expect(await storage(page, 'waitlist_status')).toBe('WAITLISTED');
     expect(await storage(page, 'waitlist_pending')).toBeNull();
   });
 
   test('about: a confirmed duplicate fires reason duplicate and the CTAs read as already joined', async ({ page }) => {
     await forceAnalytics(page);
-    await installMocks(page, { signup: confirmedDuplicate('WAITLISTNORMAL') });
+    await installMocks(page, { signup: confirmedDuplicate('INVITED') });
     await page.goto('/about.html');
 
-    await submitWaitlist(page, 'normal@example.com');
+    await submitWaitlist(page, 'invited@example.com');
     await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#success-note')).toHaveText('You’re already on the list.');
     await expect(page.locator('#nav-cta')).toHaveText('You’re in ✓');
-    await expect(page.locator('#founder-cta')).toContainText('You’re on the priority waitlist');
+    await expect(page.locator('#founder-cta')).toContainText('Your spot in line is reserved');
 
     expect(await eventNames(page)).toEqual(['Email Focused', 'Waitlist Failed']);
     expect((await eventsNamed(page, 'Waitlist Failed'))[0].props).toEqual({ reason: 'duplicate' });
-    expect(await storage(page, 'waitlist_status')).toBe('WAITLISTNORMAL');
+    // realStatus is kept verbatim, including the invite-workflow statuses.
+    expect(await storage(page, 'waitlist_status')).toBe('INVITED');
   });
 
   test('a 500 fires Waitlist Failed reason server_error, shows the error, leaves the form usable and a retry succeeds', async ({ page }) => {
@@ -547,7 +548,7 @@ test.describe('schema sweep', () => {
     // Odd raw values (on each slider's step grid), so any leak is unmistakable.
     await page.fill('#age-range', '47');
     await page.fill('#invest-range', '3350');
-    await page.fill('#retire-range', '12300');
+    await page.fill('#retire-range', '12250');
     await waitForEditsBand(page, '1-3');
     await reveal(page);
     // The age counts up for 900 ms and is aria-hidden until it settles.
@@ -567,7 +568,7 @@ test.describe('schema sweep', () => {
     const all = await events(page);
     expect(new Set(all.map((e) => e.name))).toEqual(new Set(LANDING_EVENTS));
 
-    const raw = new Set(['47', '48', '3350', '12300', ...renderedAges.map((a) => String(a).trim())]);
+    const raw = new Set(['47', '48', '3350', '12250', ...renderedAges.map((a) => String(a).trim())]);
     for (const e of all) {
       const keys = Object.keys(e.props).sort();
       const expected = e.name === 'Waitlist Submitted' && e.props.revealed === 'yes'

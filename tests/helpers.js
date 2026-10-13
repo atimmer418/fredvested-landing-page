@@ -29,10 +29,9 @@ const ALLOWED_HOSTS = new Set([
 ]);
 
 const FRESH_SIGNUP = {
-  status: 'WAITLISTNORMAL',
+  status: 'WAITLISTED',
   requiresConfirmation: true,
   count: 41,
-  founderCount: 12,
   avgFreedomAge: 0,
   projectionCount: 0,
   projectionStartDate: null,
@@ -42,7 +41,6 @@ const FRESH_SIGNUP = {
 const STATS = {
   status: 'success',
   count: 40,
-  founderCount: 12,
   avgFreedomAge: 0,
   projectionCount: 0,
   projectionStartDate: null,

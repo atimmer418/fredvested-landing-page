@@ -5,7 +5,7 @@
 const { test, expect } = require('@playwright/test');
 const { installMocks, forceAnalytics, collectHosts, submitWaitlist, assertOnlyAllowedHosts } = require('./helpers');
 
-const PAGES = ['/index.html', '/about.html', '/privacy.html', '/terms.html', '/confirmed.html?status=confirmed&hours=%3C1&tier=founder'];
+const PAGES = ['/index.html', '/about.html', '/privacy.html', '/terms.html', '/confirmed.html?status=confirmed&hours=%3C1'];
 
 for (const path of PAGES) {
   test(`${path} talks only to our origin and Turnstile`, async ({ page }) => {

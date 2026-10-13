@@ -152,17 +152,15 @@
   document.getElementById("s-" + state).hidden = false;
   if (state === "confirmed") {
     document.getElementById("c-confirmed").hidden = false;
-    // Only the backend's redirect carries hours (and tier). A shared or retyped
+    // Only the backend's redirect carries hours. A shared or retyped
     // /confirmed?status=confirmed URL does not, and must not mark this browser as a
     // member, so nothing below runs without it.
     const hours = params.get("hours");
-    const tier = params.get("tier");
     if (hours !== null) {
       // The signup is complete: index.html and about.html stop showing "check your
-      // email" and show the decided status. This browser only; never sent anywhere.
+      // email" and show the confirmed state. This browser only; never sent anywhere.
       try {
-        localStorage.setItem("waitlist_status",
-          tier === "founder" ? "WAITLISTFOUNDER" : tier === "normal" ? "WAITLISTNORMAL" : "confirmed");
+        localStorage.setItem("waitlist_status", "confirmed");
         localStorage.removeItem("waitlist_pending");
       } catch (e) { /* storage blocked: nothing to update */ }
       // The backend passes the banded hours-to-confirm; only an exact band value is forwarded.
@@ -170,12 +168,11 @@
       if (window.FredAnalytics && ["<1", "1-6", "6-24", "24-72", "72+"].indexOf(hours) !== -1) {
         window.FredAnalytics.track("Waitlist Confirmed", { hours_to_confirm_band: hours });
       }
-      // Drop both from the address bar so a reload or "open in browser" from an email
+      // Drop hours from the address bar so a reload or "open in browser" from an email
       // app can neither fire the event again nor re-store the status; the visible
-      // state is already chosen.
+      // state is already chosen. Any other unknown parameter is left as it came.
       try {
         params.delete("hours");
-        params.delete("tier");
         history.replaceState(null, "", location.pathname + "?" + params.toString());
       } catch (e) { /* history API unavailable: nothing to do */ }
     }

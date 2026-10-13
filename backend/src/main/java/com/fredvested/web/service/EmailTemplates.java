@@ -54,7 +54,16 @@ FREDvested LLC, %s
         return new Rendered(subject, html, text);
     }
 
-    /** The single-opt-in path (double opt-in flag off): the original welcome email. */
+    /**
+     * Counsel, 2026-10-13 (staged, pending final sign-off): the welcome email footer
+     * carries this disclaimer verbatim and a link to the privacy policy, in both parts.
+     */
+    static final String DEVELOPMENT_DISCLAIMER =
+            "FRED is still in development. Any investment advisory services will be made available only after applicable registration requirements have been satisfied and subject to eligibility and onboarding requirements. Joining the waitlist does not create an advisory relationship or guarantee account approval or a launch date.";
+
+    static final String PRIVACY_URL = "https://fredvested.com/privacy";
+
+    /** The welcome email ("You're in"): sent on confirmation, or at signup with double opt-in off. */
     public static Rendered welcome(String unsubscribeUrl, String postalAddress) {
         String subject = "You're in";
         String text = """
@@ -75,8 +84,11 @@ help@fredvested.com
 
 You're receiving this because you signed up at fredvested.com.
 Unsubscribe: %s
+Privacy Policy: %s
 FREDvested LLC, %s
-""".formatted(unsubscribeUrl, postalAddress);
+
+%s
+""".formatted(unsubscribeUrl, PRIVACY_URL, postalAddress, DEVELOPMENT_DISCLAIMER);
 
         String html = shell("You&#39;re in", """
               <p style="margin:0 0 24px;font-size:16px;line-height:1.4;color:#0F172A;">
@@ -90,7 +102,7 @@ FREDvested LLC, %s
               <p style="margin:0;font-size:15px;line-height:1.4;color:#334155;">
                 You don&#39;t need to do anything else right now. You&#39;re in line.
               </p>
-""", unsubscribeUrl, postalAddress);
+""", unsubscribeUrl, postalAddress, WELCOME_FOOTER);
         return new Rendered(subject, html, text);
     }
 
@@ -115,7 +127,26 @@ FREDvested LLC, %s
               </table>
 """;
 
+    /** Footer extras for the welcome email: the privacy link sits beside Unsubscribe; the disclaimer follows the address. */
+    private static final String WELCOME_FOOTER_LINKS =
+            " &#183; <a href=\"%s\" style=\"color:#94a3b8;\">Privacy Policy</a>".formatted(PRIVACY_URL);
+
+    private static final String WELCOME_FOOTER_NOTE = """
+
+        <p style="margin:12px 0 0;font-size:11px;line-height:1.5;color:#94a3b8;text-align:center;">
+          %s
+        </p>""".formatted(DEVELOPMENT_DISCLAIMER);
+
+    private static final String[] WELCOME_FOOTER = { WELCOME_FOOTER_LINKS, WELCOME_FOOTER_NOTE };
+
+    private static final String[] NO_FOOTER = { "", "" };
+
     private static String shell(String title, String body, String unsubscribeUrl, String postalAddress) {
+        return shell(title, body, unsubscribeUrl, postalAddress, NO_FOOTER);
+    }
+
+    /** footer[0] is appended after the Unsubscribe link, footer[1] after the postal address line. */
+    private static String shell(String title, String body, String unsubscribeUrl, String postalAddress, String[] footer) {
         return """
 <!DOCTYPE html>
 <html>
@@ -148,17 +179,17 @@ FREDvested LLC, %s
         </table>
         <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
           You&#39;re receiving this because this address was entered at fredvested.com.
-          <a href="%s" style="color:#94a3b8;">Unsubscribe</a>
+          <a href="%s" style="color:#94a3b8;">Unsubscribe</a>%s
         </p>
         <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
           FREDvested LLC, %s
-        </p>
+        </p>%s
       </td>
     </tr>
   </table>
 </body>
 </html>
-""".formatted(title, body, unsubscribeUrl, escape(postalAddress));
+""".formatted(title, body, unsubscribeUrl, footer[0], escape(postalAddress), footer[1]);
     }
 
     private static String escape(String s) {

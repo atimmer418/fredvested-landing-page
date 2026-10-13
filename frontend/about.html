@@ -81,7 +81,7 @@
 
 <!-- 1 · Hero -->
 <section class="hero-wash relative overflow-hidden">
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16 lg:pt-24 lg:pb-28">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16 lg:pt-24 lg:pb-28">
 <div class="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
 
   <!-- Product mock: first in DOM so mobile leads with the image; lg:order-2 keeps it right on desktop -->
@@ -126,7 +126,7 @@
              withdrawal rate) in 64 pay periods (about 29.4 months), so from September 2026 the Freedom Date lands in
              February 2029. Note: index.html compute() uses a nominal 10%/12 monthly rate and Math.round, which gives about
              28.3 months (January 2029). 77% = 1,733,180 / 2,250,000. Re-check if any figure changes. -->
-        <p class="mt-3 text-[10px] leading-snug text-slate-text">Hypothetical illustration, not a real account or a projection of your results.<sup><a href="#fn-1" id="fnref-1" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 1">1</a></sup></p>
+        <p class="mt-3 text-[clamp(7px,2.05vw,10px)] leading-snug text-slate-text">Hypothetical illustration, not a real account nor a projection of your results.<sup><a href="#fn-1" id="fnref-1" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 1">1</a></sup></p>
       </div>
     </div>
   </div>
@@ -188,17 +188,17 @@
          hypothetical-performance presentation under the Marketing Rule. Attorney to rule during screenshot review
          before this can go live. Value, sample size, and date range are live-only (no baked numbers); the tile and
          its disclosure render only when the API reports projectionCount >= STAT_TILE_MIN_N plus both period dates.
-         Attorney screenshot mode: ?previewStat=1 on localhost/127.0.0.1 only renders sample values. -->
+         Attorney screenshot mode: ?previewStat=1 on local hosts (localhost, 127.0.0.1, LAN IPs) renders sample values. -->
     <div id="stat-years-tile" class="hidden w-[calc(50%-0.75rem)] lg:flex-1">
       <div class="font-montserrat font-extrabold text-3xl text-navy"><span id="stat-years"></span></div>
-      <div class="mt-1 text-[13px] font-medium text-slate-text">avg projected years ahead of a 65 retirement<sup><a href="#fn-2" class="text-primary hover:underline" aria-label="Disclosure 2">2</a></sup></div>
+      <div class="mt-1 text-[13px] font-medium text-slate-text">avg projected years ahead of a 65 y/o retirement<sup><a href="#fn-2" class="text-primary hover:underline" aria-label="Disclosure 2">2</a></sup></div>
     </div>
   </div>
   <!-- ATTORNEY GUIDANCE 2026-09-15: disclosure always renders with the stat. The short line here and the full
        text in footnote 2 (#fn-2, Disclosures block above the footer) stay hidden until renderHeadStart shows
        them together with the stat. The full text is set by JS so the disclosed sample size and measurement
        period always come from the same API response as the stat. -->
-  <p id="stat-years-short" class="hidden mt-6 text-center text-[11px] text-slate-text">Aggregate of hypothetical calculator projections, not actual client results.<sup><a href="#fn-2" id="fnref-2" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 2">2</a></sup></p>
+  <p id="stat-years-short" class="hidden mt-6 text-center -mx-2 sm:mx-0 text-[clamp(8px,2.55vw,11px)] whitespace-nowrap text-slate-text">Aggregate of hypothetical calculator projections, not actual client results.<sup><a href="#fn-2" id="fnref-2" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 2">2</a></sup></p>
 </div>
 </section>
 
@@ -219,14 +219,14 @@
         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
       </div>
       <h3 class="font-bold text-lg text-navy mb-2">2. Every paycheck, FRED invests</h3>
-      <p class="text-sm text-slate-text max-w-[32ch] mx-auto leading-relaxed">A slice of each paycheck goes straight into your diversified index portfolio. No willpower needed.</p>
+      <p class="text-sm text-slate-text max-w-[32ch] mx-auto leading-relaxed">A slice of each paycheck goes straight into your diversified index portfolio.</p>
     </div>
     <div>
       <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-blue-100 shadow-soft text-primary">
         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="21" x2="5" y2="4"/><path d="M5 4h13l-2.5 4L18 12H5"/></svg>
       </div>
-      <h3 class="font-bold text-lg text-navy mb-2">3. Watch your date get closer</h3>
-      <p class="text-sm text-slate-text max-w-[32ch] mx-auto leading-relaxed">Compounding does the heavy lifting while your Freedom Date moves toward you.</p>
+      <h3 class="font-bold text-lg text-navy mb-2">3. Close in on your Freedom Date</h3>
+      <p class="text-sm text-slate-text max-w-[32ch] mx-auto leading-relaxed">Compounding does the heavy lifting while you move toward your Freedom Date.</p>
     </div>
   </div>
 </div>
@@ -247,7 +247,7 @@
         </span>
         <div>
           <h3 class="font-bold text-navy mb-1">Your money, your name</h3>
-          <p class="text-sm text-slate-text leading-relaxed">Your account will be held in <b>your name</b> at Alpaca Securities LLC, a FINRA/SIPC-member brokerage. If FRED were to shut down tomorrow, your money would still be yours. For more information, see the <a href="#faq" class="underline decoration-slate-text/40 underline-offset-2 hover:text-primary">&lsquo;Fair questions&rsquo;</a> below.</p>
+          <p class="text-sm text-slate-text leading-relaxed">Your account will be held in <b>your name</b> at Alpaca Securities LLC, a FINRA/SIPC-member brokerage. If FRED were to shut down tomorrow, your money would still be yours. For more information, see <a href="#faq" class="underline decoration-slate-text/40 underline-offset-2 hover:text-primary">&lsquo;Fair questions&rsquo;</a> below.</p>
         </div>
       </li>
       <li class="flex gap-4">
@@ -304,7 +304,7 @@
         <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-navy"></span>VBR 5%</span>
       </div>
       <div class="mt-4 flex flex-col gap-2">
-        <p class="order-2 sm:order-1 text-[11px] text-slate-text">Shown for transparency. Not a recommendation to buy any security.</p>
+        <p class="order-2 sm:order-1 text-[11px] text-gray-400"><span class="hidden sm:inline">Shown for transparency. Not a recommendation to buy any security.</span><span class="sm:hidden">Not a recommendation to buy any security.<br>Shown for transparency.</span></p>
         <p class="order-1 sm:order-2 text-xs text-slate-text">Thousands of companies across the global market, with<span class="sm:hidden"> extra weight on smaller, cheaper companies.</span><span class="hidden sm:inline"> a little extra weight on smaller, bargain-priced companies.</span></p>
       </div>
     </div>
@@ -312,8 +312,8 @@
 
   <!-- Founder note -->
   <div class="mt-14 max-w-3xl mx-auto rounded-[22px] border border-gray-200 bg-background-light p-7 sm:p-9">
-    <div class="flex flex-col sm:flex-row gap-6 items-start">
-      <!-- Drop a real photo at assets/founder.jpg (square, ≥400px); the pig stands in until then -->
+    <div class="flex items-center gap-4">
+      <!-- assets/founder.jpg: 480px square of Andrew's headshot (plain crop, head at about two thirds of the frame), metadata stripped; the logo fallback below only shows if it fails to load -->
       <img src="assets/founder.jpg" alt="Andrew, founder of FRED"
         class="h-20 w-20 rounded-2xl object-cover flex-shrink-0 border border-gray-200"
         onerror="this.style.display='none'; document.getElementById('founder-fallback').style.display='flex';">
@@ -321,12 +321,13 @@
         <img src="assets/logo.svg" alt="" class="h-11 w-11" draggable="false">
       </span>
       <div>
-        <p class="text-[15px] leading-relaxed text-navy">
-          &ldquo;My father was diagnosed with lung cancer and told he didn't have long. He kept working, right up until the end, because he never believed he could afford to stop. He died at 69 and never got to retire. And he had saved. Decades of paychecks into his retirement account. What he never had was a plan to safely draw it down. FRED is built to teach the strategies he was never shown. You have the choice he never got.&rdquo;
-        </p>
-        <p class="mt-3 text-sm font-bold text-navy">Andrew <span class="font-medium text-slate-text">&middot; Founder, FRED</span></p>
+        <p class="text-base font-bold text-navy">Andrew</p>
+        <p class="text-sm font-medium text-slate-text">Founder, FRED</p>
       </div>
     </div>
+    <p class="mt-6 text-[15px] leading-relaxed text-navy">
+      &ldquo;My father was diagnosed with lung cancer and told he didn't have long. But he kept working, right up until the end, because he never knew how he could afford to stop. He died at 69 and never got to retire. And he had saved. Decades of paychecks into his retirement account. What he never had was a plan to draw it down. FRED exists to teach the strategies he was never shown, so others can have the retirement he never did. You have a choice he never got.&rdquo;
+    </p>
   </div>
 </div>
 </section>
@@ -398,11 +399,11 @@
       <div class="divide-y divide-gray-100">
         <div class="flex justify-between items-center gap-4 px-4 py-3">
           <span class="text-sm text-slate-text">FRED</span>
-          <span class="text-xs text-slate-text text-right leading-snug"><svg class="inline w-4 h-4 mr-1 -mt-0.5 align-middle text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>On launch, user sets an automated schedule</span>
+          <span class="text-xs text-slate-text text-right leading-snug"><svg class="inline w-4 h-4 mr-1 -mt-0.5 align-middle text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> On launch, user sets an automated schedule</span>
         </div>
         <div class="flex justify-between items-center gap-4 px-4 py-3">
           <span class="text-sm text-slate-text">Autopilot</span>
-          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 flex-shrink-0 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> 2-week delay</span>
+          <span class="text-xs text-slate-text flex items-center gap-1"><svg class="w-4 h-4 flex-shrink-0 text-slate-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> Minimum 2-week delay</span>
         </div>
         <div class="flex justify-between items-center gap-4 px-4 py-3">
           <span class="text-sm text-slate-text">Alinea</span>
@@ -639,7 +640,7 @@
   <h2 class="font-montserrat font-extrabold text-3xl sm:text-4xl text-navy mb-3">Founder Access</h2>
   <p class="text-slate-text mb-10"><span class="sm:hidden">The first 300 members will never pay monthly.<br>We don&rsquo;t want a chunk of your future either.</span><span class="hidden sm:inline">The first 300 members will never pay a monthly subscription.<br>We don&rsquo;t want a percentage of your future either.</span></p>
 
-  <div class="bg-gray-900 text-white rounded-3xl p-8 sm:p-10 relative overflow-hidden shadow-2xl max-w-md mx-auto text-left">
+  <div class="bg-gray-900 text-white rounded-3xl p-8 pb-4 sm:p-10 relative overflow-hidden shadow-2xl max-w-md mx-auto text-left">
     <div class="absolute -top-1 -right-1 bg-primary text-xs font-bold pl-4 pb-1.5 pr-5.5 pt-2.5 rounded-bl-xl rounded-tr-3xl text-white tracking-wide shadow-lg">Limited to 300</div>
     <h3 class="text-lg font-semibold text-gray-300">One-time founder price</h3>
     <div class="flex items-baseline gap-2 my-4">
@@ -657,7 +658,7 @@
     <!-- The guarantee, out of the fine print and into the light -->
     <div class="rounded-xl bg-green-500/10 border border-green-400/30 px-4 py-3.5 mb-6 flex items-start gap-3">
       <svg class="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-      <p class="text-[13px] leading-snug text-green-100"><b class="text-green-300">Full refund</b> if you&rsquo;re not more confident in your financial future. No payment until launch, you only pay if invited and you choose to claim your spot.</p>
+      <p class="text-[13px] leading-snug text-green-100"><b class="text-green-300">Full refund</b> if you&rsquo;re not more confident in your financial future. No payment until launch. You only pay if invited and choose to claim your spot.</p>
     </div>
 
     <a href="#join" id="founder-cta" class="block w-full text-center bg-primary hover:bg-primary-dark text-white font-montserrat font-extrabold py-3.5 rounded-xl transition-colors">
@@ -667,7 +668,7 @@
   </div>
 
   <!-- ATTORNEY GUIDANCE 2026-09-15: short line; the attorney-drafted full disclosure is footnote 3 (#fn-3) -->
-  <p class="mt-6 max-w-md mx-auto text-center text-[11px] text-slate-text">$99 one-time. Lifetime of the account holder. Terms and exclusions apply.<sup><a href="#fn-3" id="fnref-3" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 3">3</a></sup></p>
+  <p class="mt-6 max-w-md mx-auto text-center text-[11px] text-gray-400">$99 one-time. Lifetime of the account holder. <br class="sm:hidden">Terms and exclusions apply.<sup><a href="#fn-3" id="fnref-3" class="scroll-mt-40 text-primary hover:underline" aria-label="Disclosure 3">3</a></sup></p>
 </div>
 </section>
 
@@ -700,6 +701,7 @@
       </summary>
       <!-- ATTORNEY GUIDANCE 2026-09-15: attorney-drafted answer, apply verbatim; JSON-LD FAQPage text must match -->
       <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">The digital advisory services provided by FRED may be discontinued in accordance with the advisory agreement. If the service ends, FRED will provide notice through the contact information associated with your account and will explain the effective date of termination, the status of pending transactions, the date automated portfolio-management features will stop, and available account-transition options. Your assets are held at Alpaca Securities LLC, subject to the custodian&rsquo;s terms and procedures. You may generally retain, transfer, or self-direct your custodial account, subject to applicable restrictions and costs. The discontinuation of FRED&rsquo;s service does not require you to liquidate investments or transfer assets to a successor adviser. Prior to the discontinuation of FRED&rsquo;s services, your investment will be subject to risks, including the risk that your investment will lose value because of overall changes in the financial markets.</p>
+      <p class="px-6 pb-5 -mt-2 text-sm text-slate-text leading-relaxed"><b>In short:</b> yes, your assets are held at Alpaca Securities LLC, not by FRED, and the end of FRED&rsquo;s service does not require you to sell or move them.</p>
     </details>
 
     <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -707,7 +709,8 @@
         Why not just buy index funds myself?
         <svg class="faq-icon w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       </summary>
-      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">You absolutely can. FRED uses plain index funds on purpose. What FRED adds is the automation: every paycheck invested on time, every month, for decades, without relying on willpower. Consistency is what the math rewards.</p>
+      <!-- COUNSEL 2026-10-13 (staged, pending final sign-off): apply verbatim; JSON-LD FAQPage text must match -->
+      <p class="px-6 pb-5 text-sm text-slate-text leading-relaxed">You absolutely can. FRED uses plain index funds on purpose. Once registered as an investment adviser, what FRED will add is the automation and the education, working hand in hand. The automation will invest your chosen percentage of each paycheck according to your contribution schedule and will rebalance your portfolio without you placing trades. The education will prepare you for the day you stop investing and start withdrawing: portfolio withdrawal strategies, Monte Carlo simulations that test your plan against thousands of possible market paths, and a clearer understanding of your withdrawal options so you can make informed decisions about the money you have built. Consistency is what the math rewards, and a plan you understand is what keeps you consistent. Our service carries a subscription fee on top of fund expenses and any third-party account charges. Automation and education do not eliminate investment risk or guarantee an earlier retirement, and whether FRED is useful for you depends on your needs and circumstances.</p>
     </details>
 
     <details class="group bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -736,21 +739,10 @@
   <h2 class="font-montserrat font-extrabold text-2xl text-navy mb-2">Join the waitlist</h2>
   <div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-semibold text-primary mb-6">
     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-    Limited to 300 founding members
+    Founding member spots are limited
   </div>
 
   <div class="bg-background-light p-4 rounded-2xl border border-gray-200 mb-5 text-left">
-    <!-- Spots-filled meter: no baked count or bar width. Renders only when the API reports
-         founderCount >= STAT_TILE_MIN_N; below that the card reflows to just the note. -->
-    <div id="progress-block" class="hidden">
-      <div class="flex justify-between text-sm font-semibold mb-2">
-        <span class="text-navy">Spots filled</span>
-        <span class="text-primary" id="progress-count"></span>
-      </div>
-      <div class="w-full bg-gray-200 rounded-full h-3 mb-3.5">
-        <div class="bg-primary h-3 rounded-full transition-all duration-700" id="progress-bar" style="width: 0%"></div>
-      </div>
-    </div>
     <p id="waitlist-note" class="text-xs text-slate-text">We cap beta spots to keep support high-touch for every founding member. The beta is currently <b>iOS only</b>.</p>
   </div>
 
@@ -779,9 +771,9 @@
     <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
     <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300">
       <div class="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-left">
-        <p class="text-sm font-bold text-navy">One more step: check your email.</p>
+        <p class="text-sm font-bold text-navy">One more step: you got mail.</p>
         <p class="mt-1 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
-        <p class="mt-2 text-[13px] text-slate-text">Didn&rsquo;t get it? Check your spam folder, or <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">resend the email</button>.</p>
+        <p class="mt-2 text-[13px] text-slate-text">Didn&rsquo;t get it? <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">Resend the email</button>.</p>
         <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
         <div id="pending-msg" aria-live="polite"></div>
       </div>
@@ -850,12 +842,12 @@
     {
       "@type": "Question",
       "name": "Is my money safe if FRED shuts down?",
-      "acceptedAnswer": { "@type": "Answer", "text": "The digital advisory services provided by FRED may be discontinued in accordance with the advisory agreement. If the service ends, FRED will provide notice through the contact information associated with your account and will explain the effective date of termination, the status of pending transactions, the date automated portfolio-management features will stop, and available account-transition options. Your assets are held at Alpaca Securities LLC, subject to the custodian’s terms and procedures. You may generally retain, transfer, or self-direct your custodial account, subject to applicable restrictions and costs. The discontinuation of FRED’s service does not require you to liquidate investments or transfer assets to a successor adviser. Prior to the discontinuation of FRED’s services, your investment will be subject to risks, including the risk that your investment will lose value because of overall changes in the financial markets." }
+      "acceptedAnswer": { "@type": "Answer", "text": "The digital advisory services provided by FRED may be discontinued in accordance with the advisory agreement. If the service ends, FRED will provide notice through the contact information associated with your account and will explain the effective date of termination, the status of pending transactions, the date automated portfolio-management features will stop, and available account-transition options. Your assets are held at Alpaca Securities LLC, subject to the custodian’s terms and procedures. You may generally retain, transfer, or self-direct your custodial account, subject to applicable restrictions and costs. The discontinuation of FRED’s service does not require you to liquidate investments or transfer assets to a successor adviser. Prior to the discontinuation of FRED’s services, your investment will be subject to risks, including the risk that your investment will lose value because of overall changes in the financial markets. In short: your assets are held at Alpaca Securities LLC, not by FRED, and the end of FRED’s service does not require you to sell or move them." }
     },
     {
       "@type": "Question",
       "name": "Why not just buy index funds myself?",
-      "acceptedAnswer": { "@type": "Answer", "text": "You absolutely can. FRED uses plain index funds on purpose. What FRED adds is the automation: every paycheck invested on time, every month, for decades, without relying on willpower. Consistency is what the math rewards." }
+      "acceptedAnswer": { "@type": "Answer", "text": "You absolutely can. FRED uses plain index funds on purpose. Once registered as an investment adviser, what FRED will add is the automation and the education, working hand in hand. The automation will invest your chosen percentage of each paycheck according to your contribution schedule and will rebalance your portfolio without you placing trades. The education will prepare you for the day you stop investing and start withdrawing: portfolio withdrawal strategies, Monte Carlo simulations that test your plan against thousands of possible market paths, and a clearer understanding of your withdrawal options so you can make informed decisions about the money you have built. Consistency is what the math rewards, and a plan you understand is what keeps you consistent. Our service carries a subscription fee on top of fund expenses and any third-party account charges. Automation and education do not eliminate investment risk or guarantee an earlier retirement, and whether FRED is useful for you depends on your needs and circumstances." }
     },
     {
       "@type": "Question",
@@ -879,7 +871,7 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 (function () {
-  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N } = window.FredWaitlist;
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, getFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
   renderConsent("consent-note");
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
@@ -895,20 +887,14 @@
   const navCta = document.getElementById("nav-cta");
 
   const STATUS_NOTES = {
-    WAITLISTFOUNDER: "You’re in line for a Founder invite.",
-    WAITLISTNORMAL: "You’re on the priority waitlist for a Founder spot.",
+    WAITLISTED: "You’re in line for a Founder invite.",
     already_joined: "You’re already on the list.",
     // Set by confirmed.html once the emailed link is clicked (same sentence as that page).
     confirmed: "Your spot on the FRED waitlist is secured. We’ll email you when your wave opens.",
   };
 
   // --- Head-start stat + its disclosure ---
-  // Attorney screenshot mode: ?previewStat=1 renders the stat with sample values. Gated to this
-  // machine's hostnames, so on any deployed host the parameter does nothing and the stat renders
-  // only from a real API response.
-  const PREVIEW_STAT =
-    (location.hostname === "localhost" || location.hostname === "127.0.0.1") &&
-    new URLSearchParams(location.search).get("previewStat") === "1";
+  // Attorney screenshot mode (?previewStat=1, local hosts incl. LAN IPs): see PREVIEW_STAT in waitlist.js.
 
   // "2026-09-03" -> "September 3, 2026". Built as a local calendar date so it never shifts a day in US timezones.
   function formatStatDate(iso) {
@@ -937,13 +923,13 @@
     document.getElementById("fn-2").classList.remove("hidden");
   }
 
-  // --- Live stats: proof strip + progress bar ---
+  // --- Live stats: proof strip ---
   // Every number here is live-only: the HTML ships with no baked values, and each element
   // stays hidden until the API returns a real value for it. Nothing renders on failure,
   // and the proof tiles additionally stay hidden below the STAT_TILE_MIN_N sample size.
   function updateStats(data) {
     const count = Number(data.count) || 0;
-    if (count >= STAT_TILE_MIN_N) {
+    if (!PREVIEW_STAT && count >= STAT_TILE_MIN_N) {
       document.getElementById("stat-count").textContent = count.toLocaleString("en-US");
       document.getElementById("stat-count-tile").classList.remove("hidden");
     }
@@ -958,26 +944,13 @@
         renderHeadStart(years + " yrs", projectionCount.toLocaleString("en-US"), startDate, endDate);
       }
     }
-    // Cap UI runs on founder-bucket occupancy, not total signups; statuses like
-    // INVITED/CLAIMED leave the founder bucket without leaving the table.
-    const max = 300;
-    const founderCount = data.founderCount != null ? Number(data.founderCount) : count;
-    const isFull = founderCount >= max;
-    if (founderCount >= STAT_TILE_MIN_N) {
-      document.getElementById("progress-count").textContent = isFull
-        ? max + " / " + max + " (Full)"
-        : founderCount + " / " + max;
-      document.getElementById("progress-bar").style.width = Math.min((founderCount / max) * 100, 100) + "%";
-      document.getElementById("progress-block").classList.remove("hidden");
-    }
-    if (isFull) {
-      document.getElementById("waitlist-note").innerHTML =
-        "The private beta is currently full. Join the priority waitlist to get a founder invitation if a spot opens. <b>iOS only</b>.";
-      btnText.textContent = "Join Priority Waitlist";
-    }
   }
   // Preview-only sample values for attorney screenshots. Never reached in production (see PREVIEW_STAT).
-  if (PREVIEW_STAT) renderHeadStart("10.5 yrs", "31", formatStatDate("2026-01-05"), formatStatDate("2026-09-14"));
+  if (PREVIEW_STAT) {
+    document.getElementById("stat-count").textContent = PREVIEW_COUNT.toLocaleString("en-US");
+    document.getElementById("stat-count-tile").classList.remove("hidden");
+    renderHeadStart("10.5 yrs", "31", formatStatDate("2026-01-05"), formatStatDate("2026-09-14"));
+  }
   fetchStats().then(updateStats).catch(() => {
     /* No fallback by design: live-only elements simply stay invisible. */
   });
@@ -1012,16 +985,15 @@
     navCta.textContent = "You’re in ✓";
     navCta.setAttribute("href", "#join");
 
-    // Price card CTA: they already reserved their place, so the action button
-    // becomes a status-worded confirmation. Still links to #join, where the
-    // success block spells out their status. Only a KNOWN founder may read as a
-    // reserved Founder spot: WAITLISTNORMAL, already_joined and a bare "confirmed"
-    // (tier unknown) all get the priority-waitlist wording.
+    // Price card CTA: they already reserved their place in line, so the action
+    // button becomes a confirmation. Still links to #join, where the success block
+    // spells out their status. Same wording for every joined status: there is no
+    // tier at signup, invites go out in the order people joined.
     const founderCta = document.getElementById("founder-cta");
     founderCta.className = "flex w-full items-center justify-center gap-2 bg-green-500/10 border border-green-400/30 text-green-300 font-montserrat font-extrabold py-3.5 rounded-xl";
     founderCta.innerHTML =
       '<svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' +
-      (displayStatus === "WAITLISTFOUNDER" ? "Your spot in line is reserved" : "You’re on the priority waitlist");
+      "Your spot in line is reserved";
   }
 
   // Double opt-in: shown after a new signup until the emailed link is clicked
@@ -1041,7 +1013,7 @@
     } else {
       pendingBlock.classList.remove("opacity-0");
     }
-    navCta.textContent = "Check your email";
+    navCta.textContent = "You got mail ✓";
     navCta.setAttribute("href", "#join");
   }
   // Back to an empty, working form (the loading animation collapsed the input and
@@ -1087,26 +1059,30 @@
     }
   });
 
+  // If this browser computed a date before signing up, show it back in the hero instead of
+  // the calculator CTA. Applies to the pending state too (Andrew, 2026-10-10): the pending
+  // block's "Find out how FRED works" button lands here, and the date was saved at submit.
+  function showHeroFreedomDate() {
+    const fd = getFreedomDate();
+    if (!fd || !fd.age) return;
+    // style.display beats Tailwind display utilities regardless of CSS order
+    document.getElementById("hero-cta").style.display = "none";
+    document.getElementById("hero-cta-note").style.display = "none";
+    document.getElementById("hero-freedom-value").textContent =
+      "Free at " + fd.age + (fd.monthYear ? " · " + fd.monthYear : "");
+    const disp = document.getElementById("hero-freedom-display");
+    disp.classList.remove("hidden");
+    disp.classList.add("flex");
+  }
+
   const savedStatus = getSavedStatus();
   if (savedStatus === "pending_confirmation") {
     // An expired pending state (older than the link itself) reads as absent: the form comes back.
     const pendingEmail = getPendingEmail();
-    if (pendingEmail) showPending(pendingEmail, false); else clearStatus();
+    if (pendingEmail) { showPending(pendingEmail, false); showHeroFreedomDate(); } else clearStatus();
   } else if (savedStatus) {
     showSuccess(savedStatus, false);
-    // If this browser computed a date before signing up, show it back in the hero
-    // instead of the calculator CTA.
-    const fd = getFreedomDate();
-    if (fd && fd.age) {
-      // style.display beats Tailwind display utilities regardless of CSS order
-      document.getElementById("hero-cta").style.display = "none";
-      document.getElementById("hero-cta-note").style.display = "none";
-      document.getElementById("hero-freedom-value").textContent =
-        "Free at " + fd.age + (fd.monthYear ? " · " + fd.monthYear : "");
-      const disp = document.getElementById("hero-freedom-display");
-      disp.classList.remove("hidden");
-      disp.classList.add("flex");
-    }
+    showHeroFreedomDate();
   }
 
   let loadingAborted = false;

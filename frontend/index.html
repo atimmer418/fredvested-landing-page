@@ -163,7 +163,9 @@
   </h1>
 
   <!-- Subhead -->
-  <p class="text-[17px] text-slate-text max-w-[44ch] mx-auto mb-2 sm:mb-3">
+  <!-- Two lines on every phone: the size tracks the viewport below 17px (a fixed 17px needed three
+       lines under about 412px, e.g. iOS Display Zoom), and text-balance evens the two lines out. -->
+  <p class="text-[clamp(13px,3.9vw,17px)] text-balance text-slate-text max-w-[44ch] mx-auto mb-2 sm:mb-3">
     Move three sliders and get the year you could walk away from work for good, in under 30<span class="sm:hidden">s.</span><span class="hidden sm:inline"> seconds.</span>
   </p>
 
@@ -206,12 +208,12 @@
         <label for="retire-number" class="text-[15px] font-semibold text-navy">I want to retire on</label>
         <span class="inline-flex items-baseline">
           <span class="font-montserrat font-bold text-lg text-primary" aria-hidden="true">$</span>
-          <input id="retire-number" type="number" value="7500" min="1000" max="30000" step="100" aria-label="I want to retire on, in dollars per month"
+          <input id="retire-number" type="number" value="7500" min="1000" max="30000" step="250" aria-label="I want to retire on, in dollars per month"
             class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
           <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">/mo</span>
         </span>
       </div>
-      <input id="retire-range" type="range" value="7500" min="1000" max="30000" step="100" aria-label="Desired monthly retirement income in dollars" class="w-full">
+      <input id="retire-range" type="range" value="7500" min="1000" max="30000" step="250" aria-label="Desired monthly retirement income in dollars" class="w-full">
     </div>
 
     <!-- Return scenario selector. Always visible: the user's ability to choose among return
@@ -246,7 +248,7 @@
   <div id="reveal-zone" class="reveal-zone text-left" inert>
 
     <!-- Result card -->
-    <div id="result-card" class="mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
+    <div id="result-card" class="mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 pt-9 pb-5 sm:py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
       <div id="feasible-block">
         <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
         <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
@@ -265,19 +267,19 @@
       <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
       <div class="mt-6 border-t border-white/20 pt-4">
         <p class="text-[11.5px] leading-relaxed text-[#dbe7ff] text-center">
-          Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.
+          Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.<br class="hidden md:inline"> Actual returns may vary.
         </p>
       </div>
     </div>
 
     <!-- Methodology accordion (collapsed by default) -->
     <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
-    <details id="calc-method" class="calc-method mt-3 rounded-[16px] border border-gray-200 bg-white text-left shadow-soft">
-      <summary class="flex cursor-pointer select-none items-center justify-between gap-3 rounded-[16px] px-5 py-4 text-[14px] font-semibold text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+    <details id="calc-method" class="calc-method mt-3 text-left">
+      <summary class="flex cursor-pointer select-none items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] font-medium text-slate-text transition hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
         How this calculation works
         <svg class="calc-chevron h-4 w-4 flex-shrink-0 text-slate-text transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </summary>
-      <div class="space-y-3 border-t border-gray-100 px-5 pb-5 pt-4 text-[13px] leading-relaxed text-slate-text">
+      <div class="mt-2 space-y-3 rounded-[14px] border border-gray-200 bg-white px-5 py-4 text-[13px] leading-relaxed text-slate-text">
         <p><b class="font-semibold text-navy">What it does:</b> Calculates an illustrative retirement timeline from your inputs: current age, monthly investment amount, desired monthly retirement income, and the annual return scenario you select.</p>
         <p><b class="font-semibold text-navy">How:</b> Applies a fixed 4% annual withdrawal rate to determine the target portfolio size, then projects time-to-target assuming a constant, reinvested nominal annual return at your selected rate.</p>
         <p><b class="font-semibold text-navy">Exclusions:</b> Unless otherwise stated, this calculation does not reflect advisory fees, fund expenses, taxes, inflation, changes in contributions or spending, withdrawals, or other personal circumstances. It assumes a constant annual return and does not reflect market volatility, losses, drawdowns, or sequence-of-returns risk.</p>
@@ -288,24 +290,35 @@
       </div>
     </details>
 
-    <!-- Capture block. Kept visually separate from the result (larger gap, distinct surface) and
+    <!-- Capture block. Kept visually separate from the result (larger gap at every width, distinct surface) and
          product-neutral: nothing here references the user's result, date, or plan, and no script
          writes result data into this section. -->
-    <div class="mt-8 sm:mt-10 rounded-[18px] border border-gray-200 bg-[#f3f6fb] p-5 sm:p-7 text-center shadow-soft">
-      <!-- ATTORNEY APPROVED 2026-09-01: headline approved; subhead is attorney-provided registration-conditioned text -->
-      <h2 class="font-montserrat font-extrabold text-[21px] text-navy"><span class="sm:hidden">Your financial future, on autopilot.</span><span class="hidden sm:inline">Put your financial future on autopilot.</span></h2>
-      <p class="mt-2 text-[14.5px] leading-relaxed text-slate-text">
-        Once registered as an investment adviser, FRED will invest a slice of every paycheck automatically and will build your confidence for the day you stop. FRED&rsquo;s services will include withdrawal strategy education, Monte Carlo simulations, and a plan for living off what you&rsquo;ve built. Only 300 founding spots are available at launch, and the waitlist is the only way in.
+    <div class="relative mt-8 sm:mt-12 overflow-hidden rounded-[18px] border border-primary/15 bg-[linear-gradient(180deg,#eef3ff_0%,#f7f9fd_100%)] p-5 sm:p-7 text-center shadow-[0_12px_32px_-14px_rgba(19,91,236,0.22)]">
+      <span class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-primary to-primary-dark" aria-hidden="true"></span>
+      <!-- Scarcity pill: the same sentence that used to sit in the fine print below the form, no JS wiring. -->
+      <div id="capture-scarcity-pill" class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-semibold text-primary">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        Founding member spots are limited
+      </div>
+      <!-- ATTORNEY APPROVED 2026-09-01: headline approved; subhead is attorney-provided registration-conditioned text.
+           ATTORNEY REVIEW PENDING (2026-10-10): closing sentence re-added with "at a rate we'll never bring back" (founder-price tease on the capture page). -->
+      <h2 class="mt-4 font-montserrat font-extrabold text-[24px] sm:text-[28px] leading-[1.15] tracking-[-0.02em] text-navy">Put your <span class="text-primary">financial future</span> on autopilot.</h2>
+      <p class="mx-auto mt-2.5 max-w-[46ch] text-[15px] leading-relaxed text-slate-text">
+        Once registered as an investment adviser, FRED will invest a slice of every paycheck automatically and will build your confidence for the day you stop. FRED&rsquo;s services will include withdrawal strategy education, Monte Carlo simulations, and a plan for living off what you&rsquo;ve built. Only 300 founding spots are available at launch, at a rate we&rsquo;ll never bring back, and the waitlist is the only way in.
       </p>
+
+      <!-- List-size line: no baked number. Renders only when the API reports
+           count >= STAT_TILE_MIN_N; otherwise it stays hidden and the card reflows. -->
+      <p id="capture-count" class="hidden mt-4 text-[13.5px] font-medium text-navy" aria-live="polite"></p>
 
       <div class="relative mt-5 min-h-[52px]">
         <form id="waitlist-form" class="flex flex-col gap-2.5 sm:flex-row" novalidate>
           <label class="sr-only" for="capture-email">Email address</label>
           <input id="capture-email" name="email" type="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required
-            class="min-w-0 flex-1 rounded-xl border-gray-200 px-4 py-[14px] text-[15px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
+            class="min-w-0 flex-1 rounded-[14px] border-gray-200 px-4 py-[16px] text-[16px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
           <button type="submit" id="join-waitlist-btn"
-            class="rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-            <span id="btn-text">Claim my spot</span>
+            class="group rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span id="btn-text">Claim my spot <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
             <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
               <span class="spinner" aria-hidden="true"></span>
               <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
@@ -316,7 +329,7 @@
         <!-- Success state (hidden until signup completes or a saved status is found) -->
         <div id="success-block" class="hidden opacity-0 transition-opacity duration-300">
           <a href="/about" id="success-link"
-            class="group flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-[14px] font-montserrat font-extrabold text-[15px] text-white shadow-[0_8px_18px_-6px_rgba(19,91,236,0.5)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            class="group flex w-full items-center justify-center gap-1.5 rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
             <span>You&rsquo;re in! See how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
           </a>
           <p id="success-note" class="mt-2.5 text-[13px] font-medium text-slate-text"></p>
@@ -324,21 +337,27 @@
 
         <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
         <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300 text-left rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
-          <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: check your email.</p>
+          <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: you got mail.</p>
           <p class="mt-1.5 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
-          <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? Check your spam folder, or <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">resend the email</button>.</p>
+          <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">Resend the email</button>.</p>
           <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
           <div id="pending-msg" aria-live="polite"></div>
+          <!-- One secondary link only (Andrew, 2026-10-10): the about page already holds the Founder offer, and
+               the inbox stays the primary action, so this is outlined rather than the success button's gradient. -->
+          <a href="/about" id="pending-link"
+            class="group mt-4 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-2 border-primary bg-white px-6 py-3 font-montserrat font-extrabold text-[15px] text-primary transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span>Find out how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+          </a>
         </div>
       </div>
 
       <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
 
-      <p id="capture-cta-note" class="mt-3.5 text-[13px] font-medium text-navy">Join the waitlist today.</p>
-      <!-- Waitlist count: rendered only from a live API value. No baked number, no fallback; the
-           line is reserved (min-height) so the layout does not shift when it fills in. -->
-      <p id="capture-count" class="mt-1 min-h-[18px] text-xs text-slate-text" aria-live="polite"></p>
-      <p class="mt-0.5 text-xs text-slate-text">Founding member spots are limited. No payment until launch.</p>
+      <!-- Same sentences as about.html's Founder Access block and waitlist note. Hidden with the form once a signup succeeds. -->
+      <div id="capture-cta-note" class="mt-3.5">
+        <p class="text-[13px] font-medium text-navy">No payment until launch. You only pay if invited and choose to claim your spot.</p>
+        <p class="mt-1 text-xs text-slate-text">The private beta is currently <b>iOS only</b>.</p>
+      </div>
       <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
            attorney review pending. The form itself needs JavaScript (Turnstile, fetch), so a
            script-off visitor never reaches a submit without this text. -->
@@ -394,7 +413,7 @@
 
   const WITHDRAWAL_RATE = 0.04;
 
-  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N } = window.FredWaitlist;
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
   renderConsent("consent-note");
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
@@ -424,8 +443,7 @@
   };
 
   const STATUS_NOTES = {
-    WAITLISTFOUNDER: "You’re in line for a Founder invite.",
-    WAITLISTNORMAL: "You’re on the priority waitlist for a Founder spot.",
+    WAITLISTED: "You’re in line for a Founder invite.",
     already_joined: "You’re already on the list.",
     // Set by confirmed.html once the emailed link is clicked (same sentence as that page).
     confirmed: "Your spot on the FRED waitlist is secured. We’ll email you when your wave opens.",
@@ -588,8 +606,16 @@
       }
       chipEl.textContent = FREEDOM_LABEL + " · " + formatMonthYear(res.date);
       const sc = currentScenario();
-      assumptionsEl.textContent =
-        "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% avg annual return (" + sc.name + " scenario) & 4% withdrawal rate.";
+      // The scenario name is desktop-only (Andrew, 2026-10-11): the selected segment already
+      // shows it, and the line wraps badly on phones. The screen-reader text keeps it.
+      const scenarioNote = document.createElement("span");
+      scenarioNote.className = "hidden sm:inline";
+      scenarioNote.textContent = " (" + sc.name + " scenario)";
+      assumptionsEl.replaceChildren(
+        document.createTextNode("Assumes " + articleFor(sc.pct) + " " + sc.pct + "% avg annual return"),
+        scenarioNote,
+        document.createTextNode(" & 4% withdrawal rate."),
+      );
       targetEl.textContent = "Projected portfolio target: " + formatUSD(res.target) + ".";
       srEl.textContent =
         "You could be free at " + roundedAge + " years old. " +
@@ -610,16 +636,36 @@
     }
   }
 
+  // `revealed` is the analytics flag: has this page load had a reveal click. `resultShown`
+  // is the rendering flag: is a result on screen that the sliders should keep current. They
+  // differ for a returning visitor, whose zone opens on load without a reveal (see
+  // openZoneForSavedState); gating liveUpdate on `revealed` left that result frozen.
   let revealed = false;
+  let resultShown = false;
   function liveUpdate() {
-    if (revealed) render(false);
+    if (!resultShown) return;
+    render(false);
+    persistResultIfJoined();
+  }
+
+  // The about page shows the saved freedom date back in its hero. It is written at signup;
+  // someone who has already joined and recalculates (about.html's "Recalculate anytime"
+  // link lands here) must overwrite it, or about.html keeps showing the signup-time date.
+  // Only user-driven renders call this: the automatic open for a saved state renders the
+  // default sliders, which must never replace the date the visitor actually computed.
+  function persistResultIfJoined() {
+    if (!getSavedStatus()) return;
+    if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
+    else clearFreedomDate();
   }
 
   const revealBtn = document.getElementById("reveal-btn");
   revealBtn.addEventListener("click", () => {
     const firstReveal = !revealed;
     revealed = true;
+    resultShown = true;
     render(firstReveal);
+    persistResultIfJoined();
     revealZone.removeAttribute("inert");
     revealZone.classList.add("open");
     revealBtn.setAttribute("aria-expanded", "true");
@@ -644,20 +690,31 @@
   });
 
   // --- Live proof counts ---
-  // The count is shown only when the API returned a real value of at least
+  // The list-size line is shown only when the API returned a real count of at least
   // STAT_TILE_MIN_N. Nothing is baked into the HTML and nothing is rendered while
   // loading, on failure, or below the threshold, so the page can never display a
-  // number that did not come from the backend; the line's min-height keeps the
-  // layout stable while it stays empty.
-  function renderCount(count) {
-    const n = Number(count);
+  // number that did not come from the backend. The line starts display:none and
+  // the card reflows around it when it appears (same gate as about.html's tiles).
+  function renderCount(data) {
+    const n = Number(data && data.count);
     if (!Number.isFinite(n) || n < STAT_TILE_MIN_N) return;
-    document.getElementById("capture-count").textContent =
-      n.toLocaleString("en-US") + " people are already on the list.";
+    renderCountLine(n);
   }
-  fetchStats().then((data) => renderCount(data.count)).catch(() => {
-    /* No fallback by design: the count line simply stays empty. */
-  });
+  function renderCountLine(n) {
+    // Built with textContent, never innerHTML: the number comes from the API's JSON.
+    const line = document.getElementById("capture-count");
+    const strong = document.createElement("b");
+    strong.textContent = n.toLocaleString("en-US");
+    line.replaceChildren(strong, document.createTextNode(" people are already on the list."));
+    line.classList.remove("hidden");
+  }
+  function refreshCount() {
+    fetchStats().then(renderCount).catch(() => {
+      /* No fallback by design: the line simply stays hidden. */
+    });
+  }
+  // Attorney screenshot mode (?previewStat=1, local hosts incl. LAN IPs): sample value, no API call.
+  if (PREVIEW_STAT) renderCountLine(PREVIEW_COUNT); else refreshCount();
 
   // --- Signup flow ---
   const ts = createTurnstile(form);
@@ -759,6 +816,7 @@
   // not a reveal: `revealed` stays false, so no event fires now and the visitor's first
   // click on this page load is this page load's Freedom Date Revealed, as for anyone.
   function openZoneForSavedState() {
+    resultShown = true;
     render(false);
     revealZone.removeAttribute("inert");
     revealZone.classList.add("open");
@@ -891,7 +949,8 @@
       joinBtn.style.transition = "opacity 300ms ease";
       await new Promise((r) => setTimeout(r, 300));
       if (pending) showPending(email, true); else showSuccess(data.status, true);
-      renderCount(data.count);
+      // The signup response carries only the total; the line wants the live, confirmed count.
+      refreshCount();
     } catch (err) {
       resetForm();
       showMsg("error", err.message);

@@ -166,18 +166,18 @@ public class WaitlistController {
                 // answered exactly like a fresh signup. Nothing in the response says the
                 // address was already known, so this is not a confirmation-status oracle.
                 if (addressLimiter.allow(email)) signupService.requestResend(email);
-                Map<String, Object> response = buildStatsMap(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL.name());
+                Map<String, Object> response = buildStatsMap(WaitlistEntry.WaitlistStatus.WAITLISTED.name());
                 response.put("requiresConfirmation", true);
                 return ResponseEntity.ok(response);
             }
             Map<String, Object> response = buildStatsMap("already_joined");
             response.put("realStatus", existing != null && existing.getStatus() != null
-                    ? existing.getStatus().name() : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL.name());
+                    ? existing.getStatus().name() : WaitlistEntry.WaitlistStatus.WAITLISTED.name());
             return ResponseEntity.ok(response);
         }
 
-        // 3. Build the entry. Its status (the founder cap) is decided by SignupService:
-        // at confirmation under double opt-in, at signup with the flag off.
+        // 3. Build the entry. SignupService sets its status (always WAITLISTED: one list,
+        // no tiers) and, with double opt-in off, confirms it at once.
         WaitlistEntry entry = new WaitlistEntry();
         entry.setEmail(email);
         entry.setCurrentAge(clampOrNull("age", request.getAge(), 18, 60));
@@ -200,7 +200,7 @@ public class WaitlistController {
 
         // 4. Return updated stats and status. requiresConfirmation tells the page whether a
         // confirmation click is still needed (double opt-in), so its success copy can say so.
-        WaitlistEntry.WaitlistStatus status = saved.getStatus() != null ? saved.getStatus() : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL;
+        WaitlistEntry.WaitlistStatus status = saved.getStatus() != null ? saved.getStatus() : WaitlistEntry.WaitlistStatus.WAITLISTED;
         Map<String, Object> response = buildStatsMap(status.name());
         response.put("requiresConfirmation", signupService.isDoubleOptIn());
         return ResponseEntity.ok(response);
@@ -278,9 +278,6 @@ public class WaitlistController {
         // Confirmed rows only (double opt-in, legacy backfill, single opt-in): an address
         // nobody has confirmed is never part of a public number.
         map.put("count", repository.countByConfirmedAtIsNotNull());
-        // Founder-cap occupancy: statuses like INVITED/CLAIMED leave the founder bucket
-        // without leaving the table, so the cap UI must not be driven by total count
-        map.put("founderCount", repository.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
         Double avg = repository.getAverageFreedomAge();
         map.put("avgFreedomAge", avg != null ? avg : 0.0);
         // How many members' projections are inside that average; the frontend

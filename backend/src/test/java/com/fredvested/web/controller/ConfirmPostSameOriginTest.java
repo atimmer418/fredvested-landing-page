@@ -1,6 +1,5 @@
 package com.fredvested.web.controller;
 
-import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.LandingUrls;
 import com.fredvested.web.service.RateLimiterService;
@@ -41,7 +40,7 @@ class ConfirmPostSameOriginTest {
 
     private void confirmed() {
         when(signupService.confirm(anyString())).thenReturn(new SignupService.Confirmation(
-                SignupService.ConfirmOutcome.CONFIRMED, "<1", WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
+                SignupService.ConfirmOutcome.CONFIRMED, "<1"));
     }
 
     @Test

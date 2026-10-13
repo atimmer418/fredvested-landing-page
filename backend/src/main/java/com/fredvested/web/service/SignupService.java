@@ -53,29 +53,22 @@ public class SignupService {
         return doubleOptIn;
     }
 
-    /** The first FOUNDER_CAP confirmed signups get WAITLISTFOUNDER; confirmed rows only. */
-    public static final int FOUNDER_CAP = 300;
-
     /**
      * Saves the signup and its pending email in the same transaction, so a crash
      * between the two can never lose the confirmation. The email itself is sent
      * asynchronously by EmailOutboxPublisher.
      *
-     * Under double opt-in the row is unconfirmed and holds no founder slot: it is
-     * WAITLISTNORMAL as a placeholder until {@link #confirm} decides. With the flag
-     * off there is no confirmation step, so the row is confirmed at once (source
-     * single_opt_in) and the slot is decided here.
+     * Every signup is WAITLISTED: there is one list and no tier (founder decision,
+     * 2026-10-10). Under double opt-in the row stays unconfirmed until {@link #confirm};
+     * with the flag off there is no confirmation step, so the row is confirmed at once
+     * (source single_opt_in).
      */
     @Transactional
     public WaitlistEntry createSignup(WaitlistEntry entry) {
-        if (doubleOptIn) {
-            entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
-        } else {
-            // Decide the slot before dirtying the row (see confirm()).
-            WaitlistEntry.WaitlistStatus decided = founderSlotStatus();
+        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
+        if (!doubleOptIn) {
             entry.setConfirmedAt(now());
             entry.setConfirmedSource(WaitlistEntry.CONFIRMED_SINGLE_OPT_IN);
-            entry.setStatus(decided);
         }
         WaitlistEntry saved = waitlist.save(entry);
         if (saved == null) saved = entry;
@@ -84,19 +77,10 @@ public class SignupService {
         return saved;
     }
 
-    // Decided against confirmed founders only, so unconfirmed signups never occupy a
-    // slot and the cap means "300 confirmed founders", whichever path confirmed them.
-    private WaitlistEntry.WaitlistStatus founderSlotStatus() {
-        long confirmedFounders = waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER);
-        return confirmedFounders < FOUNDER_CAP
-                ? WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER
-                : WaitlistEntry.WaitlistStatus.WAITLISTNORMAL;
-    }
-
     public enum ConfirmOutcome { CONFIRMED, EXPIRED, INVALID }
 
-    /** hoursBand and status (the row's tier after the decision) are set only when CONFIRMED. */
-    public record Confirmation(ConfirmOutcome outcome, String hoursBand, WaitlistEntry.WaitlistStatus status) {}
+    /** hoursBand is set only when CONFIRMED. */
+    public record Confirmation(ConfirmOutcome outcome, String hoursBand) {}
 
     /**
      * Single use: the token hash is cleared on success, so replaying the same
@@ -106,31 +90,21 @@ public class SignupService {
     @Transactional
     public Confirmation confirm(String rawToken) {
         String hash = ConfirmationTokens.hash(rawToken);
-        if (hash == null) return new Confirmation(ConfirmOutcome.INVALID, null, null);
+        if (hash == null) return new Confirmation(ConfirmOutcome.INVALID, null);
         Optional<WaitlistEntry> found = waitlist.findByConfirmationTokenHash(hash);
-        if (found.isEmpty()) return new Confirmation(ConfirmOutcome.INVALID, null, null);
+        if (found.isEmpty()) return new Confirmation(ConfirmOutcome.INVALID, null);
 
         WaitlistEntry entry = found.get();
         LocalDateTime now = now();
         if (entry.getConfirmationExpiresAt() == null || now.isAfter(entry.getConfirmationExpiresAt())) {
-            return new Confirmation(ConfirmOutcome.EXPIRED, null, null);
+            return new Confirmation(ConfirmOutcome.EXPIRED, null);
         }
-        // The founder slot is decided now, against confirmed rows, and BEFORE this row is
-        // dirtied: the entity is managed, so a JPQL count after setConfirmedAt would auto-flush
-        // the row and let a WAITLISTFOUNDER placeholder count itself at the cap boundary.
-        // Only the two pre-invitation states are (re)decided; an invited or claimed row is
-        // left alone.
-        WaitlistEntry.WaitlistStatus decided = entry.getStatus();
-        if (decided == null
-                || decided == WaitlistEntry.WaitlistStatus.WAITLISTNORMAL
-                || decided == WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER) {
-            decided = founderSlotStatus();
-        }
+        // Confirmation never changes the row's status: it only records consent. The
+        // invite workflow (INVITED / CLAIMED / DECLINED) is driven elsewhere, in signup order.
         entry.setConfirmedAt(now);
         entry.setConfirmedSource(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN);
         entry.setConfirmationTokenHash(null);
         entry.setConfirmationExpiresAt(null);
-        entry.setStatus(decided);
         waitlist.save(entry);
         // The welcome email follows the click (Andrew, 2026-09-26): queued here, in the
         // confirmation's own transaction, so a confirmed row can never miss it, and sent
@@ -139,7 +113,7 @@ public class SignupService {
         events.publishEvent(new WaitlistCountsChanged());
 
         LocalDateTime from = entry.getConfirmationSentAt() != null ? entry.getConfirmationSentAt() : entry.getCreatedAt();
-        return new Confirmation(ConfirmOutcome.CONFIRMED, hoursBand(from, now), decided);
+        return new Confirmation(ConfirmOutcome.CONFIRMED, hoursBand(from, now));
     }
 
     /**

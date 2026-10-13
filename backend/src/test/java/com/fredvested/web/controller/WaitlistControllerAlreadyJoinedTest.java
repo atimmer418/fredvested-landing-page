@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Review finding 2026-09-24: under double opt-in, re-submitting an address that is on
-// the list but not confirmed used to answer already_joined with the WAITLISTNORMAL
+// the list but not confirmed used to answer already_joined with the (then) WAITLISTNORMAL
 // placeholder: the page then said "You're in" with no way to the email, and the
 // response doubled as a confirmation-status oracle. Now such a submit is answered
 // exactly like a fresh signup and queues a fresh confirmation (address-limited).
@@ -56,13 +56,13 @@ class WaitlistControllerAlreadyJoinedTest {
         existing = new WaitlistEntry();
         existing.setId(9L);
         existing.setEmail("dup@example.com");
-        existing.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
+        existing.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
         when(repository.existsByEmail("dup@example.com")).thenReturn(true);
         when(repository.findByEmail("dup@example.com")).thenReturn(existing);
         when(repository.existsByEmail("new@example.com")).thenReturn(false);
         when(signupService.createSignup(any())).thenAnswer(inv -> {
             WaitlistEntry e = inv.getArgument(0);
-            e.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
+            e.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
             return e;
         });
     }
@@ -80,7 +80,7 @@ class WaitlistControllerAlreadyJoinedTest {
         JsonNode dup = submit("dup@example.com");
 
         assertEquals(keys(fresh), keys(dup), "same keys");
-        assertEquals("WAITLISTNORMAL", dup.get("status").asText());
+        assertEquals("WAITLISTED", dup.get("status").asText());
         assertTrue(dup.get("requiresConfirmation").asBoolean());
         assertNull(dup.get("realStatus"));
         assertFalse(dup.toString().contains("already_joined"));
@@ -92,7 +92,7 @@ class WaitlistControllerAlreadyJoinedTest {
     void unconfirmedDuplicate_overTheAddressLimit_stillLooksFresh_butQueuesNothing() throws Exception {
         when(addressLimiter.allow("dup@example.com")).thenReturn(false);
         JsonNode dup = submit("dup@example.com");
-        assertEquals("WAITLISTNORMAL", dup.get("status").asText());
+        assertEquals("WAITLISTED", dup.get("status").asText());
         assertTrue(dup.get("requiresConfirmation").asBoolean());
         verify(signupService, never()).requestResend(anyString());
     }
@@ -100,12 +100,12 @@ class WaitlistControllerAlreadyJoinedTest {
     @Test
     void confirmedDuplicate_isStillAlreadyJoined_withItsRealStatus() throws Exception {
         existing.setConfirmedAt(LocalDateTime.now());
-        existing.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER);
+        existing.setStatus(WaitlistEntry.WaitlistStatus.INVITED);
         mockMvc.perform(post("/api/waitlist").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"dup@example.com\",\"turnstileToken\":\"t\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("already_joined"))
-                .andExpect(jsonPath("$.realStatus").value("WAITLISTFOUNDER"));
+                .andExpect(jsonPath("$.realStatus").value("INVITED"));
         verify(signupService, never()).requestResend(anyString());
     }
 
@@ -116,7 +116,7 @@ class WaitlistControllerAlreadyJoinedTest {
                 .content("{\"email\":\"dup@example.com\",\"turnstileToken\":\"t\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("already_joined"))
-                .andExpect(jsonPath("$.realStatus").value("WAITLISTNORMAL"));
+                .andExpect(jsonPath("$.realStatus").value("WAITLISTED"));
         verify(signupService, never()).requestResend(anyString());
     }
 

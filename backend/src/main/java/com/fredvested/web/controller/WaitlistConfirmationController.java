@@ -1,6 +1,5 @@
 package com.fredvested.web.controller;
 
-import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.LandingUrls;
 import com.fredvested.web.service.RateLimiterService;
@@ -84,19 +83,11 @@ public class WaitlistConfirmationController {
                                         HttpServletRequest request) {
         SignupService.Confirmation result = signupService.confirm(token);
         String query = switch (result.outcome()) {
-            case CONFIRMED -> "status=confirmed&hours=" + URLEncoder.encode(result.hoursBand(), StandardCharsets.UTF_8) + tier(result.status());
+            case CONFIRMED -> "status=confirmed&hours=" + URLEncoder.encode(result.hoursBand(), StandardCharsets.UTF_8);
             case EXPIRED -> "status=expired";
             case INVALID -> "status=invalid";
         };
         return redirect(landingUrls.page(request, "confirmed", query));
-    }
-
-    // The decided tier travels with the redirect so the landing pages can show the right
-    // status afterwards (the founder slot is decided at confirmation, not at signup).
-    private static String tier(WaitlistEntry.WaitlistStatus status) {
-        if (status == WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER) return "&tier=founder";
-        if (status == WaitlistEntry.WaitlistStatus.WAITLISTNORMAL) return "&tier=normal";
-        return "";
     }
 
     // Link scanners that probe with HEAD must not consume the single-use token.

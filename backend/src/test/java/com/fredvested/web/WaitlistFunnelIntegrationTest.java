@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The funnel against a REAL MySQL: Flyway applies V1..V5 to an empty schema,
+ * The funnel against a REAL MySQL: Flyway applies V1..Vn to an empty schema,
  * Hibernate validates the entities against it, and the HTTP layer, the outbox
  * publisher (with Resend mocked), the confirmation and the webhook all run on
  * real rows and real queries. The slice tests prove each part with mocks; this
@@ -126,7 +126,7 @@ class WaitlistFunnelIntegrationTest {
         mvc.perform(post("/api/waitlist").contentType(MediaType.APPLICATION_JSON).header("CF-Connecting-IP", "203.0.113.1")
                 .content("{\"email\":\"it-one@example.com\",\"turnstileToken\":\"t\",\"age\":30,\"investMonthly\":2000,\"retireMonthly\":7500,\"interacted\":true,\"returnAssumptionPct\":10,\"utmSource\":\"tiktok\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("WAITLISTNORMAL"))
+                .andExpect(jsonPath("$.status").value("WAITLISTED"))
                 .andExpect(jsonPath("$.requiresConfirmation").value(true))
                 .andExpect(jsonPath("$.count").value(0)); // confirmed rows only
         WaitlistEntry row = waitlist.findByEmail("it-one@example.com");
@@ -149,17 +149,17 @@ class WaitlistFunnelIntegrationTest {
         assertEquals(EmailMessage.STATUS_SENT, outbox.findById(pending.get(0).getId()).orElseThrow().getStatus());
         assertEquals("re_it_1", outbox.findById(pending.get(0).getId()).orElseThrow().getResendEmailId());
 
-        // GET is a page and consumes nothing; the POST confirms once, decides the founder slot.
+        // GET is a page and consumes nothing; the POST confirms once and leaves the status alone.
         mvc.perform(get("/api/waitlist/confirm").param("token", rawConfirm)).andExpect(status().isOk());
         assertNull(waitlist.findByEmail("it-one@example.com").getConfirmedAt());
         mvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", rawConfirm))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("https://fredvested.com/confirmed?status=confirmed&hours=")))
-                .andExpect(header().string("Location", org.hamcrest.Matchers.endsWith("&tier=founder")));
+                .andExpect(header().string("Location", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("tier"))));
         row = waitlist.findByEmail("it-one@example.com");
         assertNotNull(row.getConfirmedAt());
         assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, row.getConfirmedSource());
-        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, row.getStatus());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, row.getStatus(), "confirmation never changes the status");
         assertNull(row.getConfirmationTokenHash());
 
         // Replay = unknown.
@@ -167,7 +167,7 @@ class WaitlistFunnelIntegrationTest {
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=invalid"));
 
         // Public numbers now count the confirmed row; the cache was invalidated by the confirmation.
-        mvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(1)).andExpect(jsonPath("$.founderCount").value(1));
+        mvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(1)).andExpect(jsonPath("$.founderCount").doesNotExist());
 
         // The click queued the welcome email; the outbox sends it with its own unsubscribe token.
         List<EmailMessage> welcome = outbox.findByWaitlistIdAndTemplateAndStatus(row.getId(), EmailMessage.TEMPLATE_WELCOME, EmailMessage.STATUS_PENDING);
@@ -191,7 +191,7 @@ class WaitlistFunnelIntegrationTest {
 
         mvc.perform(post("/api/waitlist").contentType(MediaType.APPLICATION_JSON).header("CF-Connecting-IP", "203.0.113.2").content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("WAITLISTNORMAL"))
+                .andExpect(jsonPath("$.status").value("WAITLISTED"))
                 .andExpect(jsonPath("$.requiresConfirmation").value(true))
                 .andExpect(jsonPath("$.realStatus").doesNotExist());
         // The first pending confirmation was retired and a fresh one queued (one pending at a time).

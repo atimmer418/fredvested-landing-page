@@ -213,13 +213,13 @@ class WaitlistControllerAttributionTest {
     @Test
     void alreadyJoined_isStill200_withAlreadyJoinedStatus() throws Exception {
         WaitlistEntry existing = new WaitlistEntry();
-        existing.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER);
+        existing.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
         existing.setConfirmedAt(java.time.LocalDateTime.now()); // a confirmed member; an unconfirmed one is answered like a fresh signup
         when(repository.existsByEmail("test@example.com")).thenReturn(true);
         when(repository.findByEmail("test@example.com")).thenReturn(existing);
         submit(basePayload()).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("already_joined"))
-                .andExpect(jsonPath("$.realStatus").value("WAITLISTFOUNDER"));
+                .andExpect(jsonPath("$.realStatus").value("WAITLISTED"));
         verify(repository, never()).save(any());
     }
 

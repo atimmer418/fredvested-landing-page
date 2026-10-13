@@ -183,37 +183,32 @@ class SignupServiceTest {
         verify(waitlist, times(1)).save(entry);
     }
 
-    // --- confirmed rows only: the founder cap is decided when a row becomes confirmed ---
+    // --- one waitlist, no tiers (2026-10-10): every signup is WAITLISTED and stays so ---
 
     @Test
-    void doubleOptInSignup_isUnconfirmed_andHoldsNoFounderSlot_untilConfirmed() {
+    void doubleOptInSignup_isUnconfirmed_andWaitlisted() {
         when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
         service.createSignup(entry);
         assertNull(entry.getConfirmedAt());
         assertNull(entry.getConfirmedSource());
-        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL, entry.getStatus(), "placeholder until confirmed");
-        verify(waitlist, never()).countByStatusAndConfirmedAtIsNotNull(any());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus());
     }
 
     @Test
-    void confirm_tagsTheSource_andTakesAFounderSlot_whileConfirmedFoundersAreUnderTheCap() {
+    void confirm_tagsTheSource_andLeavesTheStatusAlone() {
         ConfirmationTokens.Generated token = ConfirmationTokens.generate();
         entry.setConfirmationTokenHash(token.hash());
         entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
-        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
-        // Review finding 2026-09-24: the count must run BEFORE the row is dirtied, or
-        // Hibernate's auto-flush lets a WAITLISTFOUNDER placeholder count itself at the cap.
-        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenAnswer(inv -> {
-            assertNull(entry.getConfirmedAt(), "slot decided before confirmed_at is set");
-            return 299L;
-        });
+        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
 
         SignupService.Confirmation result = service.confirm(token.raw());
 
         assertEquals(SignupService.ConfirmOutcome.CONFIRMED, result.outcome());
-        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, result.status(), "the decided tier travels with the outcome");
         assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
-        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, entry.getStatus());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus(), "confirmation never changes the status");
+        // Nothing is counted to decide a tier any more.
+        verify(waitlist, never()).countByStatus(any());
+        verify(waitlist, never()).countByConfirmedAtIsNotNull();
         // The public numbers changed: the stats cache must hear about it.
         verify(events).publishEvent(any(SignupService.WaitlistCountsChanged.class));
     }
@@ -228,22 +223,23 @@ class SignupServiceTest {
     }
 
     @Test
-    void confirm_leavesTheRowNormal_whenTheConfirmedFounderCapIsFull() {
+    void confirm_statusStaysWaitlisted_noCapIsConsulted() {
+        // The 300 founding spots are no longer assigned at signup or confirmation: the
+        // row after the 300th confirmed one is WAITLISTED like every other.
         ConfirmationTokens.Generated token = ConfirmationTokens.generate();
         entry.setConfirmationTokenHash(token.hash());
         entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
-        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
-        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(300L);
+        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
 
-        SignupService.Confirmation result = service.confirm(token.raw());
+        service.confirm(token.raw());
 
-        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL, entry.getStatus());
-        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTNORMAL, result.status());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus());
         assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
+        verify(waitlist, never()).countByConfirmedAtIsNotNull();
     }
 
     @Test
-    void confirm_neverDemotes_aRowThatAlreadyLeftTheFounderBucket() {
+    void confirm_neverTouches_aRowAlreadyInTheInviteWorkflow() {
         ConfirmationTokens.Generated token = ConfirmationTokens.generate();
         entry.setConfirmationTokenHash(token.hash());
         entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
@@ -253,16 +249,15 @@ class SignupServiceTest {
     }
 
     @Test
-    void singleOptInSignup_isConfirmedAtOnce_andDecidesTheCapFromConfirmedRows() {
+    void singleOptInSignup_isConfirmedAtOnce_andWaitlisted() {
         SignupService single = new SignupService(waitlist, outbox, events, false);
         when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(waitlist.countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(12L);
 
         single.createSignup(entry);
 
         assertNotNull(entry.getConfirmedAt());
         assertEquals(WaitlistEntry.CONFIRMED_SINGLE_OPT_IN, entry.getConfirmedSource());
-        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER, entry.getStatus());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus());
         verify(waitlist, never()).countByStatus(any());
     }
 

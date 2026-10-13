@@ -117,7 +117,7 @@ State at review time: `develop` at the commit named at the end, all work committ
 | 1. Same pattern for unsubscribe | reverted to a button in `dc38953`; RFC 8058 headers instead | tests | deviation, approved in message 16 |
 | 2. Token re-mint: leave as is | `email-funnel.md` Known gaps | | decided-by-Andrew |
 | 3. Legacy rows kept and tagged; `confirmed_source`; backfill; funnel split | V5, `WaitlistEntry`, `SignupService` (`8a2c71e`) | V5 dry-run on four shapes; null-safe view check | done (`single_opt_in` third value, approved) |
-| 4. Stats and founder cap confirmed-only; stop if the footnote wording breaks | `WaitlistRepository`, `WaitlistController`, `SignupService` | `WaitlistControllerConfirmedOnlyStatsTest`; footnote checked, still accurate | done |
+| 4. Stats and founder cap confirmed-only (the founder cap itself was removed by V6, 2026-10-10); stop if the footnote wording breaks | `WaitlistRepository`, `WaitlistController`, `SignupService` | `WaitlistControllerConfirmedOnlyStatsTest`; footnote checked, still accurate | done |
 | 5. Success copy on index and about under double opt-in; keep "you're in" for single opt-in | `index.html`, `about.html` (`5fac0d0`) | `tests/pending-state.spec.js` | done |
 | 6. Flags 6, 7, 8 documented | `analytics-events.md`, `email-funnel.md` | | done |
 | 7a. Open tracking off; `email.opened` never first-class; stray one 200 and ignored | `EmailEventProcessor.HANDLED` (`ab0a2f4`) | processor and controller tests; integration test | done |
@@ -168,7 +168,7 @@ End-to-end (`npm run test:e2e`, Chromium, pages served by `frontend/serve.py`, A
 - `tests/analytics-events.spec.js`: the schema on the real pages: `Calc Engaged`, `Freedom Date Revealed` with exact bands, `Recalculated`, `Explainer Opened`, `Email Focused`, `Waitlist Submitted` (home and about), `Waitlist Failed` for a confirmed duplicate, a 500 and a 429, the cap of three, the hostname gate, and that no prop is a raw number or an address.
 - `tests/pending-state.spec.js`: the double opt-in pending state on both pages, storage keys, reload, resend, "Use a different one", storage blocked, the 7-day expiry, the single opt-in and confirmed-duplicate copy.
 - `tests/confirmed-page.spec.js`: every state of confirmed.html, `Waitlist Confirmed` with the exact band once, the tier stored only when the redirect carries `hours`, URL stripping, shared links storing nothing, the resend form's single answer.
-- `tests/about-and-consent.spec.js`: the founder wording only for a known founder, the consent sentence identical on both forms, the stat tile threshold.
+- `tests/about-and-consent.spec.js`: the founder wording only for a known founder (until V6, 2026-10-10; one wording for every joined status since), the consent sentence identical on both forms, the stat tile threshold.
 
 Results at review time (2026-09-26): backend 158 tests, 0 failures (including the 4 real-MySQL integration tests); end-to-end 95 tests, 0 failures, 0 skipped, in one invocation of `npm run test:e2e` (6 + 29 + 19 + 25 + 12 + 4 across the six files, the sixth being `tests/returning-visitor.spec.js`), each of the first five specs also run twice by its author to check for flakiness. Every spec was written by one agent and run to green by another that was allowed to change only the spec; none needed weakening. What the runners flagged and what happened to it: `showMsg()` on both pages rendered the API's `message` field with `innerHTML` (an injection sink if the API origin were ever compromised): switched to text. A malformed `waitlist_pending` record was left in storage: now cleared. Two Playwright invocations at once race on `test-results/`: run the suite from one invocation (documented in analytics-qa.md A4). The `409 -> duplicate` mapping in `waitlist.js` is unreachable (the backend answers duplicates with 200): left, documented. A product question, not a defect: on `index.html` a returning visitor with a saved pending or success state sees the calculator first, with the pending or success block inside the collapsed reveal zone until they click Reveal; that is the calculator-first design applied to a returning visitor, and it is Andrew's call whether the zone should open itself when a state is saved.
 
@@ -200,7 +200,7 @@ All of them are sequenced, with owner, dependencies and verification, in **`FRED
 
 - Token re-mint after an ambiguous send is not handled (the person uses resend). Decided.
 - A mail sandbox that executes JavaScript confirms the row itself when it opens the confirm link; what is lost is the evidence of a human click, not the signup (`email-funnel.md`).
-- The founder-slot decision is not serialised across concurrent confirmations; a burst at exactly 300 could exceed the cap by a few.
+- The founder-slot decision is not serialised across concurrent confirmations; a burst at exactly 300 could exceed the cap by a few. (Closed by V6, 2026-10-10: no slot is decided any more.)
 - `privacy.html` does not name Resend and still says transactional emails cannot be opted out of; counsel's final policy replaces the page.
 - The Plausible upstream script is fetched live through the proxy; Plausible-side changes are outside this repository's control (documented with the verification date).
 - No Docker on the build machine, so the integration test uses a local MySQL behind an environment variable instead of Testcontainers.
@@ -209,7 +209,7 @@ All of them are sequenced, with owner, dependencies and verification, in **`FRED
 ## Runbook (dev, then prod)
 
 1. Push `develop`; Cloudflare Pages builds the preview; Railway dev redeploys and Flyway applies any new migration. Watch the Railway log for `Migrating schema` lines and `Started WaitlistApplication`; a `BlankEnvironmentVariables` WARN means a variable was created empty.
-2. On the preview (treated as dev): one real signup with a fresh address; the email arrives from `fred@…` with an `https://lpapi-dev…` confirm link, `Reply-To help@fredvested.com`, no list headers (no "mailing list" strip in Apple Mail); click; the confirm page posts to itself without a CORS error; `/confirmed?status=confirmed&hours=…&tier=…`; `v_waitlist_funnel` shows the row.
+2. On the preview (treated as dev): one real signup with a fresh address; the email arrives from `fred@…` with an `https://lpapi-dev…` confirm link, `Reply-To help@fredvested.com`, no list headers (no "mailing list" strip in Apple Mail); click; the confirm page posts to itself without a CORS error; `/confirmed?status=confirmed&hours=…` (no `tier` since V6, 2026-10-10); `v_waitlist_funnel` shows the row.
 3. Webhook: Resend dashboard shows `email.sent` and `email.delivered` answered 200; `email_event` has both; a test bounce suppresses.
 4. Prod: variables above, snapshot dry-run, backup, merge, deploy, repeat step 2 with a real address, check `/stats` counts confirmed rows only.
 5. Analytics: set `fred_analytics_force=1` on production once, run the QA checklist B, clear the flag.

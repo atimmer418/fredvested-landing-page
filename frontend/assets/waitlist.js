@@ -47,6 +47,14 @@
   // or above this sample size; below it the elements stay hidden entirely.
   const STAT_TILE_MIN_N = 25;
 
+  // Attorney screenshot mode: ?previewStat=1 renders every live proof number (the list-size
+  // line on index.html, the count tile and the head-start stat on about.html) with sample
+  // values. Gated to local hosts (localhost, 127.0.0.1, file:, and private LAN IPs such as
+  // 192.168.x.x so a phone on the same wifi can take the screenshot), so on any deployed
+  // host the parameter does nothing and the numbers render only from a real API response.
+  const PREVIEW_STAT = isLocal && new URLSearchParams(location.search).get('previewStat') === '1';
+  const PREVIEW_COUNT = 1248;
+
   // Counsel-approved wording. ONE constant, rendered under every waitlist form
   // (index.html and about.html), so the wording lives in one place.
   const CONSENT_SENTENCE_HTML =
@@ -106,6 +114,9 @@
   }
   function getFreedomDate() {
     try { return JSON.parse(localStorage.getItem('waitlist_freedom')); } catch (e) { return null; }
+  }
+  function clearFreedomDate() {
+    try { localStorage.removeItem('waitlist_freedom'); } catch (e) { /* storage blocked */ }
   }
 
   function fetchStats() {
@@ -224,6 +235,8 @@
     API_BASE,
     TURNSTILE_SITEKEY,
     STAT_TILE_MIN_N,
+    PREVIEW_STAT,
+    PREVIEW_COUNT,
     CONSENT_SENTENCE_HTML,
     renderConsent,
     isValidEmail,
@@ -235,6 +248,7 @@
     clearStatus,
     saveFreedomDate,
     getFreedomDate,
+    clearFreedomDate,
     fetchStats,
     createTurnstile,
     submitWaitlist,

@@ -87,7 +87,7 @@ class WaitlistControllerStatsCacheTest {
         entry.setId(3L);
         entry.setConfirmationTokenHash(token.hash());
         entry.setConfirmationExpiresAt(java.time.LocalDateTime.now().plusDays(1));
-        entry.setStatus(com.fredvested.web.model.WaitlistEntry.WaitlistStatus.WAITLISTNORMAL);
+        entry.setStatus(com.fredvested.web.model.WaitlistEntry.WaitlistStatus.WAITLISTED);
         when(repository.findByConfirmationTokenHash(token.hash())).thenReturn(java.util.Optional.of(entry));
         when(repository.countByConfirmedAtIsNotNull()).thenReturn(41L);
 

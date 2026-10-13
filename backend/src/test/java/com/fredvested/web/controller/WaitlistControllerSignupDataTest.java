@@ -49,7 +49,6 @@ class WaitlistControllerSignupDataTest {
         when(rateLimiterService.isAllowed(anyString())).thenReturn(true);
         when(turnstileService.verifyToken(anyString())).thenReturn(true);
         when(repository.existsByEmail("test@example.com")).thenReturn(false);
-        when(repository.countByStatus(WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER)).thenReturn(0L);
         when(repository.count()).thenReturn(1L);
         when(repository.getAverageFreedomAge()).thenReturn(40.0);
     }

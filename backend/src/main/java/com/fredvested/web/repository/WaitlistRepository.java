@@ -40,10 +40,8 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntry, Long> {
     long countByStatus(WaitlistEntry.WaitlistStatus status);
 
     // Confirmed rows only (double opt-in, legacy backfill, or single opt-in): the public
-    // statistic and the founder cap never count an address nobody has confirmed.
+    // statistic never counts an address nobody has confirmed.
     long countByConfirmedAtIsNotNull();
-
-    long countByStatusAndConfirmedAtIsNotNull(WaitlistEntry.WaitlistStatus status);
 
     // Rows behind the public head-start stat. The about page disclosure states the assumptions
     // behind every averaged row, so only rows it accurately describes qualify: a confirmed

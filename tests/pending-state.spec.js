@@ -1,12 +1,12 @@
 // Proves the double opt-in pending state on index.html and about.html. A signup
 // answered with requiresConfirmation:true hides the form and shows "One more step:
-// check your email." with the address; the state survives a reload (7 days at most);
+// you got mail." with the address; the state survives a reload (7 days at most);
 // "resend the email" posts exactly the address and shows the neutral sentence;
 // "Use a different one" brings back a working form and forgets the state; a
 // storage-blocked browser still gets both from the in-memory copy; and a signup
 // that needs no confirmation (or an address already on the list) shows the success
 // block and never the pending block. On about.html the nav CTA reads
-// "Check your email" while pending and the price card CTA is left alone.
+// "you got mail" while pending and the price card CTA is left alone.
 const { test, expect } = require('@playwright/test');
 const {
   FRESH_SIGNUP, installMocks, seedStorage, blockStorage, submitWaitlist, revealIfNeeded, storage, events,
@@ -14,11 +14,11 @@ const {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RESEND_SENTENCE = 'If that address is on our waitlist, a new confirmation link is on its way. Check your inbox.';
-const PENDING_HEADLINE = 'One more step: check your email.';
-const RESEND_LINE = 'Didn’t get it? Check your spam folder, or resend the email.';
+const PENDING_HEADLINE = 'One more step: you got mail.';
+const RESEND_LINE = 'Didn’t get it? Resend the email.';
 const RESET_LINE = 'Wrong address? Use a different one.';
 const NAV_DEFAULT = 'Get my Freedom Date';
-const NAV_PENDING = 'Check your email';
+const NAV_PENDING = 'You got mail ✓';
 
 const PAGES = [
   // On index.html the capture block sits inside the reveal zone (visibility:hidden
@@ -42,7 +42,7 @@ async function expectPendingBlock(page, email) {
   await expect(page.locator('#pending-email')).toHaveText(email);
   await expect(block.locator('p', { hasText: 'get it?' })).toHaveText(RESEND_LINE);
   await expect(block.locator('p', { hasText: 'Wrong address?' })).toHaveText(RESET_LINE);
-  await expect(page.locator('#pending-resend')).toHaveText('resend the email');
+  await expect(page.locator('#pending-resend')).toHaveText('Resend the email');
   await expect(page.locator('#pending-reset')).toHaveText('Use a different one');
   await expect(page.locator('#waitlist-form')).toBeHidden();
   await expect(page.locator('#capture-email')).toBeHidden();
@@ -217,20 +217,20 @@ for (const p of PAGES) {
 
     test('a signup that needs no confirmation shows the success block, not the pending block', async ({ page }) => {
       const calls = await installMocks(page, {
-        signup: { ...FRESH_SIGNUP, status: 'WAITLISTFOUNDER', requiresConfirmation: false },
+        signup: { ...FRESH_SIGNUP, status: 'WAITLISTED', requiresConfirmation: false },
       });
       await page.goto(p.path);
-      await submitWaitlist(page, 'founder@example.com');
+      await submitWaitlist(page, 'single@example.com');
 
       await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
       await expect(page.locator('#success-note')).toHaveText('You’re in line for a Founder invite.');
       await expect(page.locator('#pending-block')).toBeHidden();
       await expect(page.locator('#waitlist-form')).toBeHidden();
       expect(calls.signup).toHaveLength(1);
-      expect(await storage(page, 'waitlist_status')).toBe('WAITLISTFOUNDER');
+      expect(await storage(page, 'waitlist_status')).toBe('WAITLISTED');
       expect(await storage(page, 'waitlist_pending')).toBeNull();
       if (p.hasNav) {
-        // A completed Founder signup is the one case that changes the price card CTA.
+        // A completed signup turns the price card CTA into the reserved-place confirmation.
         await expect(page.locator('#founder-cta')).toContainText('Your spot in line is reserved');
       }
     });
@@ -240,7 +240,7 @@ for (const p of PAGES) {
       // the row's real status alongside, and no requiresConfirmation key at all.
       const { requiresConfirmation, ...stats } = FRESH_SIGNUP;
       const calls = await installMocks(page, {
-        signup: { ...stats, status: 'already_joined', realStatus: 'WAITLISTNORMAL' },
+        signup: { ...stats, status: 'already_joined', realStatus: 'WAITLISTED' },
       });
       await page.goto(p.path);
       await submitWaitlist(page, 'again@example.com');
@@ -251,14 +251,14 @@ for (const p of PAGES) {
       await expect(page.locator('#waitlist-form')).toBeHidden();
       expect(calls.signup).toHaveLength(1);
       // The real status is what a later visit shows, never "already_joined" itself.
-      expect(await storage(page, 'waitlist_status')).toBe('WAITLISTNORMAL');
+      expect(await storage(page, 'waitlist_status')).toBe('WAITLISTED');
       expect(await storage(page, 'waitlist_pending')).toBeNull();
     });
   });
 }
 
 test.describe('about.html nav and price card', () => {
-  test('while pending the nav CTA reads "Check your email" and the price card CTA is untouched', async ({ page }) => {
+  test('while pending the nav CTA reads "you got mail" and the price card CTA is untouched', async ({ page }) => {
     await installMocks(page);
     await page.goto('/about.html');
     const nav = page.locator('#nav-cta');

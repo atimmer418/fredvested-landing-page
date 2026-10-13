@@ -1,6 +1,5 @@
 package com.fredvested.web.controller;
 
-import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.service.AddressRateLimiter;
 import com.fredvested.web.service.LandingUrls;
 import com.fredvested.web.service.RateLimiterService;
@@ -85,26 +84,22 @@ class WaitlistConfirmationControllerTest {
 
     // --- POST /confirm: the act ---
 
-    // The redirect carries the hours band and the decided tier (founder|normal), so the
-    // landing pages can show the right status afterwards without a second request.
+    // The redirect carries the hours band and nothing else: there is one waitlist and no
+    // tier (2026-10-10), so the confirmed page never needs a tier parameter.
     @Test
-    void confirmPost_redirectsToTheConfirmedPage_withTheHoursBand_andTheDecidedTier() throws Exception {
-        when(signupService.confirm("tok")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "<1", WaitlistEntry.WaitlistStatus.WAITLISTFOUNDER));
+    void confirmPost_redirectsToTheConfirmedPage_withTheHoursBand_andNoTier() throws Exception {
+        when(signupService.confirm("tok")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "<1"));
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok"))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1&tier=founder"));
-        when(signupService.confirm("tok2")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "72+", WaitlistEntry.WaitlistStatus.WAITLISTNORMAL));
-        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok2"))
-                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=72%2B&tier=normal"));
-        // An invited/claimed row confirming late is neither: no tier parameter at all.
-        when(signupService.confirm("tok3")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "<1", WaitlistEntry.WaitlistStatus.INVITED));
-        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok3"))
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=%3C1"));
+        when(signupService.confirm("tok2")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.CONFIRMED, "72+"));
+        mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "tok2"))
+                .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=confirmed&hours=72%2B"));
     }
 
     @Test
     void confirmPost_expired_redirectsToTheExpiredState() throws Exception {
-        when(signupService.confirm("old")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.EXPIRED, null, null));
+        when(signupService.confirm("old")).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.EXPIRED, null));
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "old"))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=expired"));
@@ -112,7 +107,7 @@ class WaitlistConfirmationControllerTest {
 
     @Test
     void confirmPost_unknownAndAlreadyUsedTokens_produceByteIdenticalResponses() throws Exception {
-        when(signupService.confirm(anyString())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null, null));
+        when(signupService.confirm(anyString())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null));
         MockHttpServletResponse unknown = mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "never-issued")).andReturn().getResponse();
         MockHttpServletResponse used = mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("token", "used-before")).andReturn().getResponse();
         assertEquals(unknown.getStatus(), used.getStatus());
@@ -124,7 +119,7 @@ class WaitlistConfirmationControllerTest {
 
     @Test
     void confirmPost_missingToken_isTheSameInvalidResponse() throws Exception {
-        when(signupService.confirm(isNull())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null, null));
+        when(signupService.confirm(isNull())).thenReturn(new SignupService.Confirmation(SignupService.ConfirmOutcome.INVALID, null));
         mockMvc.perform(post("/api/waitlist/confirm").contentType(MediaType.APPLICATION_FORM_URLENCODED))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=invalid"));

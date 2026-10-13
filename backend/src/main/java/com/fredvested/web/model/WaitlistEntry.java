@@ -106,7 +106,7 @@ public class WaitlistEntry {
     // How confirmed_at came to be set: 'double_opt_in' (clicked the confirmation link),
     // 'legacy' (signed up before double opt-in; backfilled by V5, they received the old
     // welcome email), or 'single_opt_in' (signed up while the double opt-in flag was off).
-    // The public statistic, the founder cap and the funnel count confirmed rows only.
+    // The public statistic and the funnel count confirmed rows only.
     @Column(name = "confirmed_source", length = 20)
     private String confirmedSource;
 
@@ -155,6 +155,8 @@ public class WaitlistEntry {
     }
 
     public enum WaitlistStatus {
-        WAITLISTFOUNDER, WAITLISTNORMAL, INVITED, CLAIMED, DECLINED
+        // WAITLISTED is the one pre-invitation state (no tiers since 2026-10-10, V6);
+        // INVITED / CLAIMED / DECLINED are the Founder Access invite workflow.
+        WAITLISTED, INVITED, CLAIMED, DECLINED
     }
 }

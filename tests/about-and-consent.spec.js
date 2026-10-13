@@ -3,17 +3,16 @@
 //   1. The post-signup status wording. about.html and index.html read
 //      localStorage.waitlist_status on load and, for a saved value, replace the
 //      form with the success block. about.html also rewrites #nav-cta and the
-//      price-card #founder-cta, and only a known WAITLISTFOUNDER may read as a
-//      reserved Founder spot: WAITLISTNORMAL, already_joined and the bare
-//      "confirmed" that confirmed.html stores when the tier is unknown all get
-//      the priority-waitlist wording (FREDdocs/email-funnel.md, section 4).
+//      price-card #founder-cta to "Your spot in line is reserved" for every
+//      joined status: there is no tier at signup, Founder Access invites go out
+//      in the order people joined (founder decision, 2026-10-10).
 //   2. The consent sentence. Both forms render CONSENT_SENTENCE_HTML from
 //      assets/waitlist.js into #consent-note, so counsel's final wording lands in
 //      one place: the two texts must be identical, ask for consent, link to the
 //      privacy policy and carry no em dash.
-//   3. about.html's live-only proof numbers. The stats endpoint is fetched on
-//      load and the count tile and the spots-filled meter render only at or
-//      above STAT_TILE_MIN_N (25); below it nothing renders at all.
+//   3. The live-only proof numbers. The stats endpoint is fetched on load and
+//      about.html's count tile and index.html's list-size line render only at
+//      or above STAT_TILE_MIN_N (25); below it nothing renders at all.
 const { test, expect } = require('@playwright/test');
 const { STATS, installMocks, seedStorage, revealIfNeeded } = require('./helpers');
 
@@ -23,9 +22,7 @@ const NAV_CTA_DEFAULT = 'Get my Freedom Date';
 const NAV_CTA_JOINED = 'You’re in ✓';
 const FOUNDER_CTA_DEFAULT = 'Reserve my Founder spot';
 const FOUNDER_CTA_RESERVED = 'Your spot in line is reserved';
-const FOUNDER_CTA_PRIORITY = 'You’re on the priority waitlist';
-const NOTE_FOUNDER = 'You’re in line for a Founder invite.';
-const NOTE_NORMAL = 'You’re on the priority waitlist for a Founder spot.';
+const NOTE_WAITLISTED = 'You’re in line for a Founder invite.';
 const NOTE_ALREADY_JOINED = 'You’re already on the list.';
 const NOTE_CONFIRMED = 'Your spot on the FRED waitlist is secured. We’ll email you when your wave opens.';
 
@@ -46,46 +43,32 @@ test('about.html with no saved status shows the form, the default nav CTA and th
   await expect(page.locator('#founder-cta')).toHaveAttribute('href', '#join');
 });
 
-test('about.html with a saved WAITLISTFOUNDER status shows the success block, a joined nav CTA and a reserved founder CTA', async ({ page }) => {
-  await seedStorage(page, { waitlist_status: 'WAITLISTFOUNDER' });
-  await installMocks(page);
-  await page.goto('/about.html');
-  await expect(page.locator('#success-block')).toBeVisible();
-  await expect(page.locator('#success-note')).toHaveText(NOTE_FOUNDER);
-  await expect(page.locator('#waitlist-form')).toBeHidden();
-  await expect(page.locator('#pending-block')).toBeHidden();
-  await expect(page.locator('#nav-cta')).toHaveText(NAV_CTA_JOINED);
-  await expect(page.locator('#nav-cta')).toHaveAttribute('href', '#join');
-  await expect(page.locator('#founder-cta')).toContainText(FOUNDER_CTA_RESERVED);
-  await expect(page.locator('#founder-cta')).not.toContainText(FOUNDER_CTA_PRIORITY);
-  await expect(page.locator('#founder-cta')).toHaveAttribute('href', '#join');
-});
-
-// Everything that is not a known founder gets the priority-waitlist wording.
+// Every joined status gets the same reserved-place wording on the price card.
 for (const { status, note } of [
-  { status: 'WAITLISTNORMAL', note: NOTE_NORMAL },
+  { status: 'WAITLISTED', note: NOTE_WAITLISTED },
   { status: 'confirmed', note: NOTE_CONFIRMED },
   { status: 'already_joined', note: NOTE_ALREADY_JOINED },
 ]) {
-  test(`about.html with a saved ${status} status notes "${note}" and words the founder CTA as the priority waitlist, never reserved`, async ({ page }) => {
+  test(`about.html with a saved ${status} status notes "${note}", joins the nav CTA and reserves the founder CTA`, async ({ page }) => {
     await seedStorage(page, { waitlist_status: status });
     await installMocks(page);
     await page.goto('/about.html');
     await expect(page.locator('#success-block')).toBeVisible();
     await expect(page.locator('#success-note')).toHaveText(note);
     await expect(page.locator('#waitlist-form')).toBeHidden();
+    await expect(page.locator('#pending-block')).toBeHidden();
     await expect(page.locator('#nav-cta')).toHaveText(NAV_CTA_JOINED);
+    await expect(page.locator('#nav-cta')).toHaveAttribute('href', '#join');
     const founderCta = page.locator('#founder-cta');
-    // The positive check first, so the negative one runs against the rewritten
-    // CTA and not against the page's initial "Reserve my Founder spot".
-    await expect(founderCta).toContainText(FOUNDER_CTA_PRIORITY);
-    await expect(founderCta).not.toContainText('reserved', { ignoreCase: true });
+    await expect(founderCta).toContainText(FOUNDER_CTA_RESERVED);
+    await expect(founderCta).not.toContainText('priority', { ignoreCase: true });
+    await expect(founderCta).toHaveAttribute('href', '#join');
   });
 }
 
 test('about.html with a saved status and a saved freedom date shows the date in the hero instead of the calculator CTA', async ({ page }) => {
   await seedStorage(page, {
-    waitlist_status: 'WAITLISTFOUNDER',
+    waitlist_status: 'WAITLISTED',
     waitlist_freedom: JSON.stringify({ age: 45, monthYear: 'March 2040' }),
   });
   await installMocks(page);
@@ -96,8 +79,8 @@ test('about.html with a saved status and a saved freedom date shows the date in 
   await expect(page.locator('#hero-cta-note')).toBeHidden();
 });
 
-test('index.html with a saved WAITLISTNORMAL status shows the priority waitlist note in place of the form at once', async ({ page }) => {
-  await seedStorage(page, { waitlist_status: 'WAITLISTNORMAL' });
+test('index.html with a saved WAITLISTED status shows the on-the-list note in place of the form at once', async ({ page }) => {
+  await seedStorage(page, { waitlist_status: 'WAITLISTED' });
   await installMocks(page);
   await page.goto('/index.html');
   // A saved state opens the reveal zone itself (2026-09-26): no reveal click needed,
@@ -105,7 +88,7 @@ test('index.html with a saved WAITLISTNORMAL status shows the priority waitlist 
   await expect(page.locator('#reveal-zone')).toHaveClass(/open/);
   await expect(page.locator('#age-range')).toBeVisible();
   await expect(page.locator('#success-block')).toBeVisible();
-  await expect(page.locator('#success-note')).toHaveText(NOTE_NORMAL);
+  await expect(page.locator('#success-note')).toHaveText(NOTE_WAITLISTED);
   await expect(page.locator('#waitlist-form')).toBeHidden();
   await expect(page.locator('#capture-cta-note')).toBeHidden();
   await expect(page.locator('#pending-block')).toBeHidden();
@@ -165,18 +148,20 @@ test('the consent sentence under both waitlist forms is one identical text that 
 // --- 3. Live-only proof numbers on about.html --------------------------------
 
 test('about.html fetches the stats endpoint on load and shows the count tile at 40, at or above STAT_TILE_MIN_N', async ({ page }) => {
-  const calls = await installMocks(page, { stats: { ...STATS, count: 40, founderCount: 12 } });
+  const calls = await installMocks(page, { stats: { ...STATS, count: 40 } });
   await page.goto('/about.html');
   expect(await page.evaluate(() => window.FredWaitlist.STAT_TILE_MIN_N)).toBe(STAT_TILE_MIN_N);
   await expect(page.locator('#stat-count-tile')).toBeVisible();
   await expect(page.locator('#stat-count')).toHaveText('40');
   expect(calls.stats).toBe(1);
-  // founderCount 12 is below the threshold: the spots-filled meter stays hidden.
-  await expect(page.locator('#progress-block')).toBeHidden();
+  // No spots-filled meter any more: the join card carries only the note.
+  await expect(page.locator('#progress-block')).toHaveCount(0);
+  await expect(page.locator('#waitlist-note')).toBeVisible();
+  await expect(page.locator('#btn-text')).toHaveText('Join Waitlist');
 });
 
 test('about.html with a count of 3 fetches the stats endpoint but keeps the count tile hidden', async ({ page }) => {
-  const calls = await installMocks(page, { stats: { ...STATS, count: 3, founderCount: 3 } });
+  const calls = await installMocks(page, { stats: { ...STATS, count: 3 } });
   const statsAnswered = page.waitForResponse((r) => /\/api\/waitlist\/stats/.test(r.url()));
   await page.goto('/about.html');
   await statsAnswered;
@@ -185,21 +170,59 @@ test('about.html with a count of 3 fetches the stats endpoint but keeps the coun
   expect(calls.stats).toBe(1);
   await expect(page.locator('#stat-count-tile')).toBeHidden();
   await expect(page.locator('#stat-count')).toHaveText('');
-  await expect(page.locator('#progress-block')).toBeHidden();
 });
 
-test('about.html shows the spots-filled meter once the founder count reaches STAT_TILE_MIN_N', async ({ page }) => {
-  await installMocks(page, { stats: { ...STATS, count: 60, founderCount: 40 } });
+test('about.html never words the join card as a full beta or a priority waitlist, whatever the count', async ({ page }) => {
+  await installMocks(page, { stats: { ...STATS, count: 5000 } });
   await page.goto('/about.html');
-  await expect(page.locator('#progress-block')).toBeVisible();
-  await expect(page.locator('#progress-count')).toHaveText('40 / 300');
+  await expect(page.locator('#stat-count')).toHaveText('5,000');
+  await expect(page.locator('#waitlist-note')).not.toContainText('full');
+  await expect(page.locator('#waitlist-note')).not.toContainText('priority');
   await expect(page.locator('#btn-text')).toHaveText('Join Waitlist');
+  await expect(page.locator('#join')).not.toContainText('priority waitlist', { ignoreCase: true });
 });
 
-test('about.html at 300 confirmed founders reads full and offers the priority waitlist instead', async ({ page }) => {
-  await installMocks(page, { stats: { ...STATS, count: 320, founderCount: 300 } });
-  await page.goto('/about.html');
-  await expect(page.locator('#progress-count')).toHaveText('300 / 300 (Full)');
-  await expect(page.locator('#waitlist-note')).toContainText('The private beta is currently full.');
-  await expect(page.locator('#btn-text')).toHaveText('Join Priority Waitlist');
+// --- 3b. List-size line on index.html (same gate as about.html's count tile) ----
+
+test('index.html keeps the list-size line hidden below STAT_TILE_MIN_N', async ({ page }) => {
+  const calls = await installMocks(page, { stats: { ...STATS, count: 12 } });
+  const statsAnswered = page.waitForResponse((r) => /\/api\/waitlist\/stats/.test(r.url()));
+  await page.goto('/index.html');
+  await statsAnswered;
+  await page.waitForLoadState('networkidle');
+  expect(calls.stats).toBe(1);
+  await expect(page.locator('#capture-count')).toBeHidden();
+  await expect(page.locator('#capture-count')).toHaveText('');
+  await expect(page.locator('#capture-count-block')).toHaveCount(0);
+  await expect(page.locator('#capture-cta-note')).toContainText('No payment until launch. You only pay if invited and choose to claim your spot.');
+  await expect(page.locator('#capture-cta-note')).toContainText('The private beta is currently iOS only.');
+});
+
+test('index.html shows the list-size line from the live count at or above STAT_TILE_MIN_N', async ({ page }) => {
+  await installMocks(page, { stats: { ...STATS, count: 120 } });
+  await page.goto('/index.html');
+  await revealIfNeeded(page);
+  await expect(page.locator('#capture-count')).toBeVisible();
+  await expect(page.locator('#capture-count')).toHaveText('120 people are already on the list.');
+  await expect(page.locator('#capture-count b')).toHaveText('120');
+  await expect(page.locator('#capture-scarcity-pill')).toBeVisible();
+});
+
+test('index.html keeps the scarcity pill and formats a large count, with no cap or "full" wording anywhere', async ({ page }) => {
+  await installMocks(page, { stats: { ...STATS, count: 4200 } });
+  await page.goto('/index.html');
+  await revealIfNeeded(page);
+  await expect(page.locator('#capture-count')).toHaveText('4,200 people are already on the list.');
+  await expect(page.locator('#capture-scarcity-pill')).toBeVisible();
+  await expect(page.locator('#capture-scarcity-pill')).toHaveText(/Founding member spots are limited/);
+  await expect(page.locator('#capture-count')).not.toContainText('/');
+});
+
+test('index.html states that the private beta is iOS only under the payment sentence', async ({ page }) => {
+  await installMocks(page);
+  await page.goto('/index.html');
+  await revealIfNeeded(page);
+  const iosLine = page.locator('#capture-cta-note p').last();
+  await expect(iosLine).toHaveText('The private beta is currently iOS only.');
+  await expect(iosLine.locator('b')).toHaveText('iOS only');
 });
