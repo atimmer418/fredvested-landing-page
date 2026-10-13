@@ -32,29 +32,27 @@ class EmailTemplatesTest {
         assertFalse(hostile.html().contains("<b>x</b>"), "address is escaped in HTML");
     }
 
-    // Counsel, 2026-10-13 (staged, pending final sign-off): the welcome email footer carries
-    // the development disclaimer verbatim and a privacy policy link, in both parts.
+    // Counsel, 2026-10-13: every email footer carries the development disclaimer verbatim
+    // and a privacy policy link, in both parts, after the unsubscribe link and postal address.
     @Test
-    void welcomeEmail_footerCarriesTheDevelopmentDisclaimer_andThePrivacyLink_inBothParts() {
-        EmailTemplates.Rendered r = EmailTemplates.welcome(UNSUB, ADDR);
+    void everyTemplate_footerCarriesTheDevelopmentDisclaimer_andThePrivacyLink_inBothParts() {
         String disclaimer = "FRED is still in development. Any investment advisory services will be made available only "
                 + "after applicable registration requirements have been satisfied and subject to eligibility and onboarding "
                 + "requirements. Joining the waitlist does not create an advisory relationship or guarantee account approval "
                 + "or a launch date.";
-        assertTrue(r.html().contains(disclaimer), "disclaimer in HTML");
-        assertTrue(r.text().contains(disclaimer), "disclaimer in text");
-        assertTrue(r.html().contains("href=\"https://fredvested.com/privacy\""), "privacy link in HTML");
-        assertTrue(r.html().contains(">Privacy Policy</a>"), "privacy link label");
-        assertTrue(r.text().contains("Privacy Policy: https://fredvested.com/privacy"), "privacy link in text");
-        // Footer placement: both sit after the body, beside the unsubscribe link / postal address.
-        int unsub = r.html().indexOf("href=\"" + UNSUB + "\"");
-        int privacy = r.html().indexOf("https://fredvested.com/privacy");
-        int address = r.html().indexOf("FREDvested LLC, " + ADDR);
-        int note = r.html().indexOf(disclaimer);
-        assertTrue(unsub < privacy && privacy < address && address < note, "footer order");
-        // The confirmation email is consent-only and unchanged.
-        EmailTemplates.Rendered c = EmailTemplates.confirmation(CONFIRM, UNSUB, 7, ADDR);
-        assertFalse(c.html().contains("fredvested.com/privacy") || c.text().contains(disclaimer));
+        for (EmailTemplates.Rendered r : all()) {
+            assertTrue(r.html().contains(disclaimer), r.subject() + ": disclaimer in HTML");
+            assertTrue(r.text().contains(disclaimer), r.subject() + ": disclaimer in text");
+            assertTrue(r.html().contains("href=\"https://fredvested.com/privacy\""), r.subject() + ": privacy link in HTML");
+            assertTrue(r.html().contains(">Privacy Policy</a>"), r.subject() + ": privacy link label");
+            assertTrue(r.text().contains("Privacy Policy: https://fredvested.com/privacy"), r.subject() + ": privacy link in text");
+            int unsub = r.html().indexOf("href=\"" + UNSUB + "\"");
+            int privacy = r.html().indexOf("https://fredvested.com/privacy");
+            int address = r.html().indexOf("FREDvested LLC, " + ADDR);
+            int note = r.html().indexOf(disclaimer);
+            assertTrue(unsub < privacy && privacy < address && address < note, r.subject() + ": footer order");
+            assertTrue(r.html().contains("text-wrap:pretty"), r.subject() + ": disclaimer paragraph wraps pretty");
+        }
     }
 
     // Dark-mode handling is deliberately left to the mail client (Andrew, 2026-09-24:

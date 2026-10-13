@@ -5,7 +5,8 @@ package com.fredvested.web.service;
  * address; no personalisation beyond the To header (the address is not in the
  * body at all). Web-safe and system font stacks only: a hosted font would make
  * every recipient's mail client fetch from a vendor the privacy policy does not
- * name. Every email carries an unsubscribe link and the postal address.
+ * name. Every email carries an unsubscribe link, a privacy policy link, the
+ * postal address and the development disclaimer (counsel, 2026-10-13).
  */
 public final class EmailTemplates {
 
@@ -33,8 +34,11 @@ The FRED Team
 help@fredvested.com
 
 Unsubscribe: %s
+Privacy Policy: %s
 FREDvested LLC, %s
-""".formatted(confirmUrl, ttlDays, unsubscribeUrl, postalAddress);
+
+%s
+""".formatted(confirmUrl, ttlDays, unsubscribeUrl, PRIVACY_URL, postalAddress, DEVELOPMENT_DISCLAIMER);
 
         String html = shell("Confirm your email", """
               <p style="margin:0 0 24px;font-size:16px;line-height:1.4;color:#0F172A;">
@@ -55,8 +59,8 @@ FREDvested LLC, %s
     }
 
     /**
-     * Counsel, 2026-10-13 (staged, pending final sign-off): the welcome email footer
-     * carries this disclaimer verbatim and a link to the privacy policy, in both parts.
+     * Counsel, 2026-10-13: every email footer carries this disclaimer verbatim and a
+     * link to the privacy policy, in both the HTML and the plain-text part.
      */
     static final String DEVELOPMENT_DISCLAIMER =
             "FRED is still in development. Any investment advisory services will be made available only after applicable registration requirements have been satisfied and subject to eligibility and onboarding requirements. Joining the waitlist does not create an advisory relationship or guarantee account approval or a launch date.";
@@ -102,7 +106,7 @@ FREDvested LLC, %s
               <p style="margin:0;font-size:15px;line-height:1.4;color:#334155;">
                 You don&#39;t need to do anything else right now. You&#39;re in line.
               </p>
-""", unsubscribeUrl, postalAddress, WELCOME_FOOTER);
+""", unsubscribeUrl, postalAddress);
         return new Rendered(subject, html, text);
     }
 
@@ -127,26 +131,7 @@ FREDvested LLC, %s
               </table>
 """;
 
-    /** Footer extras for the welcome email: the privacy link sits beside Unsubscribe; the disclaimer follows the address. */
-    private static final String WELCOME_FOOTER_LINKS =
-            " &#183; <a href=\"%s\" style=\"color:#94a3b8;\">Privacy Policy</a>".formatted(PRIVACY_URL);
-
-    private static final String WELCOME_FOOTER_NOTE = """
-
-        <p style="margin:12px 0 0;font-size:11px;line-height:1.5;color:#94a3b8;text-align:center;">
-          %s
-        </p>""".formatted(DEVELOPMENT_DISCLAIMER);
-
-    private static final String[] WELCOME_FOOTER = { WELCOME_FOOTER_LINKS, WELCOME_FOOTER_NOTE };
-
-    private static final String[] NO_FOOTER = { "", "" };
-
     private static String shell(String title, String body, String unsubscribeUrl, String postalAddress) {
-        return shell(title, body, unsubscribeUrl, postalAddress, NO_FOOTER);
-    }
-
-    /** footer[0] is appended after the Unsubscribe link, footer[1] after the postal address line. */
-    private static String shell(String title, String body, String unsubscribeUrl, String postalAddress, String[] footer) {
         return """
 <!DOCTYPE html>
 <html>
@@ -179,17 +164,20 @@ FREDvested LLC, %s
         </table>
         <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
           You&#39;re receiving this because this address was entered at fredvested.com.
-          <a href="%s" style="color:#94a3b8;">Unsubscribe</a>%s
+          <a href="%s" style="color:#94a3b8;">Unsubscribe</a> &#183; <a href="%s" style="color:#94a3b8;">Privacy Policy</a>
         </p>
         <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
           FREDvested LLC, %s
-        </p>%s
+        </p>
+        <p style="margin:12px 0 0;font-size:11px;line-height:1.2;color:#94a3b8;text-align:center;text-wrap:pretty;">
+          %s
+        </p>
       </td>
     </tr>
   </table>
 </body>
 </html>
-""".formatted(title, body, unsubscribeUrl, footer[0], escape(postalAddress), footer[1]);
+""".formatted(title, body, unsubscribeUrl, PRIVACY_URL, escape(postalAddress), DEVELOPMENT_DISCLAIMER);
     }
 
     private static String escape(String s) {
