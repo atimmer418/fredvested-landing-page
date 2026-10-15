@@ -8,27 +8,38 @@
   <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
   <link rel="icon" type="image/png" href="/assets/variation1.png">
   <link rel="apple-touch-icon" href="/assets/variation1.png">
-  <title>Privacy Policy — FRED</title>
+  <title>FRED: Privacy Policy</title>
   <meta name="description" content="Read FREDvested LLC's Privacy Policy to understand how we collect, use, and protect your waitlist data.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://fredvested.com/privacy">
   <meta property="og:site_name" content="FRED">
   <meta property="og:title" content="Privacy Policy — FRED">
   <meta property="og:description" content="Read FREDvested LLC's Privacy Policy to understand how we collect, use, and protect your waitlist data.">
+  <!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
   <link rel="stylesheet" href="dist/output.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
-  <!-- Privacy-friendly analytics by Plausible -->
-  <script async src="https://plausible.io/js/pa-hiK0VCN3k2FFZf1eqlrVf.js"></script>
+  <!-- Privacy-friendly analytics by Plausible, proxied through our own domain -->
+  <script defer data-domain="fredvested.com" src="/js/script.js"></script>
   <script>
     window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
     plausible.init()
   </script>
 </head>
 <body class="bg-background-light font-display text-navy antialiased">
+
+  <!-- Inline icon sprite (Material Icons Outlined, Apache 2.0 -- the same glyphs the Google-hosted icon
+       font served). Replaces that stylesheet + font so no request leaves our origin for icons. -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-arrow_back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></symbol>
+    <symbol id="i-bar_chart" viewBox="0 0 24 24"><g><g><rect height="11" width="4" x="4" y="9"/><rect height="7" width="4" x="16" y="13"/><rect height="16" width="4" x="10" y="4"/></g></g></symbol>
+    <symbol id="i-check_circle" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/></symbol>
+    <symbol id="i-delete" viewBox="0 0 24 24"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M14.06 9.02l.92.92L5.92 19H5v-.92l9.06-9.06M17.66 3c-.25 0-.51.1-.7.29l-1.83 1.83 3.75 3.75 1.83-1.83c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.2-.2-.45-.29-.71-.29zm-3.6 3.19L3 17.25V21h3.75L17.81 9.94l-3.75-3.75z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></symbol>
+    <symbol id="i-security" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></symbol>
+    <symbol id="i-storage" viewBox="0 0 24 24"><path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z"/></symbol>
+    <symbol id="i-unsubscribe" viewBox="0 0 24 24"><path d="M20.99 14.04V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h10.05c.28 1.92 2.1 3.35 4.18 2.93 1.34-.27 2.43-1.37 2.7-2.71.25-1.24-.16-2.39-.94-3.18zm-2-9.04L12 8.5 5 5h13.99zm-3.64 10H5V7l7 3.5L19 7v6.05c-.16-.02-.33-.05-.5-.05-1.39 0-2.59.82-3.15 2zm5.15 2h-4v-1h4v1z"/></symbol>
+    <symbol id="i-visibility" viewBox="0 0 24 24"><path d="M12 6c3.79 0 7.17 2.13 8.82 5.5C19.17 14.87 15.79 17 12 17s-7.17-2.13-8.82-5.5C4.83 8.13 8.21 6 12 6m0-2C7 4 2.73 7.11 1 11.5 2.73 15.89 7 19 12 19s9.27-3.11 11-7.5C21.27 7.11 17 4 12 4zm0 5c1.38 0 2.5 1.12 2.5 2.5S13.38 14 12 14s-2.5-1.12-2.5-2.5S10.62 9 12 9m0-2c-2.48 0-4.5 2.02-4.5 4.5S9.52 16 12 16s4.5-2.02 4.5-4.5S14.48 7 12 7z"/></symbol>
+  </svg>
 
   <!-- Navbar -->
   <nav class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100">
@@ -37,250 +48,211 @@
         <a href="/" class="flex-shrink-0 flex items-center gap-2">
           <span class="font-montserrat text-[48px] font-black italic text-primary tracking-[0px] leading-none">FRED</span>
         </a>
-        <a href="index.html#join" class="flex items-center gap-1 text-sm font-medium text-slate-text hover:text-primary transition-colors">
-          <span class="material-icons-outlined text-base">arrow_back</span>
-          Back to Home
+        <a id="back-link" href="/about" class="flex items-center gap-1 text-sm font-medium text-slate-text hover:text-primary transition-colors">
+          <svg class="text-base" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-arrow_back"/></svg>
+          <span id="back-link-label">Back to Home</span>
         </a>
       </div>
     </div>
   </nav>
 
   <!-- Page Header -->
-  <section class="bg-white border-b border-gray-100 pb-12 pt-8 sm:py-12">
+  <section class="bg-white border-b border-gray-100 pb-6 pt-8 sm:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-4">
-        <span class="material-icons-outlined text-base mr-1">lock</span>
+        <svg class="text-base mr-1" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-lock"/></svg>
         Legal
       </div>
       <h1 class="text-4xl font-extrabold text-navy mb-3">Privacy Policy</h1>
-      <p class="text-slate-text text-sm"><span class="hidden sm:inline">Effective Date: March 14, 2026 &nbsp;·&nbsp; FREDvested LLC &nbsp;·&nbsp; Maryland, United States</span><span class="sm:hidden">Effective Date: March 14, 2026<br>FREDvested LLC &nbsp;·&nbsp; Maryland, United States</span></p>
+      <p class="text-slate-text text-sm"><strong>Effective Date:</strong> March 29, 2026<br><strong>Last Updated:</strong> October 5, 2026</p>
+      <p class="text-slate-text text-sm mt-1">FREDvested LLC, a Maryland Limited Liability Company</p>
     </div>
   </section>
 
-  <!-- Content -->
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+  <!-- Content: rendered from legal/privacy-content.html (counsel's source of record). Text is verbatim; only
+       classes and wrappers were added so it fits the page design. -->
+  <div class="legal-content max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
 
-    <!-- Overview -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Overview</h2>
-      <p class="text-slate-text leading-relaxed">
-        FREDvested LLC ("FRED," "we," "our," or "us") operates the website at <strong class="text-navy">fredvested.com</strong> and, in the future, the FRED mobile application. This Privacy Policy explains what information we collect, how we use it, who we share it with, and what rights you have over your data.
-      </p>
-      <p class="text-slate-text leading-relaxed mt-4">
-        This policy currently covers our <strong class="text-navy">waitlist and landing page only</strong>. When the FRED application launches, a separate and more comprehensive privacy policy covering in-app data (including brokerage, bank-linking, and identity verification data) will be provided prior to account creation.
-      </p>
-      <p class="text-slate-text leading-relaxed mt-4">
-        By visiting fredvested.com or joining our waitlist, you agree to the practices described in this policy.
-      </p>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-1" class="text-xl font-bold text-navy mb-4 scroll-mt-20">1. Introduction</h2>
+<p class="text-slate-text leading-relaxed">FREDvested LLC (“FRED,” “we,” “us,” or “our”) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and share your personal information when you use the FRED mobile application and/or our website (collectively, the “App”).</p>
+<p class="text-slate-text leading-relaxed">By using the App, you agree to the collection and use of information in accordance with this Privacy Policy and applicable laws.</p>
+</div>
 
-    <!-- Information We Collect -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Information We Collect</h2>
-      <p class="text-slate-text leading-relaxed mb-6">We collect only what is necessary to operate our waitlist and improve our service.</p>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-2" class="text-xl font-bold text-navy mb-4 scroll-mt-20">2. Information We Collect and How We Process It</h2>
+<p class="text-slate-text leading-relaxed">Depending on the services you use, we may collect the following information:</p>
+<div class="legal-table-wrap"><table class="legal-table">
+<thead>
+<tr>
+<th><strong class="text-navy">Category of Personal Information Collected </strong></th>
+<th><strong class="text-navy">Source of Information</strong></th>
+<th><strong class="text-navy">Purpose for Collection</strong></th>
+<th><strong class="text-navy">Categories of Third-Party Recipients</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Personal identifiers:</strong> such as your full name, your date of birth, residential address, business address, any correspondence address, account name, social security number, passport number, email address, telephone numbers, or other contact information.</td>
+<td data-label="Source of Information">From you and documents you share with us</td>
+<td data-label="Purpose for Collection">To create and manage your account, to verify your identity, to communicate with you, to prevent fraud, to satisfy our legal Know Your Customer (KYC)/Anti-Money Laundering (AML) obligations, to calculate your Freedom Date, to track your progress as an input to Freedom Date projections, to provide educational and financial tools within the App, to facilitate opening a brokerage account, and to comply with sanctions screening obligations.</td>
+<td data-label="Categories of Third-Party Recipients">Registered broker-dealer partner (to assist with KYC/AML obligations and if you open a brokerage account), Database and backend hosting provider</td>
+</tr>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Customer records information: such as your name, signature, social security number, physical characteristics or description, address, telephone number, government identifying documents, tax identification numbers, company registration information, beneficial ownership information, authorized signatory information, beneficiary information, account verification information, and other records information.</strong></td>
+<td data-label="Source of Information">From you and documents you share with us</td>
+<td data-label="Purpose for Collection">To verify your identity, to allow us to conduct financial transactions involving your account, to satisfy our legal KYC/AML obligations, to comply with sanctions screening obligation, to facilitate opening a brokerage account, and to ensure the App accurately records your actions and activities.</td>
+<td data-label="Categories of Third-Party Recipients">Registered broker-dealer partner (to assist with KYC/AML obligations and if you open a brokerage account), Database and backend hosting provider</td>
+</tr>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Characteristics of protected classifications</strong>: nationality and age information.</td>
+<td data-label="Source of Information">From you and documents you share with us</td>
+<td data-label="Purpose for Collection">To verify your identity, as part of your Freedom Date calculation, to satisfy our legal KYC/AML obligations, to facilitate opening a brokerage account, and to comply with sanctions screening obligations.</td>
+<td data-label="Categories of Third-Party Recipients">Registered broker-dealer partner (if you open a brokerage account), Database and backend hosting provider</td>
+</tr>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Commercial information:</strong> financial goal inputs, including your desired monthly retirement income, your current monthly investment amount, your target retirement age, as well as records of securities purchased, obtained, or considered through a brokerage account (if one is opened).</td>
+<td data-label="Source of Information">Your use of the App</td>
+<td data-label="Purpose for Collection">To facilitate opening a brokerage account, to ensure the App accurately records your actions and activities, and to provide educational and financial tools within the App.</td>
+<td data-label="Categories of Third-Party Recipients">Registered broker-dealer partner (if you open a brokerage account), Database and backend hosting provider</td>
+</tr>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Financial Transaction Data</strong>: One-time or subscriptions to the App, your payment history for the App</td>
+<td data-label="Source of Information">Your use of the App</td>
+<td data-label="Purpose for Collection">To record your purchase of services from us</td>
+<td data-label="Categories of Third-Party Recipients">Database and backend hosting provider, Payment processor</td>
+</tr>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Communications:</strong>  communications we have with you, which may include your email address, customer support correspondence, documentation you upload through email or directly to the App, electronic signatures, and customer feedback surveys.</td>
+<td data-label="Source of Information">From you, such as when you sign up for our email list</td>
+<td data-label="Purpose for Collection">To provide customer support, to provide you with information about the App (including your use of it), to facilitate opening a brokerage account, and to make requests related to the App, including requesting information required to meet our legal obligations.</td>
+<td data-label="Categories of Third-Party Recipients">Registered broker-dealer partner (if you open a brokerage account), Database and back end hosting provider, Marketing email provider</td>
+</tr>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Geolocation data</strong>: location data, including your IP address.</td>
+<td data-label="Source of Information">From your interaction with the App, including directly from your browser</td>
+<td data-label="Purpose for Collection">To accurately route communications to/from the App and to secure the App against cyberattacks, including to investigate suspicious activity and possible fraud.</td>
+<td data-label="Categories of Third-Party Recipients">Database and back end hosting provider, Analytics provider, Security and hosting provider</td>
+</tr>
+<tr>
+<td data-label="Category of Personal Information Collected"><strong class="text-navy">Internet activity data:</strong> account activity, including browser type, operating system, device identifiers, login history, security logs, authentication logs, error logs and crash reports, security events, browsing history, search history, support requests, and other information regarding your interactions with the App.</td>
+<td data-label="Source of Information">From your interaction with the App, including directly from your browser</td>
+<td data-label="Purpose for Collection">To ensure that the App is operating as intended and to secure the App against cyberattacks, including to investigate suspicious activity and possible fraud.</td>
+<td data-label="Categories of Third-Party Recipients">Database and back end hosting provider, Analytics provider, Security and hosting provider</td>
+</tr>
+</tbody>
+</table></div>
+<p class="text-slate-text leading-relaxed">All of these categories of information have been collected and shared in the past twelve (12) months. This takes place because financial companies need to share their customers’ personal information to ensure the continued operation of the business in a safe and compliant manner.</p>
+<p class="text-slate-text leading-relaxed">Note that certain of the items described above are considered “sensitive personal data.” We limit our processing of sensitive personal data to what is required to provide our services and satisfy our regulatory obligations.</p>
+<h3 id="sec-2-1" class="font-semibold text-navy pt-2 scroll-mt-20">2.1 Information We Do NOT Collect</h3>
+<ul class="space-y-3 text-slate-text">
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Payment card numbers (processed directly by third-party payment providers)</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Bank account numbers</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Biometric data</p></div></li>
+</ul>
+</div>
 
-      <div class="space-y-5">
-        <div class="border-l-4 border-primary pl-4">
-          <h3 class="font-semibold text-navy mb-1">Email Address</h3>
-          <p class="text-slate-text text-sm leading-relaxed">Collected when you join the waitlist. Used to send you waitlist status updates, your invitation when a spot opens, and marketing communications about FRED. By submitting your email, you consent to receive these types of electronic communications from us.</p>
-        </div>
-        <div class="border-l-4 border-primary pl-4">
-          <h3 class="font-semibold text-navy mb-1">Freedom Age</h3>
-          <p class="text-slate-text text-sm leading-relaxed">The target retirement age you enter in the calculator and provide at signup. This is used in aggregate to understand our user base and to personalize your waitlist experience. It is not sold or shared individually.</p>
-        </div>
-        <div class="border-l-4 border-primary pl-4">
-          <h3 class="font-semibold text-navy mb-1">Hashed IP Address</h3>
-          <p class="text-slate-text text-sm leading-relaxed">We collect your IP address and immediately convert it to an irreversible SHA-256 hash before storage. This means we never store your actual IP address — only a one-way fingerprint used solely for rate limiting and abuse prevention. It cannot be used to identify you.</p>
-        </div>
-        <div class="border-l-4 border-primary pl-4">
-          <h3 class="font-semibold text-navy mb-1">Signup Timestamp</h3>
-          <p class="text-slate-text text-sm leading-relaxed">The date and time you joined the waitlist. Used to determine your waitlist position and Founder status.</p>
-        </div>
-        <div class="border-l-4 border-gray-200 pl-4">
-          <h3 class="font-semibold text-navy mb-1">Information We Do Not Collect</h3>
-          <p class="text-slate-text text-sm leading-relaxed">At this stage, we do not collect your name, phone number, payment information, government ID, Social Security Number, or any financial account data. These will only be collected in the future FRED application, governed by a separate privacy policy.</p>
-        </div>
-      </div>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-3" class="text-xl font-bold text-navy mb-4 scroll-mt-20">3. How We Collect Your Information</h2>
+<p class="text-slate-text leading-relaxed"><strong class="text-navy">Information you provide to us</strong>. We collect information when you interact with our services and use the App. Certain areas of our website and online resources allow you to submit your information to us. We collect your information on the bases of: (i) contract (such as information provided in connection with seeking our services); (ii) consent (such as when you sign up for our services or agree to be included on our mailing list); and (iii) legitimate interest (promoting our services and/or customizing our website).</p>
+<p class="text-slate-text leading-relaxed"><strong class="text-navy">Automatically through our services</strong>. As you navigate our App and use our services, we may use technologies to collect information that may include Personal Information. Information collected automatically may include usage details, IP addresses, operating system, and browser type, and information collected through cookies, web beacons, and other tracking technologies including details of your interactions with our website. To automatically collect information, we use the techniques described below:</p>
+<p class="text-slate-text leading-relaxed"><strong class="text-navy">Cookies. Our website may use a tracking technology called a “cookie.” A cookie is a small data file that a website can place on your computer’s hard drive where your internet browser files are kept. This file is then stored on your computer. Cookies enable us to recognize when a computer being used to browse our website has previously visited the website or online resource. Cookies can also be used to enable a website to “remember” the information a visitor has previously inputted. Cookies may be placed on your computer by our security and hosting provider as a necessary security measure.</strong> Our website also uses Cloudflare Turnstile to distinguish human visitors from automated traffic. Cloudflare's collection and processing of data through Turnstile is described in the Cloudflare Turnstile Privacy Addendum, available at https://www.cloudflare.com/turnstile-privacy-policy/.</p>
+<p class="text-slate-text leading-relaxed">Most internet browsers allow you to change your settings to notify you when you receive a cookie, which lets you choose whether or not to accept it, or to automatically refuse all cookies. Please be aware that some functionality on our website and online resources relies on the use of cookies and may not be available should you choose to refuse all cookies. You may also delete and manage cookies through your internet browser.</p>
+<p class="text-slate-text leading-relaxed"><strong class="text-navy">Web Beacons</strong>. On certain web pages or in e-mails we send to you, we and/or our analytics provider may utilize a technology called a “web beacon” (also known as an “action tag”, “pixel tags,” “single-pixel GIFs” or “clear GIF technology”). Web beacons also help analyze the effectiveness of the website by measuring the number of visitors to a website or how many visitors clicked on key elements of a website.</p>
+<p class="text-slate-text leading-relaxed">If you click a link in a marketing e-mail or invitation, we may track this action through a web beacon. You may avoid having this activity tracked by visiting our website without using the link and then navigating to the content you are interested in.</p>
+<p class="text-slate-text leading-relaxed"><strong class="text-navy">Browser Storage</strong>. We store UTM attribution in your browser’s local Storage and session Storage.</p>
+<p class="text-slate-text leading-relaxed"><strong class="text-navy">Do Not Track Signals</strong>. Our website does not support “Do Not Track” browser settings at this time.</p>
+</div>
 
-    <!-- How We Use Your Information -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">How We Use Your Information</h2>
-      <ul class="space-y-3 text-slate-text">
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
-          <span><strong class="text-navy">Waitlist management:</strong> To track your position, determine Founder status (first 300 signups), and send you your invitation when a beta spot is available.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
-          <span><strong class="text-navy">Transactional communications:</strong> To notify you of your waitlist status, your invitation, and any account-related updates. You cannot opt out of transactional emails while on the waitlist.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
-          <span><strong class="text-navy">Marketing communications:</strong> With your consent, to share product updates, financial independence content, and news about FRED. You may unsubscribe at any time via the link in any marketing email.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
-          <span><strong class="text-navy">Abuse prevention:</strong> Hashed IP addresses are used solely to enforce rate limits and prevent spam signups. They are never used to identify or profile individual users.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">check_circle</span>
-          <span><strong class="text-navy">Aggregate analysis:</strong> Anonymized, aggregate data (e.g., average target retirement age across all signups) is used to understand our audience and improve our product. No individual is identifiable from this analysis.</span>
-        </li>
-      </ul>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-4" class="text-xl font-bold text-navy mb-4 scroll-mt-20">4. How We Store And How Long We Retain Your Information</h2>
+<p class="text-slate-text leading-relaxed">Your data is stored on a MySQL database hosted on Railway, a cloud infrastructure service, connected to our Java Spring Boot backend. We implement industry-standard security measures including encryption in transit (TLS) and access controls to protect your data.</p>
+<p class="text-slate-text leading-relaxed">Sensitive data handling:</p>
+<ul class="space-y-3 text-slate-text"><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>Passwords are never stored in plain text</div></li><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>SSNs and sensitive KYC data are encrypted at rest</div></li><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>Access to production data is limited to authorized personnel only</div></li></ul>
+<p class="text-slate-text leading-relaxed">Federal law requires FRED to maintain records related to its provision of investment advice. As a result, while you may request deletion of your account and associated data at any time (see Section 8), we will need to retain certain data even after the receipt of a deletion request to satisfy our regulatory obligations.</p>
+<p class="text-slate-text leading-relaxed">We will retain our email marketing list for as long as the business is in operation. This includes keeping the list of addresses that have opted out from our marketing so that we do not contact them again.</p>
+<p class="text-slate-text leading-relaxed">Retention periods may vary depending upon the nature of the information and applicable legal requirements.</p>
+<p class="text-slate-text leading-relaxed">Our analytics provider is provided with information on page views, referrer sites, browser types, operating systems, device types, and the country/region/city of connections. We also forward the visitor’s IP address to the analytics provider, which uses it to derive location and to generate a daily-rotating visitor hash for counting unique visitors. Our analytics provider does not store IP addresses and the salt for the visitor hash is deleted every 24 hours.</p>
+<p class="text-slate-text leading-relaxed">We may also retain information if it is required to resolve disputes, enforce our contractual rights, or because it is the subject of a government inquiry. In these instances, we will limit our retention to what is reasonably required to address the dispute and any potential follow up.</p>
+</div>
 
-    <!-- Analytics -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Analytics</h2>
-      <p class="text-slate-text leading-relaxed">
-        We use <strong class="text-navy">Plausible Analytics</strong> to understand how visitors use our website. Plausible is a privacy-first analytics tool that does not use cookies, does not collect personal data, and does not track you across websites or devices. All data is aggregated and anonymous.
-      </p>
-      <p class="text-slate-text leading-relaxed mt-4">
-        Because Plausible does not use cookies or collect personally identifiable information, no cookie consent banner is required for analytics purposes. You can learn more about Plausible's data practices at <a href="https://plausible.io/privacy" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">plausible.io/privacy</a>.
-      </p>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-5" class="text-xl font-bold text-navy mb-4 scroll-mt-20">5. How We Share Your Information</h2>
+<p class="text-slate-text leading-relaxed">We do not sell your personal information. We may share your information in the following circumstances:</p>
+<h3 id="sec-5-1" class="font-semibold text-navy pt-2 scroll-mt-20">5.1 Alpaca Securities LLC</h3>
+<p class="text-slate-text leading-relaxed">If you choose to open a brokerage account, we transmit the necessary KYC and identity information to Alpaca Securities LLC, our registered broker-dealer partner, for the purpose of account opening and regulatory compliance. Alpaca’s own privacy policy governs their use of your information. It may be found at: <a class="text-primary hover:underline" href="https://s3.amazonaws.com/files.alpaca.markets/disclosures/PrivacyPolicy.pdf" rel="noopener" target="_blank">https://s3.amazonaws.com/files.alpaca.markets/disclosures/PrivacyPolicy.pdf</a>.</p>
+<h3 id="sec-5-2" class="font-semibold text-navy pt-2 scroll-mt-20">5.2 Service Providers</h3>
+<p class="text-slate-text leading-relaxed">We may share data with trusted third-party service providers who assist us in operating the App, including:</p>
+<ul class="space-y-3 text-slate-text"><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>Cloud infrastructure (Railway)</div></li><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>Payment processing</div></li><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>Analytics and error monitoring (Plausible)</div></li><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>Security and hosting (Cloudflare)</div></li><li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div>Marketing email provider (Resend)</div></li></ul>
+<p class="text-slate-text leading-relaxed">These providers are contractually obligated to use your data only for the purposes we specify and to maintain appropriate security standards.</p>
+<h3 id="sec-5-3" class="font-semibold text-navy pt-2 scroll-mt-20">5.3 Legal Requirements</h3>
+<p class="text-slate-text leading-relaxed">We may disclose your information if required to do so by law, court order, or government authority, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</p>
+<h3 id="sec-5-4" class="font-semibold text-navy pt-2 scroll-mt-20">5.4 Business Transfers</h3>
+<p class="text-slate-text leading-relaxed">If the App is involved in a potential or actual sale of assets, merger, acquisition, business transfer or other change of control of all or part of the company, we may share your information with other entities involved in the transaction. We may share your information as part of the negotiations performed in connection with such a transaction or at its completion. We will require any such successor business entity to provide the same or greater protections as those provided in the Policy and we will notify you of any changes that could affect your Personal Information. In the event of a business transfer, we will notify you via email or a prominent notice provided through the App before your data is transferred. Unless we are otherwise required by law to retain your information or to provide it to the other entity, in the event of a business transfer you may request the deletion of your information from our records.</p>
+</div>
 
-    <!-- Third-Party Services -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Third-Party Services</h2>
-      <p class="text-slate-text leading-relaxed mb-6">We work with a small number of trusted third-party providers to operate fredvested.com. Each is listed below along with the data they receive and why.</p>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-6" class="text-xl font-bold text-navy mb-4 scroll-mt-20">6. Data Security</h2>
+<p class="text-slate-text leading-relaxed">We take reasonable and appropriate measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction. These measures include:</p>
+<ul class="space-y-3 text-slate-text">
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Encrypted data transmission (TLS/HTTPS)</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Encrypted storage of sensitive fields (SSN, passwords)</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Role-based access controls on backend systems</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Regular security reviews</p></div></li>
+</ul>
+<p class="text-slate-text leading-relaxed">However, no method of transmission over the Internet or electronic storage is 100% secure. We cannot guarantee absolute security of your data.</p>
+<p class="text-slate-text leading-relaxed">In the event of a data breach that affects your personal information, we will notify you as required by applicable law.</p>
+</div>
 
-      <div class="space-y-5">
-        <div class="border border-gray-100 rounded-xl p-5">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="material-icons-outlined text-slate-text text-base">security</span>
-            <h3 class="font-semibold text-navy">Cloudflare (Turnstile)</h3>
-          </div>
-          <p class="text-slate-text text-sm leading-relaxed">We use Cloudflare Turnstile to verify that form submissions are made by humans, not bots. Cloudflare may process your IP address and browser data as part of this verification. Cloudflare's privacy policy applies: <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">cloudflare.com/privacypolicy</a>.</p>
-        </div>
-        <div class="border border-gray-100 rounded-xl p-5">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="material-icons-outlined text-slate-text text-base">storage</span>
-            <h3 class="font-semibold text-navy">Railway (Database Hosting)</h3>
-          </div>
-          <p class="text-slate-text text-sm leading-relaxed">Your waitlist data is stored in a MySQL database hosted by Railway. Railway provides secure cloud infrastructure. All data is encrypted at rest using AES-256 and in transit using TLS. Railway's privacy policy applies: <a href="https://railway.com/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">railway.app/legal/privacy</a>.</p>
-        </div>
-        <div class="border border-gray-100 rounded-xl p-5">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="material-icons-outlined text-slate-text text-base">bar_chart</span>
-            <h3 class="font-semibold text-navy">Plausible Analytics</h3>
-          </div>
-          <p class="text-slate-text text-sm leading-relaxed">Cookie-free, privacy-first website analytics. No personal data is transmitted to or stored by Plausible. See the Analytics section above for more detail.</p>
-        </div>
-      </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-7" class="text-xl font-bold text-navy mb-4 scroll-mt-20">7. Children’s Privacy</h2>
+<p class="text-slate-text leading-relaxed">The App is not directed to individuals under the age of 18. We do not knowingly collect personal information from children under 18. If we become aware that we have collected personal information from a child under 18, we will take reasonable measures to delete that information promptly and will not use the information for any purpose other than where it is necessary to protect the child or others (such as to alert a parent or other authorities to the child’s use or attempted use).</p>
+</div>
 
-      <div class="mt-6 bg-blue-50 rounded-xl p-4">
-        <p class="text-sm text-slate-text leading-relaxed">
-          <strong class="text-navy">Future third-party sharing:</strong> We do not currently sell or share your personal information with any third parties for their own marketing or business purposes. If this changes in the future — for example, if FRED partners with a service that requires sharing certain data — we will notify you by email before any such change takes effect and provide you the opportunity to opt out.
-        </p>
-      </div>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-8" class="text-xl font-bold text-navy mb-4 scroll-mt-20">8. Your Rights and Choices</h2>
+<p class="text-slate-text leading-relaxed">Subject to applicable laws, you have the following rights with respect to your personal information:</p>
+<ul class="space-y-3 text-slate-text">
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Access: Request a copy of the personal information we hold about you</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Correction: Request correction of inaccurate or incomplete information</p></div></li>
+</ul>
+<ul class="space-y-3 text-slate-text">
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Deletion: Request deletion of your account and associated personal data, subject to legal retention requirements</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Opt-out of marketing: Unsubscribe from promotional emails at any time using the unsubscribe link in those emails</p></div></li>
+<li class="flex items-start gap-3"><svg class="text-primary text-base mt-0.5 shrink-0" width="1em" height="1em" fill="currentColor" aria-hidden="true"><use href="#i-check_circle"/></svg><div><p class="text-slate-text leading-relaxed">Data portability: Request a copy of your data in a portable format</p></div></li>
+</ul>
+<p class="text-slate-text leading-relaxed">To exercise any of these rights, contact us at <a class="text-primary hover:underline" href="mailto:help@fredvested.com">help@fredvested.com</a>. You must include your name and contact information (mailing address, phone number, and/or e-mail address) so that we may verify your request and indicate in your message that you are making the request pursuant to the appropriate state’s law. If required for certain requests (such as requests for personal information), we may request additional information to verify your identity.</p>
+<p class="text-slate-text leading-relaxed">You may also submit a request to exercise any of the above rights through an authorized agent. If you do so, the agent must present us with signed written permission to act on your behalf, and we may seek to verify your identity. Authorized agents may submit requests as described above.</p>
+<p class="text-slate-text leading-relaxed">You have the right to not be discriminated against for the exercise of your privacy rights.</p>
+<p class="text-slate-text leading-relaxed">We will respond to requests within 45 days. We may need to verify your identity before processing certain requests.</p>
+<p class="text-slate-text leading-relaxed">In certain jurisdictions, if we decline to take action regarding your request, you are entitled to appeal that decision. We will inform you in writing of any action taken or not taken in response to the appeal, including a written explanation of our rationale, and the process by which you can appeal such a decision.</p>
+<p class="text-slate-text leading-relaxed">We may be required by law to retain your personal information even after the closure of your account and the termination of your use of the App.</p>
+</div>
 
-    <!-- Data Storage and Security -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Data Storage and Security</h2>
-      <p class="text-slate-text leading-relaxed mb-4">
-        We take the security of your data seriously. The following measures are in place for our waitlist platform:
-      </p>
-      <ul class="space-y-3 text-slate-text">
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">lock</span>
-          <span><strong class="text-navy">Encryption at rest:</strong> All data stored in our database is encrypted using AES-256 encryption.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">lock</span>
-          <span><strong class="text-navy">Encryption in transit:</strong> All data transmitted between your browser and our servers is encrypted using TLS (HTTPS).</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">lock</span>
-          <span><strong class="text-navy">IP anonymization:</strong> IP addresses are SHA-256 hashed on receipt and the raw IP is never stored.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">lock</span>
-          <span><strong class="text-navy">Rate limiting:</strong> Our API enforces rate limits to prevent bulk scraping or abuse of submitted data.</span>
-        </li>
-      </ul>
-      <p class="text-slate-text leading-relaxed mt-4 text-sm">
-        When the FRED application launches, additional security measures will be in place including passkey authentication, step-up authentication for sensitive actions, and background app locking. These are described in the app's privacy policy.
-      </p>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-9" class="text-xl font-bold text-navy mb-4 scroll-mt-20">9. Links</h2>
+<p class="text-slate-text leading-relaxed">The App may contain links to other websites that are operated or owned by third parties. Please note that when you follow one of these links, you are navigating to another website. FRED does not monitor the privacy policies of the linked sites, and their policies may differ from ours. FRED is not responsible or liable for the privacy practices or the content of these third-party websites. If you access a third-party website from the App, you do so at your own risk.</p>
+</div>
 
-    <!-- Data Retention -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Data Retention</h2>
-      <p class="text-slate-text leading-relaxed">
-        We retain your waitlist data for as long as necessary to manage your waitlist position and communicate with you about FRED. If you request deletion of your data, we will remove your record within 30 days, subject to any legal or operational obligations that require us to retain certain information.
-      </p>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-10" class="text-xl font-bold text-navy mb-4 scroll-mt-20">10. Changes to This Privacy Policy</h2>
+<p class="text-slate-text leading-relaxed">We may update this Privacy Policy from time to time. We will notify you of material changes by posting the updated policy in the App and updating the “Last Updated” date at the top of this document. Your continued use of the App after changes are posted constitutes your acceptance of the revised policy.</p>
+</div>
 
-    <!-- Your Rights -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Your Rights</h2>
-      <p class="text-slate-text leading-relaxed mb-4">You have the following rights with respect to your personal information:</p>
-      <ul class="space-y-3 text-slate-text">
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">visibility</span>
-          <span><strong class="text-navy">Access:</strong> You may request a copy of the personal information we hold about you.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">delete</span>
-          <span><strong class="text-navy">Deletion:</strong> You may request that we delete your personal information. Note that deletion will remove you from the waitlist.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">edit</span>
-          <span><strong class="text-navy">Correction:</strong> If your information is inaccurate, you may request that we correct it.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="material-icons-outlined text-primary text-base mt-0.5">unsubscribe</span>
-          <span><strong class="text-navy">Opt-out of marketing:</strong> You may unsubscribe from marketing emails at any time using the unsubscribe link in any marketing email or by contacting us at <a href="mailto:help@fredvested.com" class="text-primary hover:underline">help@fredvested.com</a>.</span>
-        </li>
-      </ul>
-      <p class="text-slate-text leading-relaxed mt-4 text-sm">
-        To exercise any of these rights, email us at <a href="mailto:help@fredvested.com" class="text-primary hover:underline">help@fredvested.com</a>. We will respond within 30 days.
-      </p>
-    </div>
-
-    <!-- Minimum Age -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Minimum Age</h2>
-      <p class="text-slate-text leading-relaxed">
-        FRED is intended for users who are <strong class="text-navy">18 years of age or older</strong>. We do not knowingly collect personal information from anyone under 18. If we become aware that a user under 18 has submitted their information, we will delete it promptly. If you believe a minor has joined our waitlist, please contact us at <a href="mailto:help@fredvested.com" class="text-primary hover:underline">help@fredvested.com</a>.
-      </p>
-    </div>
-
-    <!-- Geographic Scope -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Geographic Scope</h2>
-      <p class="text-slate-text leading-relaxed">
-        FRED is currently intended for residents of the <strong class="text-navy">United States only</strong>. We do not offer services to residents of the European Union, United Kingdom, or other international jurisdictions at this time. By joining the waitlist, you represent that you are a US resident.
-      </p>
-    </div>
-
-    <!-- Changes to This Policy -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Changes to This Policy</h2>
-      <p class="text-slate-text leading-relaxed">
-        We may update this Privacy Policy from time to time. For minor, non-material changes, we will update the effective date at the top of this page. For <strong class="text-navy">material changes</strong> — such as new data collection practices or new third-party sharing — we will notify you via email at least 14 days before the change takes effect, giving you the opportunity to request deletion of your data before the new practices apply.
-      </p>
-    </div>
-
-    <!-- Contact -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8">
-      <h2 class="text-xl font-bold text-navy mb-4">Contact Us</h2>
-      <p class="text-slate-text leading-relaxed mb-4">If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:</p>
-      <div class="bg-background-light rounded-xl p-5">
-        <p class="font-semibold text-navy">FREDvested LLC</p>
-        <p class="text-slate-text text-sm mt-1">Maryland, United States</p>
-        <a href="mailto:help@fredvested.com" class="text-primary hover:underline text-sm mt-1 block">help@fredvested.com</a>
-      </div>
-    </div>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-4">
+<h2 id="sec-11" class="text-xl font-bold text-navy mb-4 scroll-mt-20">11. Contact Us</h2>
+<p class="text-slate-text leading-relaxed">If you have questions, concerns, or comments regarding this Privacy Policy, please contact:</p>
+<p class="text-slate-text leading-relaxed">FREDvested LLC Email: <a class="text-primary hover:underline" href="mailto:help@fredvested.com">help@fredvested.com</a></p>
+<p class="text-slate-text leading-relaxed">or write to us at:</p>
+<p class="text-slate-text leading-relaxed">FREDvested LLC, PO Box 2406, Rockville, MD 20847</p>
+<p class="text-slate-text leading-relaxed"><em>This Privacy Policy was last updated on October 5, 2026. Prior versions are available upon request.</em></p>
+</div>
 
   </div>
 
   <!-- Footer -->
-<section class="bg-background-light pt-0 pb-16 scroll-mt-16 lg:scroll-mt-0">
-<div class="max-w-md mx-auto px-4 text-center">
+<section class="bg-background-light pt-0 pb-6 sm:pb-12 scroll-mt-16 lg:scroll-mt-0">
+<div class="max-w-[640px] mx-auto px-4 sm:px-5 text-center">
 <div class="pt-8 border-t border-gray-200 text-center text-sm text-slate-text">
 <div class="flex justify-center space-x-6 mb-4">
 <a class="hover:text-primary" href="/privacy">Privacy</a>
@@ -288,9 +260,10 @@
 <a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
 </div>
 <p>© 2026 FREDvested LLC</p>
-<div class="mt-4 text-[10px] leading-relaxed text-gray-400 -mx-4 sm:mx-auto sm:max-w-xl">
-FREDvested LLC is not a broker-dealer and does not provide investment advice.<br>
-  Brokerage services provided by Alpaca Securities LLC, member FINRA/SIPC.<br>
+<div class="mt-4 text-[10px] leading-relaxed text-gray-400">
+<span class="sm:hidden">FREDvested LLC does not provide individualized investment advice.<br>
+  FREDvested LLC is not a registered investment adviser.<br></span>
+  <span class="hidden sm:inline">FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br></span>
   Investing involves risk, including possible loss of principal.
 </div>
 </div>
@@ -298,11 +271,27 @@ FREDvested LLC is not a broker-dealer and does not provide investment advice.<br
 </div>
 </section>
 
+<!-- attribution.js records UTM/first-touch on every page; analytics.js applies the production-hostname
+     gate to Plausible (no custom events fire on these pages). -->
+<script src="assets/attribution.js"></script>
+<script src="assets/analytics.js"></script>
+<script>
+  // Visitors who came here from the calculator (index) go back to it; everyone else goes to /about.
+  (function() {
+    try {
+      var r = new URL(document.referrer);
+      if (r.origin !== location.origin || (r.pathname !== '/' && r.pathname !== '/index.html')) return;
+    } catch (e) { return; }
+    var a = document.getElementById('back-link');
+    a.setAttribute('href', '/');
+    document.getElementById('back-link-label').textContent = 'Back to Calculator';
+  })();
+</script>
 <script>
   (function() {
     var isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('ngrok');
     if (!isDev) return;
-    var map = { '/': 'index.html', '/privacy': 'privacy.html', '/terms': 'terms.html' };
+    var map = { '/': 'index.html', '/about': 'about.html', '/privacy': 'privacy.html', '/terms': 'terms.html' };
     document.querySelectorAll('a[href]').forEach(function(a) {
       if (map[a.getAttribute('href')]) a.href = map[a.getAttribute('href')];
     });

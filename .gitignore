@@ -32,8 +32,12 @@ Thumbs.db
 frontend/node_modules/
 frontend/.next/
 frontend/.nuxt/
+frontend/.wrangler/
+# wrangler run from the repo root (npx wrangler pages dev frontend) writes here
+.wrangler/
 
 # Environment variables
+backend/src/main/resources/application-local.properties
 .env
 .env.local
 .env.production
@@ -42,3 +46,7 @@ frontend/.nuxt/
 # Logs
 *.log
 logs/
+# Playwright (end-to-end tests at the repo root)
+node_modules/
+test-results/
+playwright-report/

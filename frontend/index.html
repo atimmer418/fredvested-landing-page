@@ -2,128 +2,965 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta name="theme-color" content="#ffffff"/>
 <meta name="color-scheme" content="light"/>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<title>FRED — Back soon</title>
-<meta name="description" content="FRED is undergoing maintenance and will be back shortly.">
-<meta name="robots" content="noindex">
-<!-- Open Graph (neutralized during maintenance) -->
+<title>FRED: Calculator</title>
+<meta name="description" content="Move three sliders and get the year you could walk away from work for good, in under 30 seconds.">
+<!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fredvested.com">
 <meta property="og:site_name" content="FRED">
-<meta property="og:title" content="FRED — Back soon">
-<meta property="og:description" content="FRED is undergoing maintenance and will be back shortly.">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="FRED — Back soon">
-<meta name="twitter:description" content="FRED is undergoing maintenance and will be back shortly.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
+<meta property="og:title" content="Find the age you could quit your job.">
+<meta property="og:description" content="Move three sliders and get the year you could walk away from work for good, in under 30 seconds.">
+<meta property="og:image" content="https://fredvested.com/assets/og-image.png">
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Find the age you could quit your job.">
+<meta name="twitter:description" content="Move three sliders and get the year you could walk away from work for good, in under 30 seconds.">
+<meta name="twitter:image" content="https://fredvested.com/assets/og-image.png">
+<!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
+<link rel="stylesheet" href="dist/output.css">
+<!-- Privacy-friendly analytics by Plausible, proxied through our own domain -->
+<script defer data-domain="fredvested.com" src="/js/script.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
 <style>
-  :root{
-    --blue:#135bec; --blue-dark:#0e4ac5; --navy:#0F172A; --slate:#64748B;
-    --yellow:#ffcd00; --ink:#15181d;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
-  body{
-    margin:0;
-    font-family:'Inter',system-ui,-apple-system,sans-serif;
-    color:var(--navy);
-    background:#ffffff;
-    -webkit-font-smoothing:antialiased;
-    overflow:hidden;
-    position:relative;
-  }
-  .bg-glow{
-    position:fixed; inset:0; z-index:0; pointer-events:none;
+  /* Page wash: soft FRED-blue radial fading into the light background */
+  body {
     background:
-      radial-gradient(circle at 50% 26%, rgba(19,91,236,0.08), transparent 56%),
-      radial-gradient(circle at 50% 120%, rgba(19,91,236,0.05), transparent 50%);
+      radial-gradient(1100px 520px at 50% -8%, rgba(19, 91, 236, 0.10), transparent 60%),
+      linear-gradient(180deg, #ffffff 0%, var(--color-background-light, #f6f6f8) 55%);
   }
 
-  .wrap{
-    position:relative; z-index:1;
-    min-height:100%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center;
-    padding:40px 22px;
+  /* Return-scenario segmented control (Marketing Rule: user selects the return assumption) */
+  .seg {
+    display: flex; gap: 4px; padding: 3px;
+    background: #eef2f7; border: 1px solid #e2e8f0; border-radius: 16px;
   }
-  .lockup{ display:flex; align-items:center; gap:13px; margin-bottom:34px; }
-  .lockup img{ width:56px; height:56px; user-select:none; }
-  .wordmark{
-    font-family:'Montserrat',sans-serif; font-weight:900; font-style:italic;
-    color:var(--blue); font-size:58px; line-height:1; letter-spacing:0;
+  .seg-btn {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    padding: 6px 4px; border-radius: 12px; border: 0; background: transparent; cursor: pointer;
+    font: inherit; font-weight: 600; font-size: 13px; line-height: 1.2; color: #475569;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
-  h1{
-    font-size:clamp(29px,5.2vw,46px); font-weight:800; letter-spacing:-0.025em;
-    margin:0 0 16px; color:var(--navy); max-width:16ch;
+  .seg-btn:hover { color: #0f172a; }
+  .seg-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(19, 91, 236, 0.5); }
+  .seg-pct { font-size: 11.5px; font-weight: 600; color: #64748b; }
+  .seg-btn.is-active {
+    background: linear-gradient(180deg, var(--color-primary, #135bec), var(--color-primary-dark, #0e4ac5));
+    color: #fff; box-shadow: 0 6px 14px -6px rgba(19, 91, 236, 0.55);
   }
-  h1 .accent{ color:var(--blue); }
-  p.lede{
-    font-size:clamp(15px,2.4vw,18px); line-height:1.3; color:var(--slate);
-    margin:0; max-width:46ch;
+  .seg-btn.is-active:hover { color: #fff; }
+  .seg-btn.is-active .seg-pct { color: rgba(255, 255, 255, 0.85); }
+  @media (min-width: 640px) {
+    /* Room for "Conservative (8%)" on one line; stacked layout is for narrow phones */
+    .seg-btn { flex-direction: row; gap: 4px; padding: 10px 6px; font-size: 13.5px; }
+    .seg-pct { font-size: inherit; color: inherit; }
+    .seg-pct::before { content: "("; }
+    .seg-pct::after { content: ")"; }
   }
 
-  .footer{
-    position:fixed; bottom:0; left:0; right:0; z-index:6;
-    padding:16px; text-align:center; font-size:12px; color:var(--slate);
-  }
-  .footer a{ color:var(--slate); text-decoration:none; border-bottom:1px solid rgba(100,116,139,.35); }
-  .footer a:hover{ color:var(--blue); border-color:var(--blue); }
-  .footer .sep{ margin:0 9px; opacity:.45; }
+  /* "How this calculation works" accordion */
+  .calc-method summary { list-style: none; }
+  .calc-method summary::-webkit-details-marker { display: none; }
+  .calc-method[open] .calc-chevron { transform: rotate(180deg); }
 
-  /* ---- Caution tape ---- */
-  .tape{
-    position:fixed; left:50%; width:170vw; z-index:5;
-    background:var(--yellow); color:var(--ink);
-    font-weight:800; text-transform:uppercase; letter-spacing:.2em;
-    font-size:clamp(12px,1.9vw,18px);
-    padding:13px 0; white-space:nowrap; overflow:hidden;
-    box-shadow:0 16px 34px -10px rgba(0,0,0,.32), 0 2px 0 rgba(0,0,0,.05);
-    user-select:none; pointer-events:none;
-  }
-  .tape::before,.tape::after{
-    content:""; position:absolute; left:0; right:0; height:8px;
-    background:repeating-linear-gradient(-45deg,var(--ink) 0 13px,var(--yellow) 13px 26px);
-  }
-  .tape::before{ top:0; }
-  .tape::after{ bottom:0; }
-  .tape--top{    top:16%;    transform:translateX(-50%) rotate(-7deg); }
-  .tape--bottom{ bottom:16%; transform:translateX(-50%) rotate(6deg); }
+  /* Hide native number-input spinners; the sliders are the primary control */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
-  @media (max-width:520px){
-    .tape--top{ top:13%; } .tape--bottom{ bottom:14%; }
+  /* Extends the shared slider styles in src/input.css: white ring, active scale, focus ring */
+  input[type=range]::-webkit-slider-thumb {
+    border: 4px solid #ffffff;
+    box-shadow: 0 3px 10px rgba(19, 91, 236, 0.45);
+    transition: transform 0.12s ease;
   }
-  @media (max-height:560px){
-    .tape--top{ top:7%; } .tape--bottom{ bottom:8%; }
-    .lockup{ margin-bottom:20px; }
+  input[type=range]:active::-webkit-slider-thumb { transform: scale(1.12); }
+  input[type=range]::-moz-range-thumb {
+    border: 4px solid #ffffff;
+    box-shadow: 0 3px 10px rgba(19, 91, 236, 0.45);
+    transition: transform 0.12s ease;
+  }
+  input[type=range]:active::-moz-range-thumb { transform: scale(1.12); }
+  input[type=range]:focus-visible { outline: none; }
+  input[type=range]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(19, 91, 236, 0.35), 0 3px 10px rgba(19, 91, 236, 0.45);
+  }
+  input[type=range]:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(19, 91, 236, 0.35), 0 3px 10px rgba(19, 91, 236, 0.45);
+  }
+
+  /* Result + capture stay collapsed until the reveal button is clicked */
+  .reveal-zone {
+    display: flow-root;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    /* Clip only vertically, and never change it at runtime. Side shadows are never clipped,
+       so there is no clipped-to-unclipped switch after opening; that switch left Chrome drawing
+       a stale clipped copy (shadows doubled inside the zone's box). overflow-y: clip (unlike
+       hidden) is not a scroll container, so x can stay visible. The bottom padding, cancelled
+       by the negative margin, keeps the capture block's shadow inside the clip. */
+    overflow-x: visible;
+    overflow-y: clip;
+    padding-bottom: 32px;
+    margin-bottom: -32px;
+    /* No contain/position/z-index here: a stacking context around the Turnstile iframe gives
+       the zone its own compositor layer. The sr-only email label is already contained by its
+       .relative wrapper, so there is no phantom scroll. */
+    transition: max-height 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.5s ease 0.1s;
+  }
+  .reveal-zone.open {
+    max-height: 1600px;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* CSS spinner for the submit button's loading state */
+  .spinner {
+    width: 18px; height: 18px; flex-shrink: 0;
+    border-radius: 9999px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition: none !important;
+      animation: none !important;
+      scroll-behavior: auto !important;
+    }
+    /* The universal selector does not reach vendor pseudo-elements; separate rules so
+       a browser dropping the unrecognized vendor selector keeps the other one. */
+    input[type=range]::-webkit-slider-thumb { transition: none !important; }
+    input[type=range]::-moz-range-thumb { transition: none !important; }
   }
 </style>
 </head>
-<body>
-<div class="bg-glow"></div>
+<body class="font-display text-navy antialiased min-h-screen flex flex-col items-center px-4 pt-4 sm:pt-7 pb-6 sm:pb-12 sm:px-5 selection:bg-primary/20 selection:text-primary">
 
-<div class="tape tape--top">⚠ Under Reconstruction ⚠ Under Reconstruction ⚠ Under Reconstruction ⚠ Under Reconstruction ⚠ Under Reconstruction ⚠ Under Reconstruction ⚠</div>
+<!-- Logo -->
+<header class="mb-4 sm:mb-8">
+  <a href="/" class="font-montserrat font-black italic text-[36px] sm:text-[48px] tracking-[0px] leading-none text-primary rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">FRED</a>
+</header>
 
-<main class="wrap">
-  <div class="lockup">
-    <span class="wordmark">FRED</span>
-    <img src="assets/logo.svg" alt="FRED piggy bank logo" draggable="false">
+<main class="w-full max-w-[600px] text-center">
+
+  <!-- Headline -->
+  <!-- ATTORNEY APPROVED 2026-09-01: "exact" removed by attorney direction -->
+  <h1 class="font-montserrat font-extrabold text-[clamp(30px,7.4vw,46px)] leading-[1.05] tracking-[-0.025em] text-navy mb-2 sm:mb-4">
+    Find the <span class="text-primary">age</span> you could quit your job.
+  </h1>
+
+  <!-- Subhead -->
+  <!-- Two lines on every phone: the size tracks the viewport below 17px (a fixed 17px needed three
+       lines under about 412px, e.g. iOS Display Zoom), and text-balance evens the two lines out. -->
+  <p class="text-[clamp(13px,3.9vw,17px)] text-balance text-slate-text max-w-[44ch] mx-auto mb-2 sm:mb-3">
+    Move three sliders and get the year you could walk away from work for good, in under 30<span class="sm:hidden">s.</span><span class="hidden sm:inline"> seconds.</span>
+  </p>
+
+  <!-- Pre-input disclosure -->
+  <!-- ATTORNEY REVIEW PENDING: attorney-supplied wording; final language to be confirmed during screenshot review -->
+  <p class="mx-auto mb-3 max-w-[54ch] text-[12.5px] leading-snug text-slate-text" role="note">
+    FRED&rsquo;s calculator is an educational planning tool. It does not provide investment advice or recommend any investment.
+  </p>
+
+  <!-- Input card -->
+  <div class="bg-white border border-gray-200 rounded-[20px] p-4 sm:p-8 text-left mt-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.04),0_20px_50px_-16px_rgba(19,91,236,0.22)]">
+
+    <div class="mb-3 sm:mb-6">
+      <div class="flex items-baseline justify-between mb-2 sm:mb-3">
+        <label for="age-number" class="text-[15px] font-semibold text-navy">I&rsquo;m currently</label>
+        <span class="inline-flex items-baseline">
+          <input id="age-number" type="number" value="30" min="18" max="60" step="1" aria-label="I’m currently, age in years"
+            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+          <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">years old</span>
+        </span>
+      </div>
+      <input id="age-range" type="range" value="30" min="18" max="60" step="1" aria-label="Current age in years" class="w-full">
+    </div>
+
+    <div class="mb-3 sm:mb-6">
+      <div class="flex items-baseline justify-between mb-2 sm:mb-3">
+        <label for="invest-number" class="text-[15px] font-semibold text-navy">I can invest</label>
+        <span class="inline-flex items-baseline">
+          <span class="font-montserrat font-bold text-lg text-primary" aria-hidden="true">$</span>
+          <input id="invest-number" type="number" value="2000" min="0" max="10000" step="50" aria-label="I can invest, in dollars per month"
+            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+          <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">/mo</span>
+        </span>
+      </div>
+      <input id="invest-range" type="range" value="2000" min="0" max="10000" step="50" aria-label="Monthly investment in dollars" class="w-full">
+    </div>
+
+    <div class="mb-1">
+      <div class="flex items-baseline justify-between mb-2 sm:mb-3">
+        <label for="retire-number" class="text-[15px] font-semibold text-navy">I want to retire on</label>
+        <span class="inline-flex items-baseline">
+          <span class="font-montserrat font-bold text-lg text-primary" aria-hidden="true">$</span>
+          <input id="retire-number" type="number" value="7500" min="1000" max="30000" step="250" aria-label="I want to retire on, in dollars per month"
+            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+          <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">/mo</span>
+        </span>
+      </div>
+      <input id="retire-range" type="range" value="7500" min="1000" max="30000" step="250" aria-label="Desired monthly retirement income in dollars" class="w-full">
+    </div>
+
+    <!-- Return scenario selector. Always visible: the user's ability to choose among return
+         assumptions is part of the calculator's characterization as an interactive analysis tool. -->
+    <div class="mt-3 sm:mt-5">
+      <div class="mb-2 sm:mb-2.5 flex items-baseline justify-between">
+        <span id="return-label" class="text-[15px] font-semibold text-navy">Assumed annual return</span>
+      </div>
+      <div id="return-seg" class="seg" role="radiogroup" aria-labelledby="return-label">
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-return="conservative" class="seg-btn">
+          <span class="seg-name">Conservative</span><span class="seg-pct">8%</span>
+        </button>
+        <button type="button" role="radio" aria-checked="true" tabindex="0" data-return="moderate" class="seg-btn is-active">
+          <span class="seg-name">Moderate</span><span class="seg-pct">10%</span>
+        </button>
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-return="optimistic" class="seg-btn">
+          <span class="seg-name">Optimistic</span><span class="seg-pct">12%</span>
+        </button>
+      </div>
+    </div>
+
+    <button type="button" id="reveal-btn" aria-controls="reveal-zone" aria-expanded="false"
+      class="group mt-3 sm:mt-5 w-full rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-3 py-[18px] sm:px-6 font-montserrat font-extrabold text-lg text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 active:translate-y-px cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+      Reveal my Freedom <span class="whitespace-nowrap">Date <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
+    </button>
   </div>
-  <h1>FRED is <span class="accent">undergoing reconstruction</span></h1>
-  <p class="lede">We're rebuilding things behind the scenes.<br>FRED will be back online shortly.<br>Thanks for your patience.</p>
+
+  <!-- Lives outside the inert zone so first-reveal announcements reach screen readers -->
+  <p id="result-sr" class="sr-only" aria-live="polite"></p>
+
+  <!-- Result + capture (collapsed until reveal) -->
+  <div id="reveal-zone" class="reveal-zone text-left" inert>
+
+    <!-- Result card -->
+    <div id="result-card" class="mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 pt-9 pb-5 sm:py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
+      <div id="feasible-block">
+        <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
+        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
+        <p id="result-age" class="mt-2 font-montserrat font-black text-[clamp(56px,16vw,92px)] leading-[0.95] tracking-[-0.03em] text-white"></p>
+        <p class="mt-1 text-base font-medium text-[#dbe7ff]">years old</p>
+        <p id="result-chip" class="mt-[18px] inline-block rounded-full border border-white/35 bg-white/15 px-[18px] py-[9px] font-montserrat font-bold text-base text-white"></p>
+        <p id="result-assumptions" class="mt-4 text-xs text-[#c7d6f5]"></p>
+        <p id="result-target" class="mt-1 text-[12.5px] text-[#c7d6f5]"></p>
+      </div>
+      <div id="infeasible-block" hidden>
+        <p id="infeasible-message" class="font-montserrat font-bold text-[22px] leading-snug text-white"></p>
+      </div>
+
+      <!-- Short-form hypothetical / no-guarantee disclosure, in close proximity to the output.
+           Full paragraph lives at the end of the "How this calculation works" accordion. -->
+      <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
+      <div class="mt-6 border-t border-white/20 pt-4">
+        <p class="text-[11.5px] leading-relaxed text-[#dbe7ff] text-center">
+          Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.<br class="hidden md:inline"> Actual returns may vary.
+        </p>
+      </div>
+    </div>
+
+    <!-- Methodology accordion (collapsed by default) -->
+    <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
+    <details id="calc-method" class="calc-method mt-3 text-left">
+      <summary class="flex cursor-pointer select-none items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] font-medium text-slate-text transition hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+        How this calculation works
+        <svg class="calc-chevron h-4 w-4 flex-shrink-0 text-slate-text transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="mt-2 space-y-3 rounded-[14px] border border-gray-200 bg-white px-5 py-4 text-[13px] leading-relaxed text-slate-text">
+        <p><b class="font-semibold text-navy">What it does:</b> Calculates an illustrative retirement timeline from your inputs: current age, monthly investment amount, desired monthly retirement income, and the annual return scenario you select.</p>
+        <p><b class="font-semibold text-navy">How:</b> Applies a fixed 4% annual withdrawal rate to determine the target portfolio size, then projects time-to-target assuming a constant, reinvested nominal annual return at your selected rate.</p>
+        <p><b class="font-semibold text-navy">Exclusions:</b> Unless otherwise stated, this calculation does not reflect advisory fees, fund expenses, taxes, inflation, changes in contributions or spending, withdrawals, or other personal circumstances. It assumes a constant annual return and does not reflect market volatility, losses, drawdowns, or sequence-of-returns risk.</p>
+        <p><b class="font-semibold text-navy">Variability:</b> Results will vary based on the information entered, the assumptions selected, and changes in market conditions and personal circumstances.</p>
+        <p><b class="font-semibold text-navy">No securities:</b> This tool does not consider, analyze, or recommend any specific securities or investment products.</p>
+        <p><b class="font-semibold text-navy">Not advice:</b> This tool provides general, hypothetical planning information only. It does not provide individualized investment advice or recommend any security, investment product, asset allocation, or investment strategy.</p>
+        <p class="rounded-lg border border-dashed border-gray-300 px-4 py-3 leading-snug">These results are hypothetical illustrations for planning purposes only. They do not reflect actual client performance and are not a prediction or guarantee of future investment results, retirement readiness, or financial independence. The assumed annual return is a hypothetical planning assumption. Actual returns can be lower, higher, or negative and will vary over time. This is not a guarantee that you will be able to retire or reach any goal by the date shown.</p>
+      </div>
+    </details>
+
+    <!-- Capture block. Kept visually separate from the result (larger gap at every width, distinct surface) and
+         product-neutral: nothing here references the user's result, date, or plan, and no script
+         writes result data into this section. -->
+    <div class="relative mt-8 sm:mt-12 overflow-hidden rounded-[18px] border border-primary/15 bg-[linear-gradient(180deg,#eef3ff_0%,#f7f9fd_100%)] p-5 sm:p-7 text-center shadow-[0_12px_32px_-14px_rgba(19,91,236,0.22)]">
+      <span class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-primary to-primary-dark" aria-hidden="true"></span>
+      <!-- Scarcity pill: the same sentence that used to sit in the fine print below the form, no JS wiring. -->
+      <div id="capture-scarcity-pill" class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-semibold text-primary">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        Founding member spots are limited
+      </div>
+      <!-- ATTORNEY APPROVED 2026-09-01: headline approved; subhead is attorney-provided registration-conditioned text.
+           ATTORNEY REVIEW PENDING (2026-10-10): closing sentence re-added with "at a rate we'll never bring back" (founder-price tease on the capture page). -->
+      <h2 class="mt-4 font-montserrat font-extrabold text-[24px] sm:text-[28px] leading-[1.15] tracking-[-0.02em] text-navy">Put your <span class="text-primary">financial future</span> on autopilot.</h2>
+      <p class="mx-auto mt-2.5 max-w-[46ch] text-[15px] leading-relaxed text-slate-text">
+        Once registered as an investment adviser, FRED will invest a slice of every paycheck automatically and will build your confidence for the day you stop. FRED&rsquo;s services will include withdrawal strategy education, Monte Carlo simulations, and a plan for living off what you&rsquo;ve built. Only 300 founding spots are available at launch, at a rate we&rsquo;ll never bring back, and the waitlist is the only way in.
+      </p>
+
+      <!-- List-size line: no baked number. Renders only when the API reports
+           count >= STAT_TILE_MIN_N; otherwise it stays hidden and the card reflows. -->
+      <p id="capture-count" class="hidden mt-4 text-[13.5px] font-medium text-navy" aria-live="polite"></p>
+
+      <div class="relative mt-5 min-h-[52px]">
+        <form id="waitlist-form" class="flex flex-col gap-2.5 sm:flex-row" novalidate>
+          <label class="sr-only" for="capture-email">Email address</label>
+          <input id="capture-email" name="email" type="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required
+            class="min-w-0 flex-1 rounded-[14px] border-gray-200 px-4 py-[16px] text-[16px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
+          <button type="submit" id="join-waitlist-btn"
+            class="group rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span id="btn-text">Claim my spot <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
+            <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
+            </span>
+          </button>
+        </form>
+
+        <!-- Success state (hidden until signup completes or a saved status is found) -->
+        <div id="success-block" class="hidden opacity-0 transition-opacity duration-300">
+          <a href="/about" id="success-link"
+            class="group flex w-full items-center justify-center gap-1.5 rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span>You&rsquo;re in! See how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+          </a>
+          <p id="success-note" class="mt-2.5 text-[13px] font-medium text-slate-text"></p>
+        </div>
+
+        <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
+        <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300 text-left rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+          <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: you got mail.</p>
+          <p class="mt-1.5 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
+          <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">Resend the email</button>.</p>
+          <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
+          <div id="pending-msg" aria-live="polite"></div>
+          <!-- One secondary link only (Andrew, 2026-10-10): the about page already holds the Founder offer, and
+               the inbox stays the primary action, so this is outlined rather than the success button's gradient. -->
+          <a href="/about" id="pending-link"
+            class="group mt-4 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-2 border-primary bg-white px-6 py-3 font-montserrat font-extrabold text-[15px] text-primary transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span>Find out how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+          </a>
+        </div>
+      </div>
+
+      <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
+
+      <!-- Same sentences as about.html's Founder Access block and waitlist note. Hidden with the form once a signup succeeds. -->
+      <div id="capture-cta-note" class="mt-3.5">
+        <p class="text-[13px] font-medium text-navy">No payment until launch. You only pay if invited and choose to claim your spot.</p>
+        <p class="mt-1 text-xs text-slate-text">The private beta is currently <b>iOS only</b>.</p>
+      </div>
+      <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
+           attorney review pending. The form itself needs JavaScript (Turnstile, fetch), so a
+           script-off visitor never reaches a submit without this text. -->
+      <p id="consent-note" class="mt-3 text-[11px] leading-relaxed text-slate-text text-left" role="note"></p>
+    </div>
+
+  </div>
 </main>
 
-<div class="tape tape--bottom">Do Not Cross ✕ Do Not Cross ✕ Do Not Cross ✕ Do Not Cross ✕ Do Not Cross ✕ Do Not Cross ✕ Do Not Cross ✕ Do Not Cross ✕</div>
-
-<footer class="footer">
-  <a href="privacy.html">Privacy</a><span class="sep">·</span><a href="terms.html">Terms</a><span class="sep">·</span>© 2026 FREDvested LLC
+<!-- Footer -->
+<footer class="w-full max-w-[600px] pt-6 text-center text-sm text-slate-text">
+  <div class="flex justify-center space-x-6 mb-4">
+    <a class="hover:text-primary" href="/about">How FRED Works</a>
+    <a class="hover:text-primary" href="/privacy">Privacy</a>
+    <a class="hover:text-primary" href="/terms">Terms</a>
+    <a class="hover:text-primary" href="mailto:help@fredvested.com">Contact</a>
+  </div>
+  <p>&copy; 2026 FREDvested LLC</p>
+  <!-- ATTORNEY: status sentence pending final confirmation -->
+  <div class="mt-4 text-[10px] leading-relaxed text-gray-400">
+    <span class="sm:hidden">FREDvested LLC does not provide individualized investment advice.<br>
+    FREDvested LLC is not a registered investment adviser.<br></span>
+    <span class="hidden sm:inline">FREDvested LLC is not a registered investment adviser and does not provide individualized investment advice.<br></span>
+    Investing involves risk, including possible loss of principal.
+  </div>
 </footer>
+
+<script src="assets/waitlist.js"></script>
+<!-- attribution.js captures UTM/first-touch on load; analytics.js owns every event and the
+     production-hostname gate. Both must run before Plausible's deferred script executes. -->
+<script src="assets/attribution.js"></script>
+<script src="assets/analytics.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script>
+(function () {
+  // Swappable term: change here if legal requires different phrasing in the result/capture areas.
+  const FREEDOM_LABEL = "Freedom Date";
+
+  // Return scenarios the user can select (Marketing Rule interactive-analysis-tool requirement).
+  // Change the percentages here; the segmented control, result copy, and payload all read from these.
+  const RETURN_CONSERVATIVE = 8;
+  const RETURN_MODERATE = 10;
+  const RETURN_OPTIMISTIC = 12;
+  const RETURN_SCENARIOS = {
+    conservative: { name: "Conservative", pct: RETURN_CONSERVATIVE },
+    moderate: { name: "Moderate", pct: RETURN_MODERATE },
+    optimistic: { name: "Optimistic", pct: RETURN_OPTIMISTIC },
+  };
+  let selectedReturn = "moderate";
+  const currentScenario = () => RETURN_SCENARIOS[selectedReturn];
+  // "an 8%", "a 10%", "a 12%": the article follows the spoken number.
+  const articleFor = (pct) => (/^(8|11|18)/.test(String(pct)) ? "an" : "a");
+
+  const WITHDRAWAL_RATE = 0.04;
+
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
+  renderConsent("consent-note");
+  // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
+  const Analytics = window.FredAnalytics;
+
+  const revealZone = document.getElementById("reveal-zone");
+  const feasibleBlock = document.getElementById("feasible-block");
+  const infeasibleBlock = document.getElementById("infeasible-block");
+  const ageEl = document.getElementById("result-age");
+  const chipEl = document.getElementById("result-chip");
+  const assumptionsEl = document.getElementById("result-assumptions");
+  const targetEl = document.getElementById("result-target");
+  const srEl = document.getElementById("result-sr");
+
+  const form = document.getElementById("waitlist-form");
+  const emailInput = document.getElementById("capture-email");
+  const joinBtn = document.getElementById("join-waitlist-btn");
+  const btnText = document.getElementById("btn-text");
+  const btnLoading = document.getElementById("btn-loading");
+  const successBlock = document.getElementById("success-block");
+  const successNote = document.getElementById("success-note");
+  const msg = document.getElementById("waitlist-msg");
+
+  const infeasibleMessageEl = document.getElementById("infeasible-message");
+  const INFEASIBLE_MESSAGES = {
+    "no-investment": "Add a monthly investment amount to reveal your " + FREEDOM_LABEL + ".",
+    "horizon": "At these numbers, your target is more than a lifetime away. Try raising your monthly investment or lowering your retirement income.",
+  };
+
+  const STATUS_NOTES = {
+    WAITLISTED: "You’re in line for a Founder invite.",
+    already_joined: "You’re already on the list.",
+    // Set by confirmed.html once the emailed link is clicked (same sentence as that page).
+    confirmed: "Your spot on the FRED waitlist is secured. We’ll email you when your wave opens.",
+  };
+
+  const prefersReducedMotion = () =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const formatUSD = (n) => "$" + Math.round(n).toLocaleString("en-US");
+  const formatMonthYear = (d) =>
+    d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  // Local calendar components, so the first-of-month date never shifts a day across timezones.
+  const isoDate = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01";
+
+  function compute(age, invest, retire) {
+    const target = (retire * 12) / WITHDRAWAL_RATE;
+    if (invest <= 0) return { feasible: false, target, reason: "no-investment" };
+    const monthlyRate = currentScenario().pct / 100 / 12;
+    const n = Math.log((target * monthlyRate) / invest + 1) / Math.log(1 + monthlyRate);
+    const years = n / 12;
+    const ageAtFreedom = age + years;
+    if (ageAtFreedom > 100 || years > 72) return { feasible: false, target, reason: "horizon" };
+    const now = new Date();
+    const date = new Date(now.getFullYear(), now.getMonth() + Math.round(n), 1);
+    return { feasible: true, target, years, ageAtFreedom, date };
+  }
+
+  // False until the user touches any slider or number input; untouched defaults
+  // revealed as-is should not be recorded as chosen numbers. Deliberately NOT set by the
+  // return-scenario control: picking a scenario says nothing about whether the age /
+  // invest / retire numbers are the user's own, and that is what this flag gates.
+  let hasInteracted = false;
+
+  // --- Return scenario segmented control (radiogroup with roving tabindex) ---
+  const segButtons = Array.from(document.querySelectorAll("#return-seg .seg-btn"));
+  function setReturn(key) {
+    if (!RETURN_SCENARIOS[key]) return;
+    selectedReturn = key;
+    segButtons.forEach((b) => {
+      const active = b.dataset.return === key;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-checked", String(active));
+      b.tabIndex = active ? 0 : -1;
+    });
+    liveUpdate();
+  }
+  segButtons.forEach((b) => b.addEventListener("click", () => {
+    if (b.dataset.return !== selectedReturn) Analytics.recordInput("return_scenario");
+    setReturn(b.dataset.return);
+  }));
+  document.getElementById("return-seg").addEventListener("keydown", (e) => {
+    const keys = Object.keys(RETURN_SCENARIOS);
+    const i = keys.indexOf(selectedReturn);
+    let next = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = keys[(i + 1) % keys.length];
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = keys[(i - 1 + keys.length) % keys.length];
+    if (!next) return;
+    e.preventDefault();
+    Analytics.recordInput("return_scenario");
+    setReturn(next);
+    segButtons.find((b) => b.dataset.return === next).focus();
+  });
+
+  // Keep each slider and its number input in sync; the slider holds the clamped value.
+  function sizeNumberInput(num) {
+    num.style.width = Math.max(String(num.value).length, 1) + 0.6 + "ch";
+  }
+  function bindRow(rangeId, numberId, field) {
+    const range = document.getElementById(rangeId);
+    const num = document.getElementById(numberId);
+    const clamp = (v) => Math.min(Math.max(v, +num.min), +num.max);
+    sizeNumberInput(num);
+    range.addEventListener("input", () => {
+      hasInteracted = true;
+      Analytics.recordInput(field);
+      num.value = range.value;
+      sizeNumberInput(num);
+      liveUpdate();
+    });
+    num.addEventListener("input", () => {
+      hasInteracted = true;
+      Analytics.recordInput(field);
+      if (num.value !== "") range.value = clamp(+num.value);
+      sizeNumberInput(num);
+      liveUpdate();
+    });
+    num.addEventListener("blur", () => {
+      if (num.value !== "" && !isNaN(+num.value)) range.value = clamp(+num.value);
+      // Read back from the range so typed values snap to the step grid both controls share.
+      num.value = range.value;
+      sizeNumberInput(num);
+      liveUpdate();
+    });
+  }
+  bindRow("age-range", "age-number", "age");
+  bindRow("invest-range", "invest-number", "monthly_invest");
+  bindRow("retire-range", "retire-number", "target_income");
+
+  const readInputs = () => ({
+    age: +document.getElementById("age-range").value,
+    invest: +document.getElementById("invest-range").value,
+    retire: +document.getElementById("retire-range").value,
+  });
+
+  let cancelCountUp = null;
+  function countUp(el, target, duration) {
+    if (cancelCountUp) cancelCountUp();
+    let rafId = 0;
+    const start = performance.now();
+    function cancel() {
+      cancelAnimationFrame(rafId);
+      clearTimeout(failsafe);
+      cancelCountUp = null;
+    }
+    function finish() {
+      cancel();
+      el.textContent = target;
+      el.removeAttribute("aria-hidden");
+    }
+    // Guarantees the final value even if animation frames are suspended.
+    const failsafe = setTimeout(finish, duration + 300);
+    cancelCountUp = cancel;
+    el.setAttribute("aria-hidden", "true");
+    function step(t) {
+      const p = Math.min((t - start) / duration, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) {
+        rafId = requestAnimationFrame(step);
+      } else {
+        finish();
+      }
+    }
+    rafId = requestAnimationFrame(step);
+  }
+
+  // Last feasible result, sent with the signup so the backend can track avg freedom age.
+  let lastFreedomAge = null;
+  let lastFreedomMonthYear = null;
+  // Also sent with the signup so the backend can recompute and detect drift between the two implementations.
+  let lastFreedomDateIso = null;
+  let lastPortfolioTarget = null;
+
+  function render(animate) {
+    const { age, invest, retire } = readInputs();
+    const res = compute(age, invest, retire);
+    if (res.feasible) {
+      feasibleBlock.hidden = false;
+      infeasibleBlock.hidden = true;
+      const roundedAge = Math.round(res.ageAtFreedom);
+      lastFreedomAge = roundedAge;
+      lastFreedomMonthYear = formatMonthYear(res.date);
+      lastFreedomDateIso = isoDate(res.date);
+      lastPortfolioTarget = Math.round(res.target);
+      if (animate && !prefersReducedMotion()) {
+        countUp(ageEl, roundedAge, 900);
+      } else {
+        if (cancelCountUp) cancelCountUp();
+        ageEl.textContent = roundedAge;
+        ageEl.removeAttribute("aria-hidden");
+      }
+      chipEl.textContent = FREEDOM_LABEL + " · " + formatMonthYear(res.date);
+      const sc = currentScenario();
+      // The scenario name is desktop-only (Andrew, 2026-10-11): the selected segment already
+      // shows it, and the line wraps badly on phones. The screen-reader text keeps it.
+      const scenarioNote = document.createElement("span");
+      scenarioNote.className = "hidden sm:inline";
+      scenarioNote.textContent = " (" + sc.name + " scenario)";
+      assumptionsEl.replaceChildren(
+        document.createTextNode("Assumes " + articleFor(sc.pct) + " " + sc.pct + "% avg annual return"),
+        scenarioNote,
+        document.createTextNode(" & 4% withdrawal rate."),
+      );
+      targetEl.textContent = "Projected portfolio target: " + formatUSD(res.target) + ".";
+      srEl.textContent =
+        "You could be free at " + roundedAge + " years old. " +
+        FREEDOM_LABEL + ": " + formatMonthYear(res.date) + ". " +
+        "Projected portfolio target: " + formatUSD(res.target) + ". " +
+        "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% average annual return (" + sc.name + " scenario) and 4% withdrawal rate. " +
+        "Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.";
+    } else {
+      feasibleBlock.hidden = true;
+      infeasibleBlock.hidden = false;
+      lastFreedomAge = null;
+      lastFreedomMonthYear = null;
+      lastFreedomDateIso = null;
+      lastPortfolioTarget = Math.round(res.target);
+      const message = INFEASIBLE_MESSAGES[res.reason] || INFEASIBLE_MESSAGES["no-investment"];
+      infeasibleMessageEl.textContent = message;
+      srEl.textContent = message;
+    }
+  }
+
+  // `revealed` is the analytics flag: has this page load had a reveal click. `resultShown`
+  // is the rendering flag: is a result on screen that the sliders should keep current. They
+  // differ for a returning visitor, whose zone opens on load without a reveal (see
+  // openZoneForSavedState); gating liveUpdate on `revealed` left that result frozen.
+  let revealed = false;
+  let resultShown = false;
+  function liveUpdate() {
+    if (!resultShown) return;
+    render(false);
+    persistResultIfJoined();
+  }
+
+  // The about page shows the saved freedom date back in its hero. It is written at signup;
+  // someone who has already joined and recalculates (about.html's "Recalculate anytime"
+  // link lands here) must overwrite it, or about.html keeps showing the signup-time date.
+  // Only user-driven renders call this: the automatic open for a saved state renders the
+  // default sliders, which must never replace the date the visitor actually computed.
+  function persistResultIfJoined() {
+    if (!getSavedStatus()) return;
+    if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
+    else clearFreedomDate();
+  }
+
+  const revealBtn = document.getElementById("reveal-btn");
+  revealBtn.addEventListener("click", () => {
+    const firstReveal = !revealed;
+    revealed = true;
+    resultShown = true;
+    render(firstReveal);
+    persistResultIfJoined();
+    revealZone.removeAttribute("inert");
+    revealZone.classList.add("open");
+    revealBtn.setAttribute("aria-expanded", "true");
+    // After the result has rendered, never on the raw click. compute() cannot throw for the slider
+    // domain; an unreachable result is a real outcome (lastFreedomAge null -> freedom_age_band "unreachable").
+    const inputs = readInputs();
+    Analytics.track(firstReveal ? "Freedom Date Revealed" : "Recalculated", {
+      age: inputs.age, invest: inputs.invest, retire: inputs.retire,
+      return_scenario: selectedReturn, freedom_age: lastFreedomAge,
+    });
+    // Once fully open, drop the height cap so the accordion can grow the zone past it.
+    // Overflow is deliberately left alone (see .reveal-zone).
+    setTimeout(() => {
+      revealZone.style.maxHeight = "none";
+    }, 750);
+    setTimeout(() => {
+      revealZone.scrollIntoView({
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
+        block: "start",
+      });
+    }, 150);
+  });
+
+  // --- Live proof counts ---
+  // The list-size line is shown only when the API returned a real count of at least
+  // STAT_TILE_MIN_N. Nothing is baked into the HTML and nothing is rendered while
+  // loading, on failure, or below the threshold, so the page can never display a
+  // number that did not come from the backend. The line starts display:none and
+  // the card reflows around it when it appears (same gate as about.html's tiles).
+  function renderCount(data) {
+    const n = Number(data && data.count);
+    if (!Number.isFinite(n) || n < STAT_TILE_MIN_N) return;
+    renderCountLine(n);
+  }
+  function renderCountLine(n) {
+    // Built with textContent, never innerHTML: the number comes from the API's JSON.
+    const line = document.getElementById("capture-count");
+    const strong = document.createElement("b");
+    strong.textContent = n.toLocaleString("en-US");
+    line.replaceChildren(strong, document.createTextNode(" people are already on the list."));
+    line.classList.remove("hidden");
+  }
+  function refreshCount() {
+    fetchStats().then(renderCount).catch(() => {
+      /* No fallback by design: the line simply stays hidden. */
+    });
+  }
+  // Attorney screenshot mode (?previewStat=1, local hosts incl. LAN IPs): sample value, no API call.
+  if (PREVIEW_STAT) renderCountLine(PREVIEW_COUNT); else refreshCount();
+
+  // --- Signup flow ---
+  const ts = createTurnstile(form);
+
+  document.getElementById("calc-method").addEventListener("toggle", (e) => {
+    if (e.target.open) Analytics.track("Explainer Opened");
+  });
+  emailInput.addEventListener("focus", () => Analytics.track("Email Focused"));
+
+  function showMsg(kind, text) {
+    const styles = kind === "error"
+      ? "bg-red-50 border-red-200 text-red-700"
+      : "bg-yellow-50 border-yellow-200 text-yellow-700";
+    // Text, never markup: the message can come from the API's JSON, which must not
+    // be able to inject HTML into the page.
+    const box = document.createElement("div");
+    box.className = "mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium " + styles;
+    box.textContent = text;
+    msg.replaceChildren(box);
+  }
+
+  function showSuccess(displayStatus, fadeIn) {
+    form.style.display = "none";
+    document.getElementById("capture-cta-note").hidden = true;
+    successNote.textContent = STATUS_NOTES[displayStatus] || STATUS_NOTES.already_joined;
+    successBlock.classList.remove("hidden");
+    if (fadeIn) {
+      requestAnimationFrame(() => successBlock.classList.remove("opacity-0"));
+      // Restore keyboard/SR focus after the form disappears beneath the user.
+      document.getElementById("success-link").focus();
+    } else {
+      successBlock.classList.remove("opacity-0");
+    }
+  }
+
+  // Double opt-in: shown after a new signup until the emailed link is clicked
+  // (confirmed.html then stores "confirmed" and clears the pending address).
+  const pendingBlock = document.getElementById("pending-block");
+  // The address also lives here for the session, so "resend" works even when storage is blocked.
+  let pendingEmailMemory = null;
+  function showPending(email, fadeIn) {
+    if (email) pendingEmailMemory = email;
+    form.style.display = "none";
+    document.getElementById("capture-cta-note").hidden = true;
+    document.getElementById("pending-email").textContent = email || "the address you entered";
+    pendingBlock.classList.remove("hidden");
+    if (fadeIn) {
+      requestAnimationFrame(() => pendingBlock.classList.remove("opacity-0"));
+      pendingBlock.focus();
+    } else {
+      pendingBlock.classList.remove("opacity-0");
+    }
+  }
+  // Back to an empty, working form (the loading animation collapsed the input and
+  // spent the Turnstile token), and forget the pending state in this browser.
+  function restoreForm() {
+    pendingBlock.classList.add("hidden");
+    pendingBlock.classList.add("opacity-0");
+    document.getElementById("pending-msg").innerHTML = "";
+    pendingEmailMemory = null;
+    clearPendingEmail();
+    clearStatus();
+    resetForm();
+    ts.reset();
+    form.style.display = "";
+    document.getElementById("capture-cta-note").hidden = false;
+  }
+  document.getElementById("pending-reset").addEventListener("click", () => {
+    restoreForm();
+    emailInput.focus();
+  });
+  document.getElementById("pending-resend").addEventListener("click", async () => {
+    const out = document.getElementById("pending-msg");
+    const pendingEmail = getPendingEmail() || pendingEmailMemory;
+    if (!pendingEmail) {
+      // Nothing in storage and nothing in memory (a reload with storage blocked): a
+      // resend needs the address, so bring the form back for it.
+      restoreForm();
+      showMsg("warn", "Enter your email again and we’ll send a new link.");
+      return;
+    }
+    const btn = document.getElementById("pending-resend");
+    btn.disabled = true;
+    try {
+      // Any completed request, whatever its status, gets the same answer: the
+      // response must not reveal whether the address is on the list.
+      await resendConfirmation(pendingEmail);
+      out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-blue-50 border-blue-200 text-blue-800">If that address is on our waitlist, a new confirmation link is on its way. Check your inbox.</div>';
+    } catch (err) {
+      out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-red-50 border-red-200 text-red-700">Could not reach FRED. Please check your connection and try again.</div>';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // A returning visitor with a saved state must see it at once, not a calculator that
+  // looks like they never signed up (decision 2026-09-26). The reveal zone opens itself
+  // showing the current result, the calculator stays above it, and no scrolling. It is
+  // not a reveal: `revealed` stays false, so no event fires now and the visitor's first
+  // click on this page load is this page load's Freedom Date Revealed, as for anyone.
+  function openZoneForSavedState() {
+    resultShown = true;
+    render(false);
+    revealZone.removeAttribute("inert");
+    revealZone.classList.add("open");
+    revealZone.style.maxHeight = "none";
+    revealBtn.setAttribute("aria-expanded", "true");
+  }
+
+  // If they already joined on a previous visit, skip the form entirely.
+  const savedStatus = getSavedStatus();
+  if (savedStatus === "pending_confirmation") {
+    // An expired pending state (older than the link itself) reads as absent: the form comes back.
+    const pendingEmail = getPendingEmail();
+    if (pendingEmail) { openZoneForSavedState(); showPending(pendingEmail, false); } else clearStatus();
+  } else if (savedStatus) {
+    openZoneForSavedState();
+    showSuccess(savedStatus, false);
+  }
+
+  let loadingAborted = false;
+
+  function showLoading() {
+    loadingAborted = false;
+    // Step 1: fade out the input and button text
+    emailInput.style.opacity = "0";
+    btnText.style.opacity = "0";
+    joinBtn.disabled = true;
+    // Step 2: collapse the input, expand the button to full width, swap in the loading state
+    setTimeout(() => {
+      if (loadingAborted) return;
+      emailInput.style.width = "0";
+      emailInput.style.height = "0";
+      emailInput.style.padding = "0";
+      emailInput.style.border = "none";
+      emailInput.style.margin = "0";
+      emailInput.style.flex = "0 1 auto";
+      emailInput.style.overflow = "hidden";
+      emailInput.disabled = true;
+      form.style.gap = "0";
+      joinBtn.style.width = "100%";
+      joinBtn.style.flex = "1";
+      btnText.classList.add("hidden");
+      btnLoading.classList.remove("hidden");
+      btnLoading.classList.add("flex");
+    }, 300);
+  }
+
+  function resetForm() {
+    loadingAborted = true;
+    emailInput.style.opacity = "";
+    emailInput.style.width = "";
+    emailInput.style.height = "";
+    emailInput.style.padding = "";
+    emailInput.style.border = "";
+    emailInput.style.margin = "";
+    emailInput.style.flex = "";
+    emailInput.style.overflow = "";
+    emailInput.disabled = false;
+    form.style.gap = "";
+    joinBtn.style.width = "";
+    joinBtn.style.flex = "";
+    joinBtn.style.opacity = "";
+    joinBtn.disabled = false;
+    btnText.style.opacity = "";
+    btnText.classList.remove("hidden");
+    btnLoading.classList.add("hidden");
+    btnLoading.classList.remove("flex");
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.innerHTML = "";
+
+    const email = emailInput.value.trim().toLowerCase();
+    if (!email) {
+      showMsg("error", "Please enter your email address.");
+      Analytics.track("Waitlist Failed", { reason: "empty_email" });
+      return;
+    }
+    if (!isValidEmail(email)) {
+      showMsg("error", "Please enter a valid email address.");
+      Analytics.track("Waitlist Failed", { reason: "invalid_email" });
+      return;
+    }
+    const token = ts.getToken();
+    if (!token) {
+      showMsg("warn", "Security verification in progress. Please try again in a moment.");
+      Analytics.track("Waitlist Failed", { reason: "captcha_failed" });
+      return;
+    }
+
+    showLoading();
+    const loadingStartedAt = Date.now();
+
+    try {
+      const { age, invest, retire } = readInputs();
+      const payload = {
+        email,
+        turnstileToken: token,
+        age,
+        investMonthly: invest,
+        retireMonthly: retire,
+        interacted: hasInteracted,
+        returnAssumptionPct: currentScenario().pct,
+      };
+      if (lastFreedomAge !== null) payload.freedomAge = lastFreedomAge;
+      if (lastFreedomDateIso !== null) payload.freedomDate = lastFreedomDateIso;
+      if (lastPortfolioTarget !== null) payload.portfolioTarget = lastPortfolioTarget;
+      payload.revealedBeforeSubmit = revealed;
+      Object.assign(payload, Analytics.getAttribution());
+      const data = await submitWaitlist(payload);
+      // Only after a 2xx. An address already on the list is not a new signup, so it is
+      // recorded as a duplicate failure even though the visitor sees the success state.
+      if (data.status === "already_joined") Analytics.track("Waitlist Failed", { reason: "duplicate" });
+      else Analytics.track("Waitlist Submitted", { source_page: "home" });
+
+      // Keep the loading animation on screen for at least 2s before the payoff.
+      const elapsed = Date.now() - loadingStartedAt;
+      await new Promise((r) => setTimeout(r, Math.max(0, 2000 - elapsed)));
+
+      // Double opt-in: a new signup is pending until the emailed link is clicked.
+      // For already_joined, persist the real status so refreshes show the right card.
+      // (An unconfirmed address entered again is answered like a fresh signup by the backend.)
+      const pending = data.requiresConfirmation === true;
+      saveStatus(pending ? "pending_confirmation" : (data.realStatus || data.status));
+      if (pending) { savePendingEmail(email); pendingEmailMemory = email; }
+      if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
+
+      // Fade the loading button out, then fade the success state in.
+      joinBtn.style.opacity = "0";
+      joinBtn.style.transition = "opacity 300ms ease";
+      await new Promise((r) => setTimeout(r, 300));
+      if (pending) showPending(email, true); else showSuccess(data.status, true);
+      // The signup response carries only the total; the line wants the live, confirmed count.
+      refreshCount();
+    } catch (err) {
+      resetForm();
+      showMsg("error", err.message);
+      ts.reset();
+      Analytics.track("Waitlist Failed", { reason: err.reason || "server_error" });
+    }
+  });
+
+  devLinkMap({ "/about": "about.html", "/privacy": "privacy.html", "/terms": "terms.html" });
+})();
+</script>
 </body>
 </html>

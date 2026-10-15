@@ -1,0 +1,287 @@
+package com.fredvested.web.service;
+
+import com.fredvested.web.model.EmailMessage;
+import com.fredvested.web.model.WaitlistEntry;
+import com.fredvested.web.repository.EmailMessageRepository;
+import com.fredvested.web.repository.WaitlistRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import org.springframework.context.ApplicationEventPublisher;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+class SignupServiceTest {
+
+    WaitlistRepository waitlist = mock(WaitlistRepository.class);
+    EmailMessageRepository outbox = mock(EmailMessageRepository.class);
+    ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    SignupService service = new SignupService(waitlist, outbox, events, true);
+
+    WaitlistEntry entry;
+
+    @BeforeEach
+    void setUp() {
+        entry = new WaitlistEntry();
+        entry.setId(7L);
+        entry.setEmail("a@example.com");
+        entry.setCreatedAt(LocalDateTime.now().minusHours(2));
+        // The mock answers by the entry's CURRENT hash, so clearing the hash on use is observable.
+        when(waitlist.findByConfirmationTokenHash(anyString())).thenAnswer(inv ->
+                Optional.ofNullable(entry.getConfirmationTokenHash())
+                        .filter(h -> h.equals(inv.getArgument(0)))
+                        .map(h -> entry));
+    }
+
+    @Test
+    void createSignup_savesTheRowAndQueuesTheConfirmation() {
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        service.createSignup(entry);
+        ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(outbox).save(captor.capture());
+        assertEquals(7L, captor.getValue().getWaitlistId());
+        assertEquals(EmailMessage.TEMPLATE_CONFIRMATION, captor.getValue().getTemplate());
+        assertEquals(EmailMessage.STATUS_PENDING, captor.getValue().getStatus());
+    }
+
+    @Test
+    void createSignup_queuesTheWelcomeEmail_whenDoubleOptInIsOff() {
+        SignupService single = new SignupService(waitlist, outbox, events, false);
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        single.createSignup(entry);
+        ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(outbox).save(captor.capture());
+        assertEquals(EmailMessage.TEMPLATE_WELCOME, captor.getValue().getTemplate());
+    }
+
+    @Test
+    void confirm_isSingleUse_andAReplayLooksExactlyLikeAnUnknownToken() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+        entry.setConfirmationSentAt(LocalDateTime.now().minusMinutes(20));
+
+        SignupService.Confirmation first = service.confirm(token.raw());
+        assertEquals(SignupService.ConfirmOutcome.CONFIRMED, first.outcome());
+        assertEquals("<1", first.hoursBand());
+        assertNotNull(entry.getConfirmedAt());
+        assertNull(entry.getConfirmationTokenHash());
+        assertNull(entry.getConfirmationExpiresAt());
+
+        SignupService.Confirmation replay = service.confirm(token.raw());
+        SignupService.Confirmation unknown = service.confirm(ConfirmationTokens.generate().raw());
+        assertEquals(replay, unknown); // records compare by value: identical outcome, identical (null) band
+        assertEquals(SignupService.ConfirmOutcome.INVALID, replay.outcome());
+        verify(waitlist, times(1)).save(entry);
+    }
+
+    // 2026-09-26 (Andrew): the welcome email goes out after the click, not instead of the
+    // confirmation. Queued in the confirmation's own transaction, sent by the outbox.
+    @Test
+    void confirm_queuesTheWelcomeEmail_once_inTheSameTransaction() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+
+        assertEquals(SignupService.ConfirmOutcome.CONFIRMED, service.confirm(token.raw()).outcome());
+
+        ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(outbox, times(1)).save(captor.capture());
+        assertEquals(EmailMessage.TEMPLATE_WELCOME, captor.getValue().getTemplate());
+        assertEquals(EmailMessage.STATUS_PENDING, captor.getValue().getStatus());
+        assertEquals(7L, captor.getValue().getWaitlistId());
+
+        // A replay confirms nothing and queues nothing more.
+        service.confirm(token.raw());
+        verify(outbox, times(1)).save(any());
+    }
+
+    @Test
+    void expiredOrUnknownTokens_queueNoWelcome() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().minusMinutes(1));
+        service.confirm(token.raw());
+        service.confirm(ConfirmationTokens.generate().raw());
+        verify(outbox, never()).save(any());
+    }
+
+    @Test
+    void confirm_expiredToken_isExpired_andStaysUsable_forTheResendFlow() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().minusMinutes(1));
+        assertEquals(SignupService.ConfirmOutcome.EXPIRED, service.confirm(token.raw()).outcome());
+        assertNull(entry.getConfirmedAt());
+        verify(waitlist, never()).save(any());
+    }
+
+    @Test
+    void confirm_rejectsGarbage_withoutTouchingTheDatabase() {
+        assertEquals(SignupService.ConfirmOutcome.INVALID, service.confirm(null).outcome());
+        assertEquals(SignupService.ConfirmOutcome.INVALID, service.confirm("").outcome());
+        assertEquals(SignupService.ConfirmOutcome.INVALID, service.confirm("x".repeat(5000)).outcome());
+        verify(waitlist, never()).findByConfirmationTokenHash(anyString());
+    }
+
+    @Test
+    void requestResend_doesNothing_forUnknownConfirmedOrSuppressedAddresses() {
+        when(waitlist.findByEmail("nobody@example.com")).thenReturn(null);
+        service.requestResend("nobody@example.com");
+
+        entry.setConfirmedAt(LocalDateTime.now());
+        when(waitlist.findByEmail("a@example.com")).thenReturn(entry);
+        service.requestResend("a@example.com");
+
+        entry.setConfirmedAt(null);
+        entry.setSuppressedAt(LocalDateTime.now());
+        service.requestResend("a@example.com");
+
+        verify(outbox, never()).save(any());
+    }
+
+    @Test
+    void requestResend_retiresPendingConfirmations_andQueuesAFreshOne() {
+        when(waitlist.findByEmail("a@example.com")).thenReturn(entry);
+        EmailMessage stale = new EmailMessage();
+        stale.setStatus(EmailMessage.STATUS_PENDING);
+        when(outbox.findByWaitlistIdAndTemplateAndStatus(7L, EmailMessage.TEMPLATE_CONFIRMATION, EmailMessage.STATUS_PENDING))
+                .thenReturn(List.of(stale));
+
+        service.requestResend("a@example.com");
+
+        assertEquals(EmailMessage.STATUS_SKIPPED, stale.getStatus());
+        ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(outbox, times(2)).save(captor.capture());
+        assertEquals(EmailMessage.STATUS_PENDING, captor.getAllValues().get(1).getStatus());
+        assertEquals(EmailMessage.TEMPLATE_CONFIRMATION, captor.getAllValues().get(1).getTemplate());
+    }
+
+    @Test
+    void unsubscribe_suppressesOnce_andKeepsWorking() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        EmailMessage m = new EmailMessage();
+        m.setWaitlistId(7L);
+        m.setUnsubscribeTokenHash(token.hash());
+        when(outbox.findByUnsubscribeTokenHash(token.hash())).thenReturn(Optional.of(m));
+        when(waitlist.findById(7L)).thenReturn(Optional.of(entry));
+
+        assertTrue(service.unsubscribe(token.raw()));
+        assertEquals(WaitlistEntry.SUPPRESSION_UNSUBSCRIBE, entry.getSuppressionReason());
+        LocalDateTime firstAt = entry.getSuppressedAt();
+        assertTrue(service.unsubscribe(token.raw()));
+        assertEquals(firstAt, entry.getSuppressedAt());
+        assertFalse(service.unsubscribe("nope"));
+        verify(waitlist, times(1)).save(entry);
+    }
+
+    // --- one waitlist, no tiers (2026-10-10): every signup is WAITLISTED and stays so ---
+
+    @Test
+    void doubleOptInSignup_isUnconfirmed_andWaitlisted() {
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        service.createSignup(entry);
+        assertNull(entry.getConfirmedAt());
+        assertNull(entry.getConfirmedSource());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus());
+    }
+
+    @Test
+    void confirm_tagsTheSource_andLeavesTheStatusAlone() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
+
+        SignupService.Confirmation result = service.confirm(token.raw());
+
+        assertEquals(SignupService.ConfirmOutcome.CONFIRMED, result.outcome());
+        assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus(), "confirmation never changes the status");
+        // Nothing is counted to decide a tier any more.
+        verify(waitlist, never()).countByStatus(any());
+        verify(waitlist, never()).countByConfirmedAtIsNotNull();
+        // The public numbers changed: the stats cache must hear about it.
+        verify(events).publishEvent(any(SignupService.WaitlistCountsChanged.class));
+    }
+
+    @Test
+    void doubleOptInSignup_doesNotTouchTheStatsCache_butSingleOptInDoes() {
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        service.createSignup(entry);
+        verify(events, never()).publishEvent(any());
+        new SignupService(waitlist, outbox, events, false).createSignup(entry);
+        verify(events).publishEvent(any(SignupService.WaitlistCountsChanged.class));
+    }
+
+    @Test
+    void confirm_statusStaysWaitlisted_noCapIsConsulted() {
+        // The 300 founding spots are no longer assigned at signup or confirmation: the
+        // row after the 300th confirmed one is WAITLISTED like every other.
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+        entry.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
+
+        service.confirm(token.raw());
+
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus());
+        assertEquals(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN, entry.getConfirmedSource());
+        verify(waitlist, never()).countByConfirmedAtIsNotNull();
+    }
+
+    @Test
+    void confirm_neverTouches_aRowAlreadyInTheInviteWorkflow() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        entry.setConfirmationTokenHash(token.hash());
+        entry.setConfirmationExpiresAt(LocalDateTime.now().plusDays(7));
+        entry.setStatus(WaitlistEntry.WaitlistStatus.INVITED);
+        service.confirm(token.raw());
+        assertEquals(WaitlistEntry.WaitlistStatus.INVITED, entry.getStatus());
+    }
+
+    @Test
+    void singleOptInSignup_isConfirmedAtOnce_andWaitlisted() {
+        SignupService single = new SignupService(waitlist, outbox, events, false);
+        when(waitlist.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        single.createSignup(entry);
+
+        assertNotNull(entry.getConfirmedAt());
+        assertEquals(WaitlistEntry.CONFIRMED_SINGLE_OPT_IN, entry.getConfirmedSource());
+        assertEquals(WaitlistEntry.WaitlistStatus.WAITLISTED, entry.getStatus());
+        verify(waitlist, never()).countByStatus(any());
+    }
+
+    @Test
+    void hoursBand_boundaries() {
+        LocalDateTime t = LocalDateTime.of(2026, 9, 23, 12, 0);
+        assertEquals("<1", SignupService.hoursBand(t.minusMinutes(59), t));
+        assertEquals("1-6", SignupService.hoursBand(t.minusHours(1), t));
+        assertEquals("6-24", SignupService.hoursBand(t.minusHours(6), t));
+        assertEquals("24-72", SignupService.hoursBand(t.minusHours(24), t));
+        assertEquals("72+", SignupService.hoursBand(t.minusHours(72), t));
+        assertEquals("72+", SignupService.hoursBand(null, t));
+    }
+
+    @Test
+    void hasUnsubscribeToken_hasNoSideEffect() {
+        ConfirmationTokens.Generated token = ConfirmationTokens.generate();
+        EmailMessage m = new EmailMessage();
+        m.setWaitlistId(7L);
+        when(outbox.findByUnsubscribeTokenHash(token.hash())).thenReturn(Optional.of(m));
+        assertTrue(service.hasUnsubscribeToken(token.raw()));
+        assertFalse(service.hasUnsubscribeToken("nope"));
+        assertFalse(service.hasUnsubscribeToken(null));
+        verify(waitlist, never()).save(any());
+        assertNull(entry.getSuppressedAt());
+    }
+}

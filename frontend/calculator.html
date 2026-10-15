@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FRED: Calculator</title>
+<!-- The calculator now lives at the root; this stub keeps old /calculator links working. -->
+<link rel="canonical" href="https://fredvested.com/">
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0; url=/">
+<script>
+  // file:// / Live Server development has no clean-URL mapping, so fall back to index.html
+  var isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    || location.hostname.indexOf('ngrok') !== -1 || location.protocol === 'file:';
+  location.replace(isDev ? 'index.html' : '/');
+</script>
+</head>
+<body>
+<p>The Freedom Calculator has moved to <a href="/">fredvested.com</a>.</p>
+</body>
+</html>
