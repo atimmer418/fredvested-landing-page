@@ -10,7 +10,7 @@ const { installMocks, forceAnalytics, collectHosts, events } = require('./helper
 const OWN_HOSTS = new Set(['localhost', '127.0.0.1']);
 
 const PAGES = [
-  { path: '/privacy', h1: 'FRED Privacy Policy', firstH2: '1. Introduction' },
+  { path: '/privacy', h1: 'Privacy Policy', firstH2: '1. Introduction' }, // heading matched to the terms page (b959f15)
   { path: '/terms', h1: 'Terms of Use', firstH2: '1. License.' },
 ];
 

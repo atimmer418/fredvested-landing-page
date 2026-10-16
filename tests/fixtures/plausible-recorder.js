@@ -9,6 +9,11 @@
   window.__plausible = window.__plausible || [];
   window.plausible = function (name, options) {
     window.__plausible.push({ name: name, props: (options && options.props) || {}, url: location.href });
+    // Like the real script: the callback fires once the event has been "sent".
+    // window.__plausibleNeverCallBack simulates a request that never completes.
+    if (options && typeof options.callback === 'function' && !window.__plausibleNeverCallBack) {
+      setTimeout(function () { options.callback({ status: 202 }); }, 0);
+    }
   };
   for (var i = 0; i < queued.length; i++) window.plausible.apply(null, queued[i]);
 })();

@@ -153,25 +153,40 @@
       : false),
   };
 
+  // Plausible sends events with a plain XHR, so an event fired right before a
+  // navigation can be dropped. A caller that is about to navigate passes `done`:
+  // it is called once, when Plausible reports the event sent (its `callback`
+  // option), or after SENT_TIMEOUT_MS if nothing comes back (a blocked request
+  // must never trap the visitor), or at once when the event is not sent at all.
+  const SENT_TIMEOUT_MS = 500;
+
   // Fire an event. Never throws: an analytics failure must never break the
-  // calculator or block a signup.
-  function track(name, ctx) {
+  // calculator or block a signup. Returns true if the event was handed to Plausible.
+  function track(name, ctx, done) {
+    let finished = false;
+    const finish = () => { if (finished) return; finished = true; if (typeof done === 'function') { try { done(); } catch (e) { /* caller's problem */ } } };
     try {
       const build = BUILDERS[name];
-      if (!build) { log('unknown event dropped:', name); return false; }
-      if (ONCE.has(name) && fired.has(name)) return false;
-      if (name === 'Waitlist Failed' && failedCount >= FAILED_LIMIT) return false;
+      if (!build) { log('unknown event dropped:', name); finish(); return false; }
+      if (ONCE.has(name) && fired.has(name)) { finish(); return false; }
+      if (name === 'Waitlist Failed' && failedCount >= FAILED_LIMIT) { finish(); return false; }
       const props = build(ctx || {});
-      if (props === false) return false;
+      if (props === false) { finish(); return false; }
       if (ONCE.has(name)) fired.add(name);
       if (name === 'Waitlist Failed') failedCount++;
-      if (!enabled) { log('(gated)', name, props); return false; }
-      if (typeof global.plausible !== 'function') return false;
-      global.plausible(name, { props: props });
+      if (!enabled) { log('(gated)', name, props); finish(); return false; }
+      if (typeof global.plausible !== 'function') { finish(); return false; }
+      if (typeof done === 'function') {
+        global.setTimeout(finish, SENT_TIMEOUT_MS);
+        global.plausible(name, { props: props, callback: finish });
+      } else {
+        global.plausible(name, { props: props });
+      }
       log(name, props);
       return true;
     } catch (e) {
       if (debug && global.console) global.console.error('[analytics] track failed', e);
+      finish();
       return false;
     }
   }
