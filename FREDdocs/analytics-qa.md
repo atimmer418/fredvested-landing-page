@@ -54,6 +54,7 @@ The end-to-end suite lives at the repo root: `playwright.config.js`, `package.js
 
 - `tests/third-party-hosts.spec.js` is the A1 enforcement: for every page and for a full signup it subscribes to `page.on('request')`, collects each hostname, and fails on anything outside `localhost`, `127.0.0.1` and `challenges.cloudflare.com` (`ALLOWED_HOSTS` in `helpers.js`). `plausible.io` is therefore a failure by construction. Observed on 2026-09-25: Turnstile contacts only `challenges.cloudflare.com`.
 - `tests/analytics-events.spec.js` covers B4, B5, B6 and B7 (every event, exact bands, once guards, the failure reasons and the cap of three, the hostname gate, no raw numbers or addresses in props). Tests that expect events call `forceAnalytics(page)` first, which sets `localStorage.fred_analytics_force = '1'` before the page scripts run.
+- `tests/plausible-transport.spec.js` runs Plausible's real script (vendored as `tests/fixtures/plausible-script.js`, one edit: its localhost ignore removed so it runs against the local server) and asserts that the pageview, `Calc Engaged`, `Waitlist Submitted` on both forms and `Waitlist Confirmed` each complete as a POST to `/api/event` with the documented body; `tests/track-callback.spec.js` covers `track(name, ctx, done)`, the hook for a caller that navigates (see `analytics-events.md`, Transport). `tests/returning-visitor.spec.js` covers the saved state opening the reveal zone on `index.html`.
 - `tests/pending-state.spec.js`, `tests/confirmed-page.spec.js` and `tests/about-and-consent.spec.js` cover section D's browser-side checks (the pending state, storage keys, resend, the confirmed page's states and what it stores, the founder wording, the consent sentence).
 - Running against a deployed preview instead of the local server is not configured; the preview is a Cloudflare build of the same files, and the live checks in B and D remain manual there.
 
@@ -370,6 +371,42 @@ SELECT COUNT(*) FROM waitlist_signups w
 - **Do:** `SELECT status, COUNT(*) FROM waitlist_signups GROUP BY status;`
 - **Expect:** Only `WAITLISTED`, `INVITED`, `CLAIMED`, `DECLINED` (the enum since V6, 2026-10-10; V6 folded `WAITLISTFOUNDER` and `WAITLISTNORMAL` into `WAITLISTED`). Every new signup is `WAITLISTED`, confirmed or not; no founder tier is assigned or counted at signup or confirmation. Founder Access invites go out later in signup order while the 300 spots last.
 - **If not:** a `WAITLISTFOUNDER` or `WAITLISTNORMAL` row means V6 did not run against this database (check `flyway_schema_history`).
+
+### E5. Weekly reconciliation against Plausible (blocker rate)
+
+`v_waitlist_funnel` has no date dimension (it groups by `utm_source`, `utm_campaign`, `utm_content`), so the per-day numbers come from `waitlist_signups` using the view's own definitions: `submitted` is a row (`COUNT(*)`), `confirmed` is `confirmed_at IS NOT NULL`. Legacy rows are excluded from the confirmed column because V5 set their `confirmed_at = created_at`, which would show as confirmations on days before the event existed.
+
+- **Do:** run against the production database (the hostname gate means dev and preview signups never reach Plausible, so only prod can be reconciled). Replace the two dates with the week you are checking; `created_at` and `confirmed_at` are Eastern wall-clock values, so the literals are Eastern days.
+
+```sql
+SELECT d.day,
+       IFNULL(s.submitted, 0) AS submitted,
+       IFNULL(c.confirmed, 0) AS confirmed
+FROM (
+      SELECT DATE(created_at) AS day FROM waitlist_signups WHERE created_at IS NOT NULL
+      UNION
+      SELECT DATE(confirmed_at) FROM waitlist_signups WHERE confirmed_at IS NOT NULL
+     ) d
+LEFT JOIN (
+      SELECT DATE(created_at) AS day, COUNT(*) AS submitted
+      FROM waitlist_signups
+      GROUP BY DATE(created_at)
+     ) s ON s.day = d.day
+LEFT JOIN (
+      SELECT DATE(confirmed_at) AS day, COUNT(*) AS confirmed
+      FROM waitlist_signups
+      WHERE confirmed_at IS NOT NULL AND confirmed_source <> 'legacy'
+      GROUP BY DATE(confirmed_at)
+     ) c ON c.day = d.day
+WHERE d.day BETWEEN '2026-10-12' AND '2026-10-18'
+ORDER BY d.day;
+```
+
+  Then in Plausible, Goals tab, same date range, read the **Total** column (not Uniques) for `Waitlist Submitted` and `Waitlist Confirmed`. The site's reporting timezone must be America/New_York (`analytics-dashboard-setup.md`, section 2) or the days will not line up. Leave out the current day: the database is complete for it and Plausible is not yet.
+
+- **Expect:** For every full day, Plausible `Waitlist Confirmed` is at most the database `confirmed`, and Plausible `Waitlist Submitted` is close to the database `submitted`. The blocker rate for the week is `1 - (Plausible total / database total)`, and the confirmed pair is the cleaner measure: one confirmation click is exactly one row and exactly one page load, so that gap is almost entirely visitors whose browser blocks `/api/event` (content blockers, `plausible_ignore`, a mail app's in-app browser that strips scripts). The submitted pair carries two known biases in opposite directions: an unconfirmed address entered again fires `Waitlist Submitted` without creating a row (counts in Plausible, not in the database), and a blocked browser creates a row without an event. Read the confirmed gap as the blocker rate and treat the submitted gap as a consistency check, not a second estimate. A plausible blocker rate for a US consumer audience is somewhere between 15 and 40 percent; it should be stable week to week.
+
+- **If not:** Plausible `Waitlist Confirmed` above the database `confirmed` on a day means a confirmation page was loaded more than once per row, which the `hours` parameter stripping is meant to prevent (confirmed.html), or a mail scanner rendered the redirect target (the known gap in `analytics-events.md`); check `hours_to_confirm_band` for a spike in `<1`. A blocker rate that jumps in one week while the submitted pair stays close means the confirmed page specifically stopped sending: check that `confirmed.html` still loads `/js/script.js` through the proxy and that `Waitlist Confirmed` still has a goal. A blocker rate near 100 percent on both pairs with pageviews still arriving means the goals were removed or renamed (Plausible shows custom events only through goals).
 
 ---
 
