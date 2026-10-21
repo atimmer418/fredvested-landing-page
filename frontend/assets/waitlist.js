@@ -123,14 +123,23 @@
     return fetch(API_BASE + '/stats').then((r) => r.json());
   }
 
-  // Invisible Turnstile bound to a form element. Returns a handle; token is
-  // null until the widget script loads and the challenge completes.
+  // Invisible Turnstile for a form. Returns a handle; token is null until the
+  // widget script loads and the challenge completes. The widget renders into
+  // its own full-width block right after the form, not into the form itself:
+  // the form is a flex row, and when Cloudflare decides a visitor needs a
+  // visible challenge the 300px widget would otherwise land in that row and
+  // crush the email input (desktop) or wedge under the button (mobile). The
+  // token travels in the submit payload, so the hidden input the widget adds
+  // does not need to live inside the form.
   function createTurnstile(formEl) {
     let token = null;
     let widgetId = null;
+    const host = document.createElement('div');
+    host.className = 'turnstile-host';
+    formEl.insertAdjacentElement('afterend', host);
     (function init() {
       if (typeof turnstile === 'undefined') { setTimeout(init, 200); return; }
-      widgetId = turnstile.render(formEl, {
+      widgetId = turnstile.render(host, {
         sitekey: TURNSTILE_SITEKEY,
         appearance: 'interaction-only',
         callback: (t) => { token = t; },

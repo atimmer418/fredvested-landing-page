@@ -234,3 +234,13 @@ input[type=range]::-moz-range-thumb {
     margin-bottom: 0.125rem;
   }
 }
+
+/* Turnstile renders into this block right after the waitlist form (see
+   createTurnstile in assets/waitlist.js). It holds only a hidden input until
+   Cloudflare shows a visible challenge; then it becomes its own centered row
+   under the form instead of a sibling inside the form's flex row. */
+.turnstile-host:has(iframe) {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
