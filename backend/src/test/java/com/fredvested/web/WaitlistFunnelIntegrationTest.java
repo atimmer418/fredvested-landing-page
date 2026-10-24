@@ -124,7 +124,7 @@ class WaitlistFunnelIntegrationTest {
     void signup_outbox_confirm_stats_onRealRows() throws Exception {
         // Signup: row + pending confirmation in one transaction, nothing sent yet.
         mvc.perform(post("/api/waitlist").contentType(MediaType.APPLICATION_JSON).header("CF-Connecting-IP", "203.0.113.1")
-                .content("{\"email\":\"it-one@example.com\",\"turnstileToken\":\"t\",\"age\":30,\"investMonthly\":2000,\"retireMonthly\":7500,\"interacted\":true,\"returnAssumptionPct\":10,\"utmSource\":\"tiktok\"}"))
+                .content("{\"email\":\"it-one@example.com\",\"turnstileToken\":\"t\",\"age\":30,\"investMonthly\":2000,\"retireMonthly\":7500,\"interacted\":true,\"returnAssumptionPct\":10,\"existingInvested\":0,\"utmSource\":\"tiktok\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("WAITLISTED"))
                 .andExpect(jsonPath("$.requiresConfirmation").value(true))
@@ -167,7 +167,30 @@ class WaitlistFunnelIntegrationTest {
                 .andExpect(header().string("Location", "https://fredvested.com/confirmed?status=invalid"));
 
         // Public numbers now count the confirmed row; the cache was invalidated by the confirmation.
-        mvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(1)).andExpect(jsonPath("$.founderCount").doesNotExist());
+        // 30 / 2000 / 7500 at 10% from zero is 53, and with nothing already invested the row
+        // qualifies for the head-start stat.
+        mvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(1)).andExpect(jsonPath("$.founderCount").doesNotExist())
+                .andExpect(jsonPath("$.projectionCount").value(1)).andExpect(jsonPath("$.avgFreedomAge").value(53.0));
+
+        // A confirmed, interacted member who started from an existing balance is on the list
+        // (count) but outside the head-start average and its sample size (HEAD_START_ROWS):
+        // the about-page disclosure says the calculation assumes no existing savings.
+        WaitlistEntry withBalance = new WaitlistEntry();
+        withBalance.setEmail("it-one-balance@example.com");
+        withBalance.setStatus(WaitlistEntry.WaitlistStatus.WAITLISTED);
+        withBalance.setCurrentAge(30);
+        withBalance.setInvestMonthly(2000);
+        withBalance.setRetireMonthly(7500);
+        withBalance.setReturnAssumptionPct(10);
+        withBalance.setInteracted(true);
+        withBalance.setExistingInvested(50_000L);
+        withBalance.setFreedomAge(40);
+        withBalance.setConfirmedAt(java.time.LocalDateTime.now());
+        withBalance.setConfirmedSource(WaitlistEntry.CONFIRMED_DOUBLE_OPT_IN);
+        waitlist.save(withBalance);
+        assertEquals(50_000L, waitlist.findByEmail("it-one-balance@example.com").getExistingInvested(), "existing_invested round-trips through V7");
+        mvc.perform(get("/api/waitlist/stats")).andExpect(jsonPath("$.count").value(2))
+                .andExpect(jsonPath("$.projectionCount").value(1)).andExpect(jsonPath("$.avgFreedomAge").value(53.0));
 
         // The click queued the welcome email; the outbox sends it with its own unsubscribe token.
         List<EmailMessage> welcome = outbox.findByWaitlistIdAndTemplateAndStatus(row.getId(), EmailMessage.TEMPLATE_WELCOME, EmailMessage.STATUS_PENDING);

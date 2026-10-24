@@ -2,6 +2,8 @@
 
 State of the working tree on 2026-09-24. Every statement below is read from the code; where a choice is Andrew's rather than the code's, it says so.
 
+Updated 2026-10-22: existing invested amount. The calculator gained a fourth input, "I already have invested" (`#existing-range` / `#existing-number`, the starting balance of the projection). It reaches Plausible only as `existing_invested_band` on `Freedom Date Revealed` and as the `first_field` value `existing_invested`; `freedom_age_band` gained the label `at_target` for the state where the existing amount already meets the portfolio target. Line numbers quoted below predate that change; the ids and function names still hold.
+
 ## Where things live
 
 | Concern | File |
@@ -34,7 +36,7 @@ Eight event names exist. Seven fire on `index.html` / `about.html`; `Waitlist Co
 |---|---|---|---|
 | `Calc Engaged` | index | first calculator input the visitor touches | `first_field` |
 | `Explainer Opened` | index | `<details id="calc-method">` opened | none |
-| `Freedom Date Revealed` | index | first click on `#reveal-btn` | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` |
+| `Freedom Date Revealed` | index | first click on `#reveal-btn` | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `existing_invested_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` |
 | `Recalculated` | index | second click on `#reveal-btn` | `edits_after_reveal_band` |
 | `Email Focused` | index, about | `focus` on `#capture-email` | none |
 | `Waitlist Submitted` | index, about | 2xx from `POST /api/waitlist` with `status` other than `already_joined` (under double opt-in that includes an unconfirmed address entered again, see the duplicate note) | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign`, plus `return_scenario` and `freedom_age_band` only when `revealed` is `yes` |
@@ -43,7 +45,7 @@ Eight event names exist. Seven fire on `index.html` / `about.html`; `Waitlist Co
 
 ### Calc Engaged
 
-`analytics.js:183-191` (`recordInput`) and `:97`. The page calls `Analytics.recordInput(field)` from every calculator input listener: `input` on `#age-range` / `#age-number` (`age`), `#invest-range` / `#invest-number` (`monthly_invest`), `#retire-range` / `#retire-number` (`target_income`) at index.html:493 and :500; a click on a `#return-seg .seg-btn` that changes the scenario (index.html:466) or an arrow key on `#return-seg` (index.html:477) for `return_scenario`. The first call fires the event with `first_field` set to that field; any other value is dropped (`FIELDS` set). The same call starts the time-to-reveal clock and counts edits with a 400 ms per-field debounce (`EDIT_DEBOUNCE_MS`), so one slider drag is one edit.
+`analytics.js:183-191` (`recordInput`) and `:97`. The page calls `Analytics.recordInput(field)` from every calculator input listener: `input` on `#age-range` / `#age-number` (`age`), `#invest-range` / `#invest-number` (`monthly_invest`), `#retire-range` / `#retire-number` (`target_income`) at index.html:493 and :500 (`bindRow`), and `#existing-range` / `#existing-number` (`existing_invested`, since 2026-10-22; that row has its own listeners, because its slider runs on a tick index); a click on a `#return-seg .seg-btn` that changes the scenario (index.html:466) or an arrow key on `#return-seg` (index.html:477) for `return_scenario`. The first call fires the event with `first_field` set to that field; any other value is dropped (`FIELDS` set). The same call starts the time-to-reveal clock and counts edits with a 400 ms per-field debounce (`EDIT_DEBOUNCE_MS`), so one slider drag is one edit.
 
 ### Explainer Opened
 
@@ -51,7 +53,7 @@ index.html:655-657: `toggle` on `#calc-method` when `e.target.open` is true. No 
 
 ### Freedom Date Revealed
 
-index.html:608-622: on the `#reveal-btn` click, after `render()` has run, the page passes `age`, `invest`, `retire`, `return_scenario`, `freedom_age` (null when the target is unreachable). Builder at `analytics.js:101-116`. Dropped if `return_scenario` is not one of `conservative`, `moderate`, `optimistic`.
+index.html:608-622: on the `#reveal-btn` click, after `render()` has run, the page passes `age`, `invest`, `retire`, `existing` (the existing invested amount, since 2026-10-22), `return_scenario`, `freedom_age` (null when the target is unreachable; the string `'at_target'` when the at-target state is showing, that is when the existing amount is greater than or equal to the portfolio target, so no date or age was computed). Builder at `analytics.js:101-116`. `existing` is banded by `existingInvestedBand()` to `existing_invested_band`; `freedom_age` goes through `freedomAgeBand()`, which returns `at_target` for that string, `unreachable` for null, and the age band otherwise. Dropped if `return_scenario` is not one of `conservative`, `moderate`, `optimistic`.
 
 - `sec_to_reveal_band`: seconds from the first `recordInput` call to this click, rounded; 0 when no input was touched.
 - `input_edits_band`: debounced edit count at the click. An edit made less than 400 ms before the click is not yet counted.
@@ -76,7 +78,7 @@ index.html:847 and about.html:1182, after `submitWaitlist` resolves with a 2xx a
 | `utm_medium` | same, else `none` |
 | `utm_campaign` | same, else `none` |
 | `return_scenario` | only when `revealed` is `yes`: scenario at the last reveal-button click |
-| `freedom_age_band` | only when `revealed` is `yes`: banded freedom age at the last reveal-button click |
+| `freedom_age_band` | only when `revealed` is `yes`: banded freedom age at the last reveal-button click (`at_target` when that click showed the at-target state, `unreachable` when no date was computed) |
 
 `about.html` has no calculator, so its submits always carry `revealed: "no"` and no calculator props. On `index.html` a submit before any reveal also carries `revealed: "no"`. `utm_content` and `utm_term` never go to Plausible (`attribution.js:123-133`).
 
@@ -132,12 +134,13 @@ All numbers are banded inside `analytics.js` (`band()`, :36-48) before they leav
 | `age_band` | 25, 30, 35, 40, 45, 50, 55 | `18-24`, `25-29`, `30-34`, `35-39`, `40-44`, `45-49`, `50-54`, `55+` |
 | `invest_band` | 100, 250, 500, 1000, 2000, 5000 | `0-99`, `100-249`, `250-499`, `500-999`, `1000-1999`, `2000-4999`, `5000+` |
 | `target_income_band` | 2500, 5000, 7500, 10000 | `<2500`, `2500-4999`, `5000-7499`, `7500-9999`, `10000+` |
-| `freedom_age_band` | 45, 50, 55, 60, 65 (null input: `unreachable`) | `unreachable`, `<45`, `45-49`, `50-54`, `55-59`, `60-64`, `65+` |
+| `freedom_age_band` | 45, 50, 55, 60, 65 (null input: `unreachable`; the string `at_target`: `at_target`) | `unreachable`, `at_target`, `<45`, `45-49`, `50-54`, `55-59`, `60-64`, `65+` |
+| `existing_invested_band` | 1, 50000, 250000, 1000000 | `0`, `1-50k`, `50k-250k`, `250k-1m`, `1m+` |
 | `sec_to_reveal_band` | 11, 31, 61, 121 | `0-10`, `11-30`, `31-60`, `61-120`, `120+` |
 | `input_edits_band`, `edits_after_reveal_band` | 1, 4, 9, 16 | `0`, `1-3`, `4-8`, `9-15`, `16+` |
 | `hours_to_confirm_band` | backend, see above | `<1`, `1-6`, `6-24`, `24-72`, `72+` |
 
-Fixed vocabularies: `first_field` in `age`, `monthly_invest`, `target_income`, `return_scenario`; `return_scenario` in `conservative`, `moderate`, `optimistic`; `source_page` in `home`, `about`; `revealed` in `yes`, `no`; `reason` as listed above. Slider ranges (index.html:181, :194, :207) are age 18-60, invest 0-10000, retire 1000-30000, so `55+` means 55-60 and `10000+` means 10000-30000.
+Fixed vocabularies: `first_field` in `age`, `monthly_invest`, `target_income`, `existing_invested`, `return_scenario`; `return_scenario` in `conservative`, `moderate`, `optimistic`; `source_page` in `home`, `about`; `revealed` in `yes`, `no`; `reason` as listed above. Slider ranges (index.html:181, :194, :207) are age 18-60, invest 0-10000, retire 1000-30000, so `55+` means 55-60 and `10000+` means 10000-30000; the existing invested amount is 0-10,000,000 (`#existing-range` is a graduated slider that runs on a tick index, not on dollars: 2,500 steps to 100,000, 25,000 steps to 1,000,000, 250,000 steps above that; `#existing-number` accepts any integer in range), so `1m+` means 1,000,000-10,000,000.
 
 ## Guards
 
@@ -171,7 +174,7 @@ The "7-per-visitor budget" named in `analytics.js:10-15` is the happy path on `i
 
 - No email address, no name, nothing typed into the form. The signup payload goes to `/api/waitlist` only.
 - No visitor id. `attribution.js:12-13`: a durable first-party id would be a cookie in all but name. The Plausible script sets no cookie, and `_worker.js` strips the `cookie` header before forwarding.
-- No raw numbers: age, investment, income, freedom age, seconds and edit counts all leave as bands; the freedom date (month/year) and portfolio target are never sent.
+- No raw numbers: age, investment, income, existing invested amount, freedom age, seconds and edit counts all leave as bands; the freedom date (month/year) and portfolio target are never sent. The existing invested amount leaves the page only as `existing_invested_band`; the raw dollars go to the waitlist API only (`existingInvested` in the signup payload, stored in `waitlist_signups.existing_invested`).
 - No `utm_content`, `utm_term`, first-touch UTM, `first_touch_at`, `referrer_host`, `landing_path` or `device_type` as props; those go to the waitlist API only (`attribution.js:get()` versus `forPlausible()`).
 - No error message text; only the fixed `reason` vocabulary.
 
@@ -227,7 +230,7 @@ Why it is present: commit `74b4a61` (2026-09-18) replaced the direct `<script as
 |---|---|---|---|---|
 | `Calc Engaged` | index | `first_field` | once per page load; dropped if field unknown | `analytics.js:97`, `:183-191`; index.html:466, :477, :493, :500 |
 | `Explainer Opened` | index | none | once per page load | `analytics.js:99`; index.html:655-657 |
-| `Freedom Date Revealed` | index | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` | once per page load; dropped if scenario unknown | `analytics.js:101-116`; index.html:608-622 |
+| `Freedom Date Revealed` | index | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `existing_invested_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` | once per page load; dropped if scenario unknown | `analytics.js:101-116`; index.html:608-622 |
 | `Recalculated` | index | `edits_after_reveal_band` | once per page load; only after a reveal | `analytics.js:118-125`; index.html:619 |
 | `Email Focused` | index, about | none | once per page load | `analytics.js:127`; index.html:658; about.html:981 |
 | `Waitlist Submitted` | index, about | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign` (+ `return_scenario`, `freedom_age_band` when revealed) | once per page load; only on 2xx with status other than `already_joined` (an unconfirmed re-submit counts) | `analytics.js:131-145`; index.html:847; about.html:1182 |

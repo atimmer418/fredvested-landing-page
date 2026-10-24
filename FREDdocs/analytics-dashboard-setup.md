@@ -63,7 +63,7 @@ Create one custom event goal per event name. The names are case-sensitive litera
 |---|---|---|---|
 | `Calc Engaged` | `index.html`, first slider drag, number edit or return-scenario change (`FredAnalytics.recordInput`) | once per page load | `first_field` |
 | `Explainer Opened` | `index.html`, the `<details id="calc-method">` element opening | once per page load | none |
-| `Freedom Date Revealed` | `index.html`, first click on `#reveal-btn` | once per page load | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` |
+| `Freedom Date Revealed` | `index.html`, first click on `#reveal-btn` | once per page load | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `existing_invested_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` |
 | `Recalculated` | `index.html`, a later click on `#reveal-btn` (the button stays in place after the reveal) | once per page load, and only after `Freedom Date Revealed` | `edits_after_reveal_band` |
 | `Email Focused` | `index.html` and `about.html`, focus on `#capture-email` | once per page load | none |
 | `Waitlist Submitted` | `index.html` and `about.html`, after a 2xx from `POST /api/waitlist` whose `status` is not `already_joined` | once per page load | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign`; plus `return_scenario` and `freedom_age_band` when `revealed` is `yes` |
@@ -92,12 +92,13 @@ Plausible stores every property it receives, but the dashboard only breaks down 
 
 | Property key | On events | Values (exact strings from `analytics.js`) |
 |---|---|---|
-| `first_field` | Calc Engaged | `age`, `monthly_invest`, `target_income`, `return_scenario` |
+| `first_field` | Calc Engaged | `age`, `monthly_invest`, `existing_invested`, `target_income`, `return_scenario` |
 | `return_scenario` | Freedom Date Revealed, Waitlist Submitted (when revealed) | `conservative`, `moderate`, `optimistic` |
 | `age_band` | Freedom Date Revealed | `18-24`, `25-29`, `30-34`, `35-39`, `40-44`, `45-49`, `50-54`, `55+` |
 | `invest_band` | Freedom Date Revealed | `0-99`, `100-249`, `250-499`, `500-999`, `1000-1999`, `2000-4999`, `5000+` (monthly investment, USD) |
 | `target_income_band` | Freedom Date Revealed | `<2500`, `2500-4999`, `5000-7499`, `7500-9999`, `10000+` (monthly retirement income, USD) |
-| `freedom_age_band` | Freedom Date Revealed, Waitlist Submitted (when revealed) | `<45`, `45-49`, `50-54`, `55-59`, `60-64`, `65+`, `unreachable` |
+| `existing_invested_band` | Freedom Date Revealed | `0`, `1-50k`, `50k-250k`, `250k-1m`, `1m+` (amount already invested, USD; since 2026-10-22) |
+| `freedom_age_band` | Freedom Date Revealed, Waitlist Submitted (when revealed) | `<45`, `45-49`, `50-54`, `55-59`, `60-64`, `65+`, `unreachable`, `at_target` (the amount already invested meets the target; since 2026-10-22) |
 | `sec_to_reveal_band` | Freedom Date Revealed | `0-10`, `11-30`, `31-60`, `61-120`, `120+` (seconds from first input to reveal; `0-10` when the visitor never touched an input) |
 | `input_edits_band` | Freedom Date Revealed | `0`, `1-3`, `4-8`, `9-15`, `16+` (debounced 400 ms per field, so one drag is one edit) |
 | `edits_after_reveal_band` | Recalculated | `0`, `1-3`, `4-8`, `9-15`, `16+` |

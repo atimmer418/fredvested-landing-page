@@ -131,4 +131,118 @@ class WaitlistControllerSignupDataTest {
         assertNull(saved.getInteracted());
         assertNull(saved.getReturnAssumptionPct());
     }
+
+    // --- Existing invested amount ---
+
+    @Test
+    void joinWaitlist_persistsExistingInvested_andRecomputesWithIt() throws Exception {
+        Map<String, Object> payload = basePayload();
+        payload.put("age", 30);
+        payload.put("investMonthly", 2000);
+        payload.put("retireMonthly", 7500);
+        payload.put("interacted", true);
+        payload.put("returnAssumptionPct", 12);
+        payload.put("existingInvested", 250000);
+        payload.put("freedomAge", 44);
+
+        mockMvc.perform(post("/api/waitlist")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<WaitlistEntry> captor = ArgumentCaptor.forClass(WaitlistEntry.class);
+        verify(repository).save(captor.capture());
+        WaitlistEntry saved = captor.getValue();
+        assertEquals(250000L, saved.getExistingInvested());
+        // 30 / 2000 / 7500 at 12% from 250,000 -> 44 (170 months); from zero it is 51.
+        assertEquals(44, saved.getFreedomAge());
+        assertEquals(2_250_000L, saved.getComputedPortfolioTarget());
+        assertNotNull(saved.getComputedFreedomDate());
+    }
+
+    @Test
+    void joinWaitlist_nullsOutOfRangeExistingInvested() throws Exception {
+        for (long bad : new long[] {10_000_001L, -1L}) {
+            clearInvocations(repository);
+            Map<String, Object> payload = basePayload();
+            payload.put("existingInvested", bad);
+
+            mockMvc.perform(post("/api/waitlist")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payload)))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<WaitlistEntry> captor = ArgumentCaptor.forClass(WaitlistEntry.class);
+            verify(repository).save(captor.capture());
+            assertNull(captor.getValue().getExistingInvested(), "existingInvested " + bad);
+        }
+    }
+
+    @Test
+    void joinWaitlist_keepsExistingInvestedAtTheInclusiveBounds() throws Exception {
+        // The page clamps a typed value to exactly 0 or 10,000,000 and submits that; an
+        // off-by-one in clampOrNullLong would silently null every max-value row.
+        for (long edge : new long[] {0L, 10_000_000L}) {
+            clearInvocations(repository);
+            Map<String, Object> payload = basePayload();
+            payload.put("existingInvested", edge);
+
+            mockMvc.perform(post("/api/waitlist")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payload)))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<WaitlistEntry> captor = ArgumentCaptor.forClass(WaitlistEntry.class);
+            verify(repository).save(captor.capture());
+            assertEquals(edge, captor.getValue().getExistingInvested(), "existingInvested " + edge);
+        }
+    }
+
+    @Test
+    void joinWaitlist_withoutExistingInvested_projectsFromZero() throws Exception {
+        Map<String, Object> payload = basePayload();
+        payload.put("age", 30);
+        payload.put("investMonthly", 2000);
+        payload.put("retireMonthly", 7500);
+        payload.put("interacted", true);
+        payload.put("returnAssumptionPct", 12);
+
+        mockMvc.perform(post("/api/waitlist")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<WaitlistEntry> captor = ArgumentCaptor.forClass(WaitlistEntry.class);
+        verify(repository).save(captor.capture());
+        WaitlistEntry saved = captor.getValue();
+        assertNull(saved.getExistingInvested());
+        // Same numbers as before the input existed (and as the 5-arg FreedomCalculator overload).
+        assertEquals(51, saved.getFreedomAge());
+        assertEquals(2_250_000L, saved.getComputedPortfolioTarget());
+    }
+
+    @Test
+    void joinWaitlist_atTarget_storesNoProjectedAgeOrDate() throws Exception {
+        Map<String, Object> payload = basePayload();
+        payload.put("age", 30);
+        payload.put("investMonthly", 2000);
+        payload.put("retireMonthly", 1000);
+        payload.put("interacted", true);
+        payload.put("returnAssumptionPct", 10);
+        payload.put("existingInvested", 300000);
+        // The page sends no freedomAge in the at-target state; the server computes none either.
+
+        mockMvc.perform(post("/api/waitlist")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<WaitlistEntry> captor = ArgumentCaptor.forClass(WaitlistEntry.class);
+        verify(repository).save(captor.capture());
+        WaitlistEntry saved = captor.getValue();
+        assertEquals(300000L, saved.getExistingInvested());
+        assertNull(saved.getFreedomAge());
+        assertNull(saved.getComputedFreedomDate());
+        assertEquals(300_000L, saved.getComputedPortfolioTarget());
+    }
 }

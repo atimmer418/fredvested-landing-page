@@ -28,7 +28,7 @@
     'invalid_email', 'empty_email', 'duplicate', 'rate_limited', 'server_error',
     'network_error', 'timeout', 'geo_blocked', 'captcha_failed',
   ]);
-  const FIELDS = new Set(['age', 'monthly_invest', 'target_income', 'return_scenario']);
+  const FIELDS = new Set(['age', 'monthly_invest', 'target_income', 'existing_invested', 'return_scenario']);
   const SCENARIOS = new Set(['conservative', 'moderate', 'optimistic']);
   const EDIT_DEBOUNCE_MS = 400;
 
@@ -43,7 +43,10 @@
   const ageBand = (v) => band(v, [25, 30, 35, 40, 45, 50, 55], ['18-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55+']);
   const investBand = (v) => band(v, [100, 250, 500, 1000, 2000, 5000], ['0-99', '100-249', '250-499', '500-999', '1000-1999', '2000-4999', '5000+']);
   const targetIncomeBand = (v) => band(v, [2500, 5000, 7500, 10000], ['<2500', '2500-4999', '5000-7499', '7500-9999', '10000+']);
-  const freedomAgeBand = (v) => (v === null || v === undefined ? 'unreachable' : band(v, [45, 50, 55, 60, 65], ['<45', '45-49', '50-54', '55-59', '60-64', '65+']));
+  // 'at_target' is the page's own label for the state where the existing balance already meets
+  // the target (no age exists); null is an unreachable target. Both pass through as labels.
+  const freedomAgeBand = (v) => (v === 'at_target' ? 'at_target' : v === null || v === undefined ? 'unreachable' : band(v, [45, 50, 55, 60, 65], ['<45', '45-49', '50-54', '55-59', '60-64', '65+']));
+  const existingInvestedBand = (v) => band(v, [1, 50000, 250000, 1000000], ['0', '1-50k', '50k-250k', '250k-1m', '1m+']);
   const secondsBand = (v) => band(v, [11, 31, 61, 121], ['0-10', '11-30', '31-60', '61-120', '120+']);
   const editsBand = (v) => band(v, [1, 4, 9, 16], ['0', '1-3', '4-8', '9-15', '16+']);
 
@@ -109,6 +112,7 @@
         age_band: ageBand(ctx.age),
         invest_band: investBand(ctx.invest),
         target_income_band: targetIncomeBand(ctx.retire),
+        existing_invested_band: existingInvestedBand(ctx.existing),
         freedom_age_band: freedomAgeBand(unreachable ? null : ctx.freedom_age),
         sec_to_reveal_band: secondsBand(secs),
         input_edits_band: editsBand(editCount),

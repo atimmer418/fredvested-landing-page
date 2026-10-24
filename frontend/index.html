@@ -72,10 +72,6 @@
   .calc-method summary::-webkit-details-marker { display: none; }
   .calc-method[open] .calc-chevron { transform: rotate(180deg); }
 
-  /* Hide native number-input spinners; the sliders are the primary control */
-  input[type=number]::-webkit-outer-spin-button,
-  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
   /* Extends the shared slider styles in src/input.css: white ring, active scale, focus ring */
   input[type=range]::-webkit-slider-thumb {
@@ -180,10 +176,9 @@
 
     <div class="mb-3 sm:mb-6">
       <div class="flex items-baseline justify-between mb-2 sm:mb-3">
-        <label for="age-number" class="text-[15px] font-semibold text-navy">I&rsquo;m currently</label>
-        <span class="inline-flex items-baseline">
-          <input id="age-number" type="number" value="30" min="18" max="60" step="1" aria-label="I’m currently, age in years"
-            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+        <label for="age-range" class="text-[15px] font-semibold text-navy">I&rsquo;m currently</label>
+        <span class="inline-flex items-baseline" aria-hidden="true">
+          <span id="age-number" class="font-montserrat font-extrabold text-[26px] text-primary">30</span>
           <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">years old</span>
         </span>
       </div>
@@ -192,28 +187,45 @@
 
     <div class="mb-3 sm:mb-6">
       <div class="flex items-baseline justify-between mb-2 sm:mb-3">
-        <label for="invest-number" class="text-[15px] font-semibold text-navy">I can invest</label>
-        <span class="inline-flex items-baseline">
-          <span class="font-montserrat font-bold text-lg text-primary" aria-hidden="true">$</span>
-          <input id="invest-number" type="number" value="2000" min="0" max="10000" step="50" aria-label="I can invest, in dollars per month"
-            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+        <label for="invest-range" class="text-[15px] font-semibold text-navy">I can invest</label>
+        <span class="inline-flex items-baseline" aria-hidden="true">
+          <span class="font-montserrat font-bold text-lg text-primary">$</span>
+          <span id="invest-number" class="font-montserrat font-extrabold text-[26px] text-primary">2,000</span>
           <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">/mo</span>
         </span>
       </div>
       <input id="invest-range" type="range" value="2000" min="0" max="10000" step="50" aria-label="Monthly investment in dollars" class="w-full">
     </div>
 
-    <div class="mb-1">
+    <div class="mb-3 sm:mb-6">
       <div class="flex items-baseline justify-between mb-2 sm:mb-3">
-        <label for="retire-number" class="text-[15px] font-semibold text-navy">I want to retire on</label>
-        <span class="inline-flex items-baseline">
-          <span class="font-montserrat font-bold text-lg text-primary" aria-hidden="true">$</span>
-          <input id="retire-number" type="number" value="7500" min="1000" max="30000" step="250" aria-label="I want to retire on, in dollars per month"
-            class="num-input border-0 bg-transparent p-0 text-right font-montserrat font-extrabold text-[26px] text-primary rounded-md focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/40">
+        <label for="retire-range" class="text-[15px] font-semibold text-navy">I want to retire on</label>
+        <span class="inline-flex items-baseline" aria-hidden="true">
+          <span class="font-montserrat font-bold text-lg text-primary">$</span>
+          <span id="retire-number" class="font-montserrat font-extrabold text-[26px] text-primary">7,500</span>
           <span class="ml-1.5 self-center text-[13px] font-semibold text-slate-text">/mo</span>
         </span>
       </div>
       <input id="retire-range" type="range" value="7500" min="1000" max="30000" step="250" aria-label="Desired monthly retirement income in dollars" class="w-full">
+    </div>
+
+    <!-- Existing investments (added 2026-10-22; last slider, Andrew 2026-10-23). The slider runs on a tick index (0..112), not dollars:
+         the page script maps ticks to graduated dollar steps so the low end is usable on a phone
+         (see tickToDollars). The figure beside the label is display only, like the other three
+         (Andrew, 2026-10-23: no typing into the fields); the slider is the single control. -->
+    <div class="mb-1">
+      <!-- The figure always shares the label's line (Andrew, 2026-10-23: no wrapping onto a new
+           line). The subtext is small so the label does not force the row wider, and
+           fitExistingFigure() in the page script steps the figure's font down only when an
+           eight digit value would otherwise not fit beside the title on a narrow phone. -->
+      <div class="flex items-baseline justify-between gap-3 mb-2 sm:mb-3">
+        <label for="existing-range" class="min-w-0 flex-1 text-[15px] font-semibold text-navy"><span id="existing-title">I already have invested</span><span class="block text-[10px] font-medium leading-snug text-slate-text">(in personal/retirement accounts)</span></label>
+        <span class="inline-flex shrink-0 items-baseline" aria-hidden="true">
+          <span class="font-montserrat font-bold text-lg text-primary">$</span>
+          <span id="existing-number" class="font-montserrat font-extrabold text-[26px] text-primary">0</span>
+        </span>
+      </div>
+      <input id="existing-range" type="range" value="0" min="0" max="112" step="1" aria-label="Amount already invested, in personal/retirement accounts, in dollars" aria-valuetext="$0" class="w-full">
     </div>
 
     <!-- Return scenario selector. Always visible: the user's ability to choose among return
@@ -261,6 +273,12 @@
       <div id="infeasible-block" hidden>
         <p id="infeasible-message" class="font-montserrat font-bold text-[22px] leading-snug text-white"></p>
       </div>
+      <!-- Shown when the money already invested meets or exceeds the portfolio target: no date, no age. -->
+      <!-- ATTORNEY REVIEW PENDING 2026-10-22: at-target state copy -->
+      <div id="at-target-block" hidden>
+        <p id="at-target-headline" class="font-montserrat font-bold text-[22px] leading-snug text-white">You&rsquo;re already there.</p>
+        <p id="at-target-body" class="mt-3 text-[12px] leading-relaxed text-[#dbe7ff]">Based on your inputs, you meet the portfolio target for the income you chose. This is a hypothetical illustration, not an assessment of whether you can retire.</p>
+      </div>
 
       <!-- Short-form hypothetical / no-guarantee disclosure, in close proximity to the output.
            Full paragraph lives at the end of the "How this calculation works" accordion. -->
@@ -280,8 +298,11 @@
         <svg class="calc-chevron h-4 w-4 flex-shrink-0 text-slate-text transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </summary>
       <div class="mt-2 space-y-3 rounded-[14px] border border-gray-200 bg-white px-5 py-4 text-[13px] leading-relaxed text-slate-text">
+        <!-- The "What it does" input list is approved wording and deliberately unchanged for the 2026-10-22 existing-investments
+             input; the "Existing investments:" paragraph below is the supplied sentence for that input. -->
         <p><b class="font-semibold text-navy">What it does:</b> Calculates an illustrative retirement timeline from your inputs: current age, monthly investment amount, desired monthly retirement income, and the annual return scenario you select.</p>
         <p><b class="font-semibold text-navy">How:</b> Applies a fixed 4% annual withdrawal rate to determine the target portfolio size, then projects time-to-target assuming a constant, reinvested nominal annual return at your selected rate.</p>
+        <p><b class="font-semibold text-navy">Existing investments:</b> If you enter money you already have invested, the projection includes it as a starting balance and assumes it grows at the same selected annual return as your ongoing contributions.</p>
         <p><b class="font-semibold text-navy">Exclusions:</b> Unless otherwise stated, this calculation does not reflect advisory fees, fund expenses, taxes, inflation, changes in contributions or spending, withdrawals, or other personal circumstances. It assumes a constant annual return and does not reflect market volatility, losses, drawdowns, or sequence-of-returns risk.</p>
         <p><b class="font-semibold text-navy">Variability:</b> Results will vary based on the information entered, the assumptions selected, and changes in market conditions and personal circumstances.</p>
         <p><b class="font-semibold text-navy">No securities:</b> This tool does not consider, analyze, or recommend any specific securities or investment products.</p>
@@ -421,6 +442,7 @@
   const revealZone = document.getElementById("reveal-zone");
   const feasibleBlock = document.getElementById("feasible-block");
   const infeasibleBlock = document.getElementById("infeasible-block");
+  const atTargetBlock = document.getElementById("at-target-block");
   const ageEl = document.getElementById("result-age");
   const chipEl = document.getElementById("result-chip");
   const assumptionsEl = document.getElementById("result-assumptions");
@@ -458,11 +480,20 @@
   // Local calendar components, so the first-of-month date never shifts a day across timezones.
   const isoDate = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01";
 
-  function compute(age, invest, retire) {
+  // `existing` is the money already invested: the projection's starting balance, growing at the
+  // same selected rate as the contributions (backend FreedomCalculator.java mirrors this exactly).
+  function compute(age, invest, retire, existing) {
     const target = (retire * 12) / WITHDRAWAL_RATE;
+    // A balance already at or past the target is its own result state (no date, no age), and it
+    // comes before the no-investment check: nothing is being projected.
+    if (existing >= target) return { feasible: false, atTarget: true, target };
+    // A monthly amount is required even with a balance (Andrew, 2026-10-23): the tool projects
+    // ongoing investing, so a growth-only date is never shown.
     if (invest <= 0) return { feasible: false, target, reason: "no-investment" };
     const monthlyRate = currentScenario().pct / 100 / 12;
-    const n = Math.log((target * monthlyRate) / invest + 1) / Math.log(1 + monthlyRate);
+    // Months until starting balance plus contributions reach the target, one rate on everything.
+    // With existing = 0 this is the original ln(target * r / invest + 1) / ln(1 + r).
+    const n = Math.log((target * monthlyRate + invest) / (existing * monthlyRate + invest)) / Math.log(1 + monthlyRate);
     const years = n / 12;
     const ageAtFreedom = age + years;
     if (ageAtFreedom > 100 || years > 72) return { feasible: false, target, reason: "horizon" };
@@ -507,45 +538,99 @@
     segButtons.find((b) => b.dataset.return === next).focus();
   });
 
-  // Keep each slider and its number input in sync; the slider holds the clamped value.
-  function sizeNumberInput(num) {
-    num.style.width = Math.max(String(num.value).length, 1) + 0.6 + "ch";
-  }
-  function bindRow(rangeId, numberId, field) {
+  // Each slider's figure is display only (Andrew, 2026-10-23: no typing into the fields); the
+  // slider is the single control and holds the value. The figures are plain inline text, so
+  // they size themselves and the "$" sits against the first digit. Each figure is aria-hidden:
+  // the slider announces the value itself, in dollars where it is money (aria-valuetext).
+  const formatNum = (n) => Math.round(n).toLocaleString("en-US");
+  function bindRow(rangeId, numberId, field, money) {
     const range = document.getElementById(rangeId);
     const num = document.getElementById(numberId);
-    const clamp = (v) => Math.min(Math.max(v, +num.min), +num.max);
-    sizeNumberInput(num);
+    const show = () => {
+      num.textContent = money ? formatNum(range.value) : String(range.value);
+      if (money) range.setAttribute("aria-valuetext", formatUSD(+range.value) + " per month");
+    };
+    show();
     range.addEventListener("input", () => {
       hasInteracted = true;
       Analytics.recordInput(field);
-      num.value = range.value;
-      sizeNumberInput(num);
-      liveUpdate();
-    });
-    num.addEventListener("input", () => {
-      hasInteracted = true;
-      Analytics.recordInput(field);
-      if (num.value !== "") range.value = clamp(+num.value);
-      sizeNumberInput(num);
-      liveUpdate();
-    });
-    num.addEventListener("blur", () => {
-      if (num.value !== "" && !isNaN(+num.value)) range.value = clamp(+num.value);
-      // Read back from the range so typed values snap to the step grid both controls share.
-      num.value = range.value;
-      sizeNumberInput(num);
+      show();
       liveUpdate();
     });
   }
-  bindRow("age-range", "age-number", "age");
-  bindRow("invest-range", "invest-number", "monthly_invest");
-  bindRow("retire-range", "retire-number", "target_income");
+  bindRow("age-range", "age-number", "age", false);
+  bindRow("invest-range", "invest-number", "monthly_invest", true);
+  bindRow("retire-range", "retire-number", "target_income", true);
+
+  // --- "I already have invested": a graduated slider ---
+  // A linear $0 to $10,000,000 slider would move tens of thousands of dollars per pixel on a
+  // phone, so the range runs on a tick index and tickToDollars maps it to dollars: fine steps
+  // where most people are, coarse ones at the top. The dollar value lives in existingInvested,
+  // never in the range's value.
+  function tickToDollars(t) {
+    if (t <= 40) return t * 2500;                  // ticks 0..40: $0 to $100,000 in $2,500 steps
+    if (t <= 76) return 100000 + (t - 40) * 25000; // ticks 41..76: to $1,000,000 in $25,000 steps
+    return 1000000 + (t - 76) * 250000;            // ticks 77..112: to $10,000,000 in $250,000 steps
+  }
+  let existingInvested = 0;
+  const existingRange = document.getElementById("existing-range");
+  const existingNum = document.getElementById("existing-number");
+  const existingTitle = document.getElementById("existing-title");
+  // The figure never wraps under the label (Andrew, 2026-10-23). When the title plus the
+  // figure would overflow the row, as "$10,000,000" does beside "I already have invested"
+  // on a phone, the figure's font steps down (never below 16px) until it fits; it returns
+  // to full size as soon as the value or the viewport allows.
+  const EXISTING_FONT_PX = 26;
+  const EXISTING_MIN_FONT_PX = 16;
+  const measureCtx = (() => {
+    try { return document.createElement("canvas").getContext("2d"); } catch (e) { return null; }
+  })();
+  function fitExistingFigure() {
+    existingNum.style.fontSize = "";
+    const figure = existingNum.parentElement;
+    const row = figure.parentElement;
+    const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
+    // The title's natural width, not its box: the label is min-w-0, so its box has already
+    // been squeezed by the figure at the moment this runs.
+    let titleWidth = existingTitle.getBoundingClientRect().width;
+    if (measureCtx) {
+      const ts = getComputedStyle(existingTitle);
+      measureCtx.font = `${ts.fontStyle} ${ts.fontWeight} ${ts.fontSize} ${ts.fontFamily}`;
+      titleWidth = measureCtx.measureText(existingTitle.textContent).width;
+    }
+    const available = row.clientWidth - titleWidth - gap;
+    const needed = figure.getBoundingClientRect().width;
+    if (needed <= available || available <= 0) return;
+    const dollar = needed - existingNum.getBoundingClientRect().width;
+    const scale = (available - dollar) / (needed - dollar);
+    existingNum.style.fontSize = Math.max(EXISTING_MIN_FONT_PX, Math.floor(EXISTING_FONT_PX * scale)) + "px";
+  }
+  // The slider's own value is a tick index; aria-valuetext speaks dollars to screen readers.
+  // (aria-valuemin/max/now are not set: ARIA in HTML forbids them on a native range, whose
+  // own min/max/value are the ticks.)
+  function showExisting() {
+    existingNum.textContent = formatNum(existingInvested);
+    existingRange.setAttribute("aria-valuetext", formatUSD(existingInvested));
+    fitExistingFigure();
+  }
+  showExisting();
+  window.addEventListener("resize", fitExistingFigure);
+  // Montserrat and Inter are self-hosted and may land after the first fit, which then measured
+  // the fallback faces; fit again once the fonts are in.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitExistingFigure);
+  existingRange.addEventListener("input", () => {
+    hasInteracted = true;
+    Analytics.recordInput("existing_invested");
+    existingInvested = tickToDollars(+existingRange.value);
+    showExisting();
+    liveUpdate();
+  });
 
   const readInputs = () => ({
     age: +document.getElementById("age-range").value,
     invest: +document.getElementById("invest-range").value,
     retire: +document.getElementById("retire-range").value,
+    existing: existingInvested,
   });
 
   let cancelCountUp = null;
@@ -585,13 +670,18 @@
   // Also sent with the signup so the backend can recompute and detect drift between the two implementations.
   let lastFreedomDateIso = null;
   let lastPortfolioTarget = null;
+  // True while the at-target state is on screen (existing balance >= target): no freedom age or
+  // date exists then, and analytics bands it as 'at_target' rather than 'unreachable'.
+  let atTarget = false;
 
   function render(animate) {
-    const { age, invest, retire } = readInputs();
-    const res = compute(age, invest, retire);
+    const { age, invest, retire, existing } = readInputs();
+    const res = compute(age, invest, retire, existing);
+    atTarget = res.atTarget === true;
     if (res.feasible) {
       feasibleBlock.hidden = false;
       infeasibleBlock.hidden = true;
+      atTargetBlock.hidden = true;
       const roundedAge = Math.round(res.ageAtFreedom);
       lastFreedomAge = roundedAge;
       lastFreedomMonthYear = formatMonthYear(res.date);
@@ -623,9 +713,22 @@
         "Projected portfolio target: " + formatUSD(res.target) + ". " +
         "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% average annual return (" + sc.name + " scenario) and 4% withdrawal rate. " +
         "Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.";
+    } else if (res.atTarget) {
+      feasibleBlock.hidden = true;
+      infeasibleBlock.hidden = true;
+      atTargetBlock.hidden = false;
+      lastFreedomAge = null;
+      lastFreedomMonthYear = null;
+      lastFreedomDateIso = null;
+      lastPortfolioTarget = Math.round(res.target);
+      // The copy is static in the markup (attorney-reviewed text); read it back rather than duplicate it.
+      srEl.textContent =
+        document.getElementById("at-target-headline").textContent + " " +
+        document.getElementById("at-target-body").textContent;
     } else {
       feasibleBlock.hidden = true;
       infeasibleBlock.hidden = false;
+      atTargetBlock.hidden = true;
       lastFreedomAge = null;
       lastFreedomMonthYear = null;
       lastFreedomDateIso = null;
@@ -670,11 +773,12 @@
     revealZone.classList.add("open");
     revealBtn.setAttribute("aria-expanded", "true");
     // After the result has rendered, never on the raw click. compute() cannot throw for the slider
-    // domain; an unreachable result is a real outcome (lastFreedomAge null -> freedom_age_band "unreachable").
+    // domain; an unreachable result is a real outcome (lastFreedomAge null -> freedom_age_band "unreachable"),
+    // and so is the at-target state ('at_target'). The existing amount is banded inside analytics.js.
     const inputs = readInputs();
     Analytics.track(firstReveal ? "Freedom Date Revealed" : "Recalculated", {
-      age: inputs.age, invest: inputs.invest, retire: inputs.retire,
-      return_scenario: selectedReturn, freedom_age: lastFreedomAge,
+      age: inputs.age, invest: inputs.invest, retire: inputs.retire, existing: inputs.existing,
+      return_scenario: selectedReturn, freedom_age: atTarget ? "at_target" : lastFreedomAge,
     });
     // Once fully open, drop the height cap so the accordion can grow the zone past it.
     // Overflow is deliberately left alone (see .reveal-zone).
@@ -911,13 +1015,14 @@
     const loadingStartedAt = Date.now();
 
     try {
-      const { age, invest, retire } = readInputs();
+      const { age, invest, retire, existing } = readInputs();
       const payload = {
         email,
         turnstileToken: token,
         age,
         investMonthly: invest,
         retireMonthly: retire,
+        existingInvested: existing,
         interacted: hasInteracted,
         returnAssumptionPct: currentScenario().pct,
       };

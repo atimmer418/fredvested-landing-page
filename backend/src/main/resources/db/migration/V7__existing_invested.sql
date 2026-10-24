@@ -1,0 +1,22 @@
+-- V7: the calculator's "I already have invested" input, stored with each signup.
+--
+-- existing_invested is the dollar amount the user said they already have
+-- invested (personal and or retirement accounts), 0 to 10,000,000. It is kept
+-- exactly like the other calculator inputs (current_age, invest_monthly,
+-- retire_monthly): the raw value the user entered, never bucketed here. NULL
+-- for clients that predate the input and for an out-of-range value (the
+-- controller nulls rather than clamps, so a tampered request never fabricates
+-- a data point). The projection treats it as the starting balance, compounding
+-- at the selected return scenario alongside the monthly contributions.
+--
+-- The public head-start statistic EXCLUDES rows where this is nonzero
+-- (WaitlistRepository.HEAD_START_ROWS): the about-page disclosure states that
+-- the calculation assumes no existing savings, and that text was approved as
+-- is, so only rows it accurately describes may feed the average, its sample
+-- size and its measurement period.
+--
+-- Plain ALTER: the column exists in no environment yet, so the V2-style
+-- information_schema guard is not needed. v_waitlist_funnel does not reference
+-- it and is unchanged.
+ALTER TABLE waitlist_signups
+    ADD COLUMN existing_invested BIGINT NULL;

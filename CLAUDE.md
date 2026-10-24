@@ -48,7 +48,7 @@ npm install && npx playwright install chromium   # once
 npm run test:e2e                                 # starts frontend/serve.py itself; API and Plausible mocked in the browser
 ```
 
-The suite lives in `tests/` (helpers.js is the harness). It fails on any request to a host other than our own origin and `challenges.cloudflare.com`, and covers the event schema, the double opt-in pending state, the confirmed page and the about-page wording. Turnstile is real (test sitekey on localhost), everything else is intercepted, so no backend runs.
+The suite lives in `tests/` (helpers.js is the harness). It fails on any request to a host other than our own origin and `challenges.cloudflare.com`, and covers the event schema, the double opt-in pending state, the confirmed page, the about-page wording and (`existing-invested.spec.js`) the "I already have invested" slider, its projection and the at-target result state. Turnstile is real (test sitekey on localhost), everything else is intercepted, so no backend runs.
 
 ## Architecture
 
@@ -61,6 +61,7 @@ The suite lives in `tests/` (helpers.js is the harness). It fails on any request
 ### Backend
 - **`WaitlistController`** — REST endpoints: `GET /api/waitlist/stats` and `POST /api/waitlist`
 - **`WaitlistEntry`** — JPA entity mapped to `waitlist_signups` table; status enum: `WAITLISTED`, `INVITED`, `CLAIMED`, `DECLINED` (one list, no tiers since 2026-10-10 / V6; `WAITLISTFOUNDER` and `WAITLISTNORMAL` no longer exist anywhere)
+- **`existing_invested`** (V7, 2026-10-22): stores the "I already have invested" calculator input (`existingInvested` in the signup payload, BIGINT NULL). `FreedomCalculator` and `index.html` `compute()` share the starting-balance formula (one scenario rate on everything, monthly compounding). The head-start statistic (`WaitlistRepository.HEAD_START_ROWS`) excludes rows with a nonzero value so the about-page disclosure ("no existing savings") stays true without re-approval. The at-target result state (existing amount >= portfolio target) has copy pending attorney approval before deploy.
 - **`TurnstileService`** — Verifies Cloudflare Turnstile tokens against `https://challenges.cloudflare.com/turnstile/v0/siteverify`
 - **`RateLimiterService`** — In-memory sliding window rate limiter (3 requests/minute per IP hash); cleans up every 5 minutes via `@Scheduled`
 - **`WebConfig`** — CORS configuration driven by `cors.allowed.origins` property

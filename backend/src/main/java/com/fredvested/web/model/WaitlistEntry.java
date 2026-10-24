@@ -40,6 +40,14 @@ public class WaitlistEntry {
     @Column(name = "return_assumption_pct")
     private Integer returnAssumptionPct;
 
+    // Dollars the user said they already have invested (0 to 10,000,000), the
+    // projection's starting balance. Stored raw like the other inputs; null when
+    // out of range or from a client that predates the input. The head-start
+    // statistic excludes rows where this is nonzero (HEAD_START_ROWS), because
+    // the public disclosure says the calculation assumes no existing savings.
+    @Column(name = "existing_invested")
+    private Long existingInvested;
+
     // Server-recomputed projection from the inputs above (freedom_age holds the
     // recomputed age); null when the inputs are incomplete or the target is unreachable.
     @Column(name = "computed_freedom_date")

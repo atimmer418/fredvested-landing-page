@@ -906,7 +906,8 @@
 
   // The stat, its short line, and footnote 2 only ever render together. Every claim here must describe
   // the rows the backend averages (WaitlistRepository.HEAD_START_ROWS): adjusted inputs, the 8/10/12
-  // scenarios mirrored from RETURN_* in index.html, ages 18 to 100. Change them together.
+  // scenarios mirrored from RETURN_* in index.html, ages 18 to 100, and no existing invested amount
+  // (existing_invested NULL or 0, since 2026-10-22: the text says "no existing savings"). Change them together.
   function renderHeadStart(yearsText, sampleSize, startDate, endDate) {
     document.getElementById("stat-years").textContent = yearsText;
     document.getElementById("stat-years-disclosure").textContent =

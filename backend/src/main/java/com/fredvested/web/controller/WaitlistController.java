@@ -85,6 +85,7 @@ public class WaitlistController {
         private Integer retireMonthly;
         private Boolean interacted;
         private Integer returnAssumptionPct;
+        private Long existingInvested;   // dollars already invested, the projection's starting balance
 
         // The client's own projection. Never stored as-is: the server recomputes from the
         // inputs and logs a warning if the two disagree (drift between the implementations).
@@ -186,6 +187,7 @@ public class WaitlistController {
         entry.setInteracted(request.getInteracted());
         // Range, not a fixed set, so retuning the frontend scenarios never silently nulls the data.
         entry.setReturnAssumptionPct(clampOrNull("returnAssumptionPct", request.getReturnAssumptionPct(), 1, 30));
+        entry.setExistingInvested(clampOrNullLong("existingInvested", request.getExistingInvested(), 0, 10_000_000));
         applyProjection(entry, request);
         applyAttribution(entry, request);
         entry.setRevealedBeforeSubmit(Boolean.TRUE.equals(request.getRevealedBeforeSubmit()));
@@ -220,7 +222,11 @@ public class WaitlistController {
             }
             return;
         }
-        FreedomCalculator.Result server = FreedomCalculator.compute(age, invest, retire, pct, LocalDate.now(EASTERN));
+        // A missing or out-of-range existing amount projects from zero, exactly like a client
+        // that predates the input. In the at-target state the server's freedomAge is null and
+        // the client sends none, so the drift check below still agrees.
+        long existing = entry.getExistingInvested() == null ? 0 : entry.getExistingInvested();
+        FreedomCalculator.Result server = FreedomCalculator.compute(age, invest, retire, pct, existing, LocalDate.now(EASTERN));
         entry.setFreedomAge(server.freedomAge());
         entry.setComputedFreedomDate(server.freedomDate());
         entry.setComputedPortfolioTarget(server.portfolioTarget());
@@ -278,6 +284,10 @@ public class WaitlistController {
         // Confirmed rows only (double opt-in, legacy backfill, single opt-in): an address
         // nobody has confirmed is never part of a public number.
         map.put("count", repository.countByConfirmedAtIsNotNull());
+        // The head-start average, its sample size and its measurement period all come from
+        // HEAD_START_ROWS, which excludes rows with a nonzero existing_invested: the about-page
+        // disclosure states the calculation assumes no existing savings, and that text was not
+        // changed, so a projection that started from a balance must not be averaged in.
         Double avg = repository.getAverageFreedomAge();
         map.put("avgFreedomAge", avg != null ? avg : 0.0);
         // How many members' projections are inside that average; the frontend
@@ -297,6 +307,16 @@ public class WaitlistController {
     // so a hit here is a tampered request -- logged (field and direction only, never
     // the value) because a spike is a bot signature.
     private static Integer clampOrNull(String field, Integer v, int min, int max) {
+        if (v == null) return null;
+        if (v < min || v > max) {
+            log.warn("Calculator input out of range: field={} direction={}", field, v < min ? "below" : "above");
+            return null;
+        }
+        return v;
+    }
+
+    // Same rule for the one Long input (existing invested, 0 to 10,000,000).
+    private static Long clampOrNullLong(String field, Long v, long min, long max) {
         if (v == null) return null;
         if (v < min || v > max) {
             log.warn("Calculator input out of range: field={} direction={}", field, v < min ? "below" : "above");

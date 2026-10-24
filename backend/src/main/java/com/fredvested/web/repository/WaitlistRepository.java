@@ -48,12 +48,18 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntry, Long> {
     // waitlist member, a calculator result the user actually adjusted (interacted), made with
     // one of the current return scenarios (mirrors RETURN_* in index.html; older clients used
     // different math and tampered payloads fall outside the set), and a freedom age inside the
-    // calculator's own bounds (18 to 100). Every head-start query below shares this one filter.
+    // calculator's own bounds (18 to 100), and no existing invested amount (null from a
+    // client that predates the input, or exactly 0): the disclosure states that the
+    // calculation assumes no existing savings, and that approved text must stay true
+    // without re-approval, so a projection that started from a balance is left out of the
+    // average, the sample size and the measurement period alike. Every head-start query
+    // below shares this one filter.
     String HEAD_START_ROWS = " FROM WaitlistEntry w"
         + " WHERE w.confirmedAt IS NOT NULL"
         + " AND w.freedomAge BETWEEN 18 AND 100"
         + " AND w.returnAssumptionPct IN (8, 10, 12)"
-        + " AND w.interacted = true";
+        + " AND w.interacted = true"
+        + " AND (w.existingInvested IS NULL OR w.existingInvested = 0)";
 
     @Query("SELECT AVG(w.freedomAge)" + HEAD_START_ROWS)
     Double getAverageFreedomAge();

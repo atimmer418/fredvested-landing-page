@@ -22,12 +22,13 @@ const {
 // --- the documented vocabulary (FREDdocs/analytics-events.md, "Bands") --------
 const EDITS = ['0', '1-3', '4-8', '9-15', '16+'];
 const VOCAB = {
-  first_field: ['age', 'monthly_invest', 'target_income', 'return_scenario'],
+  first_field: ['age', 'monthly_invest', 'target_income', 'existing_invested', 'return_scenario'],
   return_scenario: ['conservative', 'moderate', 'optimistic'],
   age_band: ['18-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55+'],
   invest_band: ['0-99', '100-249', '250-499', '500-999', '1000-1999', '2000-4999', '5000+'],
   target_income_band: ['<2500', '2500-4999', '5000-7499', '7500-9999', '10000+'],
-  freedom_age_band: ['unreachable', '<45', '45-49', '50-54', '55-59', '60-64', '65+'],
+  existing_invested_band: ['0', '1-50k', '50k-250k', '250k-1m', '1m+'],
+  freedom_age_band: ['unreachable', 'at_target', '<45', '45-49', '50-54', '55-59', '60-64', '65+'],
   sec_to_reveal_band: ['0-10', '11-30', '31-60', '61-120', '120+'],
   input_edits_band: EDITS,
   edits_after_reveal_band: EDITS,
@@ -40,7 +41,7 @@ const SUBMITTED_KEYS = ['source_page', 'revealed', ...UTM_KEYS];
 const EVENT_KEYS = {
   'Calc Engaged': ['first_field'],
   'Explainer Opened': [],
-  'Freedom Date Revealed': ['return_scenario', 'age_band', 'invest_band', 'target_income_band', 'freedom_age_band', 'sec_to_reveal_band', 'input_edits_band'],
+  'Freedom Date Revealed': ['return_scenario', 'age_band', 'invest_band', 'target_income_band', 'existing_invested_band', 'freedom_age_band', 'sec_to_reveal_band', 'input_edits_band'],
   'Recalculated': ['edits_after_reveal_band'],
   'Email Focused': [],
   'Waitlist Submitted': SUBMITTED_KEYS, // plus return_scenario and freedom_age_band when revealed is "yes"
@@ -54,6 +55,7 @@ const DEFAULT_REVEAL = {
   age_band: '30-34',
   invest_band: '2000-4999',
   target_income_band: '7500-9999',
+  existing_invested_band: '0',
   freedom_age_band: '50-54',
   sec_to_reveal_band: '0-10',
   input_edits_band: '0',
@@ -107,7 +109,7 @@ async function expectFormUsable(page) {
 test.describe('index.html: calculator events', () => {
   for (const [selector, value, field] of [
     ['#age-range', '35', 'age'],
-    ['#invest-number', '900', 'monthly_invest'],
+    ['#invest-range', '900', 'monthly_invest'],
     ['#retire-range', '4000', 'target_income'],
   ]) {
     test(`the first input on ${selector} fires Calc Engaged once with first_field ${field}`, async ({ page }) => {
@@ -128,7 +130,7 @@ test.describe('index.html: calculator events', () => {
 
     await page.fill('#age-range', '35');
     await page.fill('#invest-range', '3000');
-    await page.fill('#retire-number', '5000');
+    await page.fill('#retire-range', '5000');
     await page.click('#return-seg [data-return="optimistic"]');
     // The reveal is a sentinel: anything the extra inputs fired would sit before it.
     await reveal(page);
@@ -192,6 +194,7 @@ test.describe('index.html: calculator events', () => {
       age_band: '40-44',
       invest_band: '500-999',
       target_income_band: '2500-4999',
+      existing_invested_band: '0',
       freedom_age_band: '65+',
       sec_to_reveal_band: '0-10',
       input_edits_band: '1-3',
@@ -545,18 +548,27 @@ test.describe('schema sweep', () => {
     await installMocks(page, { signup: failOnceThenSucceed(SERVER_ERROR) });
     await page.goto('/index.html');
 
-    // Odd raw values (on each slider's step grid), so any leak is unmistakable.
+    // Odd raw values (on each slider's step grid), so any leak is unmistakable. The existing
+    // slider is a tick index: tick 42 is $150,000, nonzero because '0' is the documented band
+    // label for an untouched amount.
     await page.fill('#age-range', '47');
     await page.fill('#invest-range', '3350');
     await page.fill('#retire-range', '12250');
-    await waitForEditsBand(page, '1-3');
+    await page.fill('#existing-range', '42');
+    await waitForEditsBand(page, '4-8');
     await reveal(page);
     // The age counts up for 900 ms and is aria-hidden until it settles.
     const resultAge = page.locator('#result-age');
     await expect(resultAge).not.toHaveAttribute('aria-hidden');
     const renderedAges = [await resultAge.textContent()];
+    // Five more edits (nine in all) move the band to 9-15, so the wait proves the debounced
+    // count has caught up before the second click; a fifth edit alone would still read 4-8.
     await page.fill('#age-range', '48');
-    await waitForEditsBand(page, '4-8');
+    await page.fill('#invest-range', '3400');
+    await page.fill('#retire-range', '12500');
+    await page.fill('#existing-range', '43'); // $175,000
+    await page.click('#return-seg [data-return="optimistic"]');
+    await waitForEditsBand(page, '9-15');
     await page.click('#reveal-btn');
     renderedAges.push(await resultAge.textContent());
     await page.locator('#calc-method summary').click();
@@ -568,7 +580,7 @@ test.describe('schema sweep', () => {
     const all = await events(page);
     expect(new Set(all.map((e) => e.name))).toEqual(new Set(LANDING_EVENTS));
 
-    const raw = new Set(['47', '48', '3350', '12250', ...renderedAges.map((a) => String(a).trim())]);
+    const raw = new Set(['47', '48', '3350', '3400', '12250', '12500', '150000', '175000', ...renderedAges.map((a) => String(a).trim())]);
     for (const e of all) {
       const keys = Object.keys(e.props).sort();
       const expected = e.name === 'Waitlist Submitted' && e.props.revealed === 'yes'
