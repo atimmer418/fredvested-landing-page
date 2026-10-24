@@ -10,6 +10,8 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './tests',
+  // tests/unit/ holds node --test unit tests (npm run test:unit), not browser specs.
+  testIgnore: '**/unit/**',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

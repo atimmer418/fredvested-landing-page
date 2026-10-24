@@ -266,6 +266,9 @@
         <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
         <p id="result-age" class="mt-2 font-montserrat font-black text-[clamp(56px,16vw,92px)] leading-[0.95] tracking-[-0.03em] text-white"></p>
         <p class="mt-1 text-base font-medium text-[#dbe7ff]">years old</p>
+        <!-- Result context line (2026-10-24): the number is a starting point, not a verdict. Text from COPY in the page script. -->
+        <!-- ATTORNEY REVIEW PENDING 2026-10-24 -->
+        <p id="result-context" class="mt-2.5 text-[14px] font-semibold text-[#e3edff]"></p>
         <p id="result-chip" class="mt-[18px] inline-block rounded-full border border-white/35 bg-white/15 px-[18px] py-[9px] font-montserrat font-bold text-base text-white"></p>
         <p id="result-assumptions" class="mt-4 text-xs text-[#c7d6f5]"></p>
         <p id="result-target" class="mt-1 text-[12.5px] text-[#c7d6f5]"></p>
@@ -290,6 +293,101 @@
       </div>
     </div>
 
+    <!-- Post-reveal section (2026-10-24, post-reveal conversion). The "what moves your date" card and
+         the capture card are stamped out of the template below on the first reveal (or on load for a
+         browser with a saved signup state) and never before, so no email input exists in the DOM until
+         a result is on screen. Every new sentence lives in COPY at the top of the page script; this
+         markup carries structure only. Surfaces, type and spacing are the calculator's own: the white
+         card is the input card, the dark card is the navy text token, the button and input are the
+         capture form's, the row icons are inline SVGs with the page's stroke treatment. -->
+    <div id="post-reveal"></div>
+    <template id="post-reveal-template">
+      <!-- "What moves your date". Hidden (not rendered empty) when neither row has something to show. -->
+      <!-- ATTORNEY REVIEW PENDING 2026-10-24: lever card copy (COPY.LEVERS_*, COPY.LEVER_*, COPY.DELAY_*) -->
+      <div id="levers-card" class="mt-3 sm:mt-4 rounded-[20px] border border-gray-200 bg-white p-5 sm:p-7 text-left shadow-[0_1px_3px_rgba(15,23,42,0.04),0_20px_50px_-16px_rgba(19,91,236,0.22)]" hidden>
+        <h2 id="levers-heading" class="font-montserrat font-extrabold text-[20px] sm:text-[22px] leading-[1.2] tracking-[-0.02em] text-navy"></h2>
+        <ul class="mt-4 space-y-4">
+          <li id="lever-row" class="flex items-start gap-3.5" hidden>
+            <span class="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+            </span>
+            <div class="min-w-0">
+              <p id="lever-title" class="text-[15px] font-semibold text-navy"></p>
+              <p id="lever-text" class="mt-0.5 text-[13.5px] leading-snug text-slate-text"></p>
+            </div>
+          </li>
+          <li id="delay-row" class="flex items-start gap-3.5" hidden>
+            <span class="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </span>
+            <div class="min-w-0">
+              <p id="delay-title" class="text-[15px] font-semibold text-navy"></p>
+              <p id="delay-text" class="mt-0.5 text-[13.5px] leading-snug text-slate-text"></p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Capture card: the one waitlist form on the page (id "join" so anchor links land here, as on about.html).
+           Turnstile, submit handling and the success / pending / error states are the ones the form always had;
+           only the position and the wrapper changed (2026-10-24). -->
+      <!-- ATTORNEY REVIEW PENDING 2026-10-24: capture card copy (COPY.CAPTURE_*, COPY.BUTTON). The heading can carry the
+           lever age, a departure from the product-neutral capture ruling of 2026-08-18 made by the founder in this spec. -->
+      <div id="join" class="relative mt-3 sm:mt-4 overflow-hidden rounded-[20px] bg-navy px-5 py-6 sm:px-7 sm:py-8 text-center text-white shadow-[0_24px_60px_-18px_rgba(15,23,42,0.5)]">
+        <h2 id="capture-heading" class="font-montserrat font-extrabold text-[22px] sm:text-[26px] leading-[1.15] tracking-[-0.02em] text-white"></h2>
+        <p id="capture-support" class="mx-auto mt-2.5 max-w-[46ch] text-[14.5px] leading-relaxed text-[#dbe7ff]"></p>
+
+        <div class="relative mt-5 min-h-[52px]">
+          <form id="waitlist-form" class="flex flex-col gap-2.5" novalidate>
+            <label id="capture-email-label" class="sr-only" for="capture-email"></label>
+            <input id="capture-email" name="email" type="email" inputmode="email" enterkeyhint="go" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required
+              class="w-full min-h-[48px] rounded-[14px] border-gray-200 px-4 py-[14px] text-[16px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
+            <button type="submit" id="join-waitlist-btn"
+              class="group w-full min-h-[48px] rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[15px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy">
+              <span id="btn-text"><span id="btn-label"></span> <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
+              <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
+                <span class="spinner" aria-hidden="true"></span>
+                <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
+              </span>
+            </button>
+          </form>
+
+          <!-- Success state (hidden until signup completes or a saved status is found) -->
+          <div id="success-block" class="hidden opacity-0 transition-opacity duration-300">
+            <a href="/about" id="success-link"
+              class="group flex w-full items-center justify-center gap-1.5 rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy">
+              <span>You&rsquo;re in! See how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+            </a>
+            <p id="success-note" class="mt-2.5 text-[13px] font-medium text-[#dbe7ff]"></p>
+          </div>
+
+          <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
+          <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300 text-left rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+            <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: you got mail.</p>
+            <p class="mt-1.5 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
+            <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">Resend the email</button>.</p>
+            <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
+            <div id="pending-msg" aria-live="polite"></div>
+            <!-- One secondary link only (Andrew, 2026-10-10): the about page already holds the Founder offer, and
+                 the inbox stays the primary action, so this is outlined rather than the success button's gradient. -->
+            <a href="/about" id="pending-link"
+              class="group mt-4 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-2 border-primary bg-white px-6 py-3 font-montserrat font-extrabold text-[15px] text-primary transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+              <span>Find out how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+            </a>
+          </div>
+        </div>
+
+        <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
+
+        <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
+             attorney review pending. The form itself needs JavaScript (Turnstile, fetch), so a
+             script-off visitor never reaches a submit without this text. -->
+        <!-- The shared constant's link carries hover:text-primary for the light surface on about.html; on navy that
+             hover colour is 3.2:1, so the card keeps the link white on hover. -->
+        <p id="consent-note" class="mt-3.5 text-[11px] leading-relaxed text-[#c7d6f5] text-left [&_a:hover]:text-white" role="note"></p>
+      </div>
+    </template>
+
     <!-- Methodology accordion (collapsed by default) -->
     <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
     <details id="calc-method" class="calc-method mt-3 text-left">
@@ -310,80 +408,6 @@
         <p class="rounded-lg border border-dashed border-gray-300 px-4 py-3 leading-snug">These results are hypothetical illustrations for planning purposes only. They do not reflect actual client performance and are not a prediction or guarantee of future investment results, retirement readiness, or financial independence. The assumed annual return is a hypothetical planning assumption. Actual returns can be lower, higher, or negative and will vary over time. This is not a guarantee that you will be able to retire or reach any goal by the date shown.</p>
       </div>
     </details>
-
-    <!-- Capture block. Kept visually separate from the result (larger gap at every width, distinct surface) and
-         product-neutral: nothing here references the user's result, date, or plan, and no script
-         writes result data into this section. -->
-    <div class="relative mt-8 sm:mt-12 overflow-hidden rounded-[18px] border border-primary/15 bg-[linear-gradient(180deg,#eef3ff_0%,#f7f9fd_100%)] p-5 sm:p-7 text-center shadow-[0_12px_32px_-14px_rgba(19,91,236,0.22)]">
-      <span class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-primary to-primary-dark" aria-hidden="true"></span>
-      <!-- Scarcity pill: the same sentence that used to sit in the fine print below the form, no JS wiring. -->
-      <div id="capture-scarcity-pill" class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-semibold text-primary">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-        Founding member spots are limited
-      </div>
-      <!-- ATTORNEY APPROVED 2026-09-01: headline approved; subhead is attorney-provided registration-conditioned text.
-           ATTORNEY REVIEW PENDING (2026-10-10): closing sentence re-added with "at a rate we'll never bring back" (founder-price tease on the capture page). -->
-      <h2 class="mt-4 font-montserrat font-extrabold text-[24px] sm:text-[28px] leading-[1.15] tracking-[-0.02em] text-navy">Put your <span class="text-primary">financial future</span> on autopilot.</h2>
-      <p class="mx-auto mt-2.5 max-w-[46ch] text-[15px] leading-relaxed text-slate-text">
-        Once registered as an investment adviser, FRED will invest a slice of every paycheck automatically and will build your confidence for the day you stop. FRED&rsquo;s services will include withdrawal strategy education, Monte Carlo simulations, and a plan for living off what you&rsquo;ve built. Only 300 founding spots are available at launch, at a rate we&rsquo;ll never bring back, and the waitlist is the only way in.
-      </p>
-
-      <!-- List-size line: no baked number. Renders only when the API reports
-           count >= STAT_TILE_MIN_N; otherwise it stays hidden and the card reflows. -->
-      <p id="capture-count" class="hidden mt-4 text-[13.5px] font-medium text-navy" aria-live="polite"></p>
-
-      <div class="relative mt-5 min-h-[52px]">
-        <form id="waitlist-form" class="flex flex-col gap-2.5 sm:flex-row" novalidate>
-          <label class="sr-only" for="capture-email">Email address</label>
-          <input id="capture-email" name="email" type="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required
-            class="min-w-0 flex-1 rounded-[14px] border-gray-200 px-4 py-[16px] text-[16px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
-          <button type="submit" id="join-waitlist-btn"
-            class="group rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-            <span id="btn-text">Claim my spot <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
-            <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
-              <span class="spinner" aria-hidden="true"></span>
-              <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
-            </span>
-          </button>
-        </form>
-
-        <!-- Success state (hidden until signup completes or a saved status is found) -->
-        <div id="success-block" class="hidden opacity-0 transition-opacity duration-300">
-          <a href="/about" id="success-link"
-            class="group flex w-full items-center justify-center gap-1.5 rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-            <span>You&rsquo;re in! See how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
-          </a>
-          <p id="success-note" class="mt-2.5 text-[13px] font-medium text-slate-text"></p>
-        </div>
-
-        <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
-        <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300 text-left rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
-          <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: you got mail.</p>
-          <p class="mt-1.5 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
-          <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">Resend the email</button>.</p>
-          <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
-          <div id="pending-msg" aria-live="polite"></div>
-          <!-- One secondary link only (Andrew, 2026-10-10): the about page already holds the Founder offer, and
-               the inbox stays the primary action, so this is outlined rather than the success button's gradient. -->
-          <a href="/about" id="pending-link"
-            class="group mt-4 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-2 border-primary bg-white px-6 py-3 font-montserrat font-extrabold text-[15px] text-primary transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-            <span>Find out how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
-          </a>
-        </div>
-      </div>
-
-      <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
-
-      <!-- Same sentences as about.html's Founder Access block and waitlist note. Hidden with the form once a signup succeeds. -->
-      <div id="capture-cta-note" class="mt-3.5">
-        <p class="text-[13px] font-medium text-navy">No payment until launch. You only pay if invited and choose to claim your spot.</p>
-        <p class="mt-1 text-xs text-slate-text">The private beta is currently <b>iOS only</b>.</p>
-      </div>
-      <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
-           attorney review pending. The form itself needs JavaScript (Turnstile, fetch), so a
-           script-off visitor never reaches a submit without this text. -->
-      <p id="consent-note" class="mt-3 text-[11px] leading-relaxed text-slate-text text-left" role="note"></p>
-    </div>
 
   </div>
 </main>
@@ -406,6 +430,9 @@
   </div>
 </footer>
 
+<!-- projection.js is the calculator's pure projection (compute() below wraps it) and the two
+     "what moves your date" scenarios built on it; the unit tests in tests/unit/ load the same file. -->
+<script src="assets/projection.js"></script>
 <script src="assets/waitlist.js"></script>
 <!-- attribution.js captures UTM/first-touch on load; analytics.js owns every event and the
      production-hostname gate. Both must run before Plausible's deferred script executes. -->
@@ -416,6 +443,39 @@
 (function () {
   // Swappable term: change here if legal requires different phrasing in the result/capture areas.
   const FREEDOM_LABEL = "Freedom Date";
+
+  // ---- Post-reveal copy (2026-10-24, post-reveal conversion) ---------------------------------
+  // Every new user-facing sentence of the result context line, the "what moves your date" card
+  // and the capture card lives in this one block and nowhere else, so counsel's edits land in
+  // one place. {placeholders} are filled by the page script below; nothing is reworded in code.
+  // ATTORNEY REVIEW PENDING 2026-10-24.
+  const COPY = {
+    // Under the revealed age. {N} = 65 minus the shown age ({unit} is "years", or "year" when N is 1).
+    CONTEXT_BEFORE_65: "{N} {unit} before the usual 65",
+    CONTEXT_65_PLUS: "Here is what moves this date.",
+    // The "what moves your date" card.
+    LEVERS_HEADING: "This date is not fixed. Here is what moves it.",
+    LEVER_TITLE: "Invest ${step} more each month",
+    LEVER_TEXT: "Freedom Date moves to {leverAge}",
+    DELAY_TITLE: "Start one year later",
+    DELAY_TEXT: "Freedom Date slips to {delayAge}. Waiting costs about {delayMonths} months per year.",
+    // The capture card.
+    CAPTURE_HEADING_LEVER: "Get the plan that gets you to {leverAge}.",
+    CAPTURE_HEADING_SAVE: "Save this Freedom Date.",
+    CAPTURE_SUPPORT: "We will save this Freedom Date and email you the exact steps when FRED opens. No app needed yet.",
+    EMAIL_LABEL: "Email",
+    BUTTON: "Save my Freedom Date",
+    // Specified for under the capture card and NOT rendered: the result card already carries the
+    // attorney-approved disclosure (2026-09-01) directly under the output, and the spec keeps one,
+    // not two. Listed so counsel sees the full set.
+    DISCLAIMER_NOT_RENDERED: "Hypothetical illustration based on the inputs and assumptions shown. Not a prediction or a guarantee of any outcome.",
+  };
+  // No-date states (no monthly amount, target more than a lifetime away, balance already at the
+  // target): there is no Freedom Date to save, so the capture card falls back to the capture
+  // headline the attorney approved on 2026-09-01 and shows no supporting line. Not new copy.
+  const CAPTURE_HEADING_NO_DATE = "Put your financial future on autopilot.";
+  // Age at or above which the context line stops counting years before 65.
+  const USUAL_RETIREMENT_AGE = 65;
 
   // Return scenarios the user can select (Marketing Rule interactive-analysis-tool requirement).
   // Change the percentages here; the segmented control, result copy, and payload all read from these.
@@ -432,10 +492,10 @@
   // "an 8%", "a 10%", "a 12%": the article follows the spoken number.
   const articleFor = (pct) => (/^(8|11|18)/.test(String(pct)) ? "an" : "a");
 
-  const WITHDRAWAL_RATE = 0.04;
-
-  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
-  renderConsent("consent-note");
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent } = window.FredWaitlist;
+  // The projection (assets/projection.js): compute() below wraps project() and adds the calendar
+  // date; the two lever-card scenarios call the same project() with modified inputs.
+  const { project, scenarios: computeScenarios, roundAge } = window.FredProjection;
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
 
@@ -444,19 +504,11 @@
   const infeasibleBlock = document.getElementById("infeasible-block");
   const atTargetBlock = document.getElementById("at-target-block");
   const ageEl = document.getElementById("result-age");
+  const contextEl = document.getElementById("result-context");
   const chipEl = document.getElementById("result-chip");
   const assumptionsEl = document.getElementById("result-assumptions");
   const targetEl = document.getElementById("result-target");
   const srEl = document.getElementById("result-sr");
-
-  const form = document.getElementById("waitlist-form");
-  const emailInput = document.getElementById("capture-email");
-  const joinBtn = document.getElementById("join-waitlist-btn");
-  const btnText = document.getElementById("btn-text");
-  const btnLoading = document.getElementById("btn-loading");
-  const successBlock = document.getElementById("success-block");
-  const successNote = document.getElementById("success-note");
-  const msg = document.getElementById("waitlist-msg");
 
   const infeasibleMessageEl = document.getElementById("infeasible-message");
   const INFEASIBLE_MESSAGES = {
@@ -479,27 +531,19 @@
     d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   // Local calendar components, so the first-of-month date never shifts a day across timezones.
   const isoDate = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01";
+  // Fills {placeholders} in a COPY sentence. Values are numbers or fixed words, never user text.
+  const fill = (template, vars) => template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
 
   // `existing` is the money already invested: the projection's starting balance, growing at the
   // same selected rate as the contributions (backend FreedomCalculator.java mirrors this exactly).
+  // The arithmetic is project() in assets/projection.js; this adds the calendar date to a feasible
+  // result and passes the no-date results (at-target, no-investment, horizon) through unchanged.
   function compute(age, invest, retire, existing) {
-    const target = (retire * 12) / WITHDRAWAL_RATE;
-    // A balance already at or past the target is its own result state (no date, no age), and it
-    // comes before the no-investment check: nothing is being projected.
-    if (existing >= target) return { feasible: false, atTarget: true, target };
-    // A monthly amount is required even with a balance (Andrew, 2026-10-23): the tool projects
-    // ongoing investing, so a growth-only date is never shown.
-    if (invest <= 0) return { feasible: false, target, reason: "no-investment" };
-    const monthlyRate = currentScenario().pct / 100 / 12;
-    // Months until starting balance plus contributions reach the target, one rate on everything.
-    // With existing = 0 this is the original ln(target * r / invest + 1) / ln(1 + r).
-    const n = Math.log((target * monthlyRate + invest) / (existing * monthlyRate + invest)) / Math.log(1 + monthlyRate);
-    const years = n / 12;
-    const ageAtFreedom = age + years;
-    if (ageAtFreedom > 100 || years > 72) return { feasible: false, target, reason: "horizon" };
+    const res = project({ age: age, invest: invest, retire: retire, existing: existing, ratePct: currentScenario().pct });
+    if (!res.feasible) return res;
     const now = new Date();
-    const date = new Date(now.getFullYear(), now.getMonth() + Math.round(n), 1);
-    return { feasible: true, target, years, ageAtFreedom, date };
+    const date = new Date(now.getFullYear(), now.getMonth() + Math.round(res.months), 1);
+    return Object.assign({}, res, { date: date });
   }
 
   // False until the user touches any slider or number input; untouched defaults
@@ -673,16 +717,138 @@
   // True while the at-target state is on screen (existing balance >= target): no freedom age or
   // date exists then, and analytics bands it as 'at_target' rather than 'unreachable'.
   let atTarget = false;
+  // The lever card's two rows at the last render, null where the row is hidden. Only their
+  // sizes (whole years, whole months) reach analytics, banded there.
+  let lastLever = null;
+  let lastDelay = null;
+
+  // --- Post-reveal section: stamped out of #post-reveal-template on the first reveal ---------
+  // (or on load for a saved signup state), never before, so the page holds no email input until
+  // a result is on screen. mountPostReveal() binds the whole signup flow once; the element
+  // handles below are null until then and every caller runs after it.
+  const postRevealHost = document.getElementById("post-reveal");
+  let mounted = false;
+  let leversCard, leversHeading, leverRow, leverTitle, leverText, delayRow, delayTitle, delayText;
+  let captureHeading, captureSupport;
+  let form, emailInput, joinBtn, btnText, btnLoading, successBlock, successNote, msg, pendingBlock;
+  let ts = { getToken: () => null, reset: () => {} };
+
+  function mountPostReveal() {
+    if (mounted) return;
+    mounted = true;
+    const tpl = document.getElementById("post-reveal-template");
+    postRevealHost.appendChild(tpl.content.cloneNode(true));
+    const $ = (id) => document.getElementById(id);
+    leversCard = $("levers-card"); leversHeading = $("levers-heading");
+    leverRow = $("lever-row"); leverTitle = $("lever-title"); leverText = $("lever-text");
+    delayRow = $("delay-row"); delayTitle = $("delay-title"); delayText = $("delay-text");
+    captureHeading = $("capture-heading"); captureSupport = $("capture-support");
+    form = $("waitlist-form"); emailInput = $("capture-email"); joinBtn = $("join-waitlist-btn");
+    btnText = $("btn-text"); btnLoading = $("btn-loading");
+    successBlock = $("success-block"); successNote = $("success-note"); msg = $("waitlist-msg");
+    pendingBlock = $("pending-block");
+    // The fixed sentences, from COPY. Variable ones are written by renderPostReveal().
+    leversHeading.textContent = COPY.LEVERS_HEADING;
+    delayTitle.textContent = COPY.DELAY_TITLE;
+    captureSupport.textContent = COPY.CAPTURE_SUPPORT;
+    $("capture-email-label").textContent = COPY.EMAIL_LABEL;
+    $("btn-label").textContent = COPY.BUTTON;
+    renderConsent("consent-note");
+    bindCapture();
+    observeLevers();
+    // Clean paths need the .html suffix on the local static server; the template's links were not
+    // in the document when the page-level call ran.
+    devLinkMap({ "/about": "about.html", "/privacy": "privacy.html", "/terms": "terms.html" });
+  }
+
+  // Writes the result context line, the two lever rows and the capture heading for the result
+  // on screen. `res` is compute()'s result; the rows exist only for a feasible one.
+  function renderPostReveal(res, inputs) {
+    if (!mounted) return;
+    if (!res.feasible) {
+      lastLever = null;
+      lastDelay = null;
+      contextEl.textContent = "";
+      contextEl.hidden = true;
+      leversCard.hidden = true;
+      leverRow.hidden = true;
+      delayRow.hidden = true;
+      captureHeading.textContent = CAPTURE_HEADING_NO_DATE;
+      captureSupport.hidden = true;
+      return;
+    }
+    const sc = computeScenarios({ age: inputs.age, invest: inputs.invest, retire: inputs.retire, existing: inputs.existing, ratePct: currentScenario().pct });
+    lastLever = sc.lever;
+    lastDelay = sc.delay;
+    const hasRows = !!(sc.lever || sc.delay);
+
+    const shownAge = roundAge(res.ageAtFreedom);
+    const yearsBefore = USUAL_RETIREMENT_AGE - shownAge;
+    if (yearsBefore > 0) {
+      contextEl.textContent = fill(COPY.CONTEXT_BEFORE_65, { N: yearsBefore, unit: yearsBefore === 1 ? "year" : "years" });
+      contextEl.hidden = false;
+    } else {
+      // "Here is what moves this date." points at the card below; with no card to point at
+      // (both rows hidden, which a large balance can produce) the line stays out.
+      contextEl.textContent = hasRows ? COPY.CONTEXT_65_PLUS : "";
+      contextEl.hidden = !hasRows;
+    }
+    if (sc.lever) {
+      leverTitle.textContent = fill(COPY.LEVER_TITLE, { step: formatNum(sc.lever.step) });
+      leverText.textContent = fill(COPY.LEVER_TEXT, { leverAge: sc.lever.age });
+    }
+    leverRow.hidden = !sc.lever;
+    if (sc.delay) {
+      delayText.textContent = fill(COPY.DELAY_TEXT, { delayAge: sc.delay.age, delayMonths: sc.delay.months });
+    }
+    delayRow.hidden = !sc.delay;
+    leversCard.hidden = !hasRows;
+
+    captureHeading.textContent = sc.lever
+      ? fill(COPY.CAPTURE_HEADING_LEVER, { leverAge: sc.lever.age })
+      : COPY.CAPTURE_HEADING_SAVE;
+    captureSupport.hidden = false;
+  }
+
+  // Lever Viewed: once per reveal-button click, when the lever card is at least half in view.
+  // Each click re-arms it and re-observes the card, which makes the observer report the card's
+  // current visibility at once (so a card already in view fires without a scroll). The event's
+  // bands describe the card as that click rendered it, so a click that rendered no card arms
+  // nothing, and a live slider edit after the click disarms it (liveUpdate): the card on screen
+  // may no longer be the one the click recorded. analytics.js caps the event per page load.
+  let leverViewArmed = false;
+  let leverObserver = null;
+  function observeLevers() {
+    if (!("IntersectionObserver" in window)) return;
+    leverObserver = new IntersectionObserver((entries) => {
+      if (!leverViewArmed) return;
+      for (const entry of entries) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          leverViewArmed = false;
+          Analytics.track("Lever Viewed");
+          return;
+        }
+      }
+    }, { threshold: 0.5 });
+    leverObserver.observe(leversCard);
+  }
+  function armLeverView() {
+    leverViewArmed = !leversCard.hidden;
+    if (!leverObserver || !leverViewArmed) return;
+    leverObserver.unobserve(leversCard);
+    leverObserver.observe(leversCard);
+  }
 
   function render(animate) {
-    const { age, invest, retire, existing } = readInputs();
+    const inputs = readInputs();
+    const { age, invest, retire, existing } = inputs;
     const res = compute(age, invest, retire, existing);
     atTarget = res.atTarget === true;
     if (res.feasible) {
       feasibleBlock.hidden = false;
       infeasibleBlock.hidden = true;
       atTargetBlock.hidden = true;
-      const roundedAge = Math.round(res.ageAtFreedom);
+      const roundedAge = roundAge(res.ageAtFreedom);
       lastFreedomAge = roundedAge;
       lastFreedomMonthYear = formatMonthYear(res.date);
       lastFreedomDateIso = isoDate(res.date);
@@ -707,8 +873,10 @@
         document.createTextNode(" & 4% withdrawal rate."),
       );
       targetEl.textContent = "Projected portfolio target: " + formatUSD(res.target) + ".";
+      renderPostReveal(res, inputs);
       srEl.textContent =
         "You could be free at " + roundedAge + " years old. " +
+        (contextEl.textContent ? contextEl.textContent.replace(/\.$/, "") + ". " : "") +
         FREEDOM_LABEL + ": " + formatMonthYear(res.date) + ". " +
         "Projected portfolio target: " + formatUSD(res.target) + ". " +
         "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% average annual return (" + sc.name + " scenario) and 4% withdrawal rate. " +
@@ -721,6 +889,7 @@
       lastFreedomMonthYear = null;
       lastFreedomDateIso = null;
       lastPortfolioTarget = Math.round(res.target);
+      renderPostReveal(res, inputs);
       // The copy is static in the markup (attorney-reviewed text); read it back rather than duplicate it.
       srEl.textContent =
         document.getElementById("at-target-headline").textContent + " " +
@@ -733,6 +902,7 @@
       lastFreedomMonthYear = null;
       lastFreedomDateIso = null;
       lastPortfolioTarget = Math.round(res.target);
+      renderPostReveal(res, inputs);
       const message = INFEASIBLE_MESSAGES[res.reason] || INFEASIBLE_MESSAGES["no-investment"];
       infeasibleMessageEl.textContent = message;
       srEl.textContent = message;
@@ -747,6 +917,7 @@
   let resultShown = false;
   function liveUpdate() {
     if (!resultShown) return;
+    leverViewArmed = false;
     render(false);
     persistResultIfJoined();
   }
@@ -767,6 +938,7 @@
     const firstReveal = !revealed;
     revealed = true;
     resultShown = true;
+    mountPostReveal();
     render(firstReveal);
     persistResultIfJoined();
     revealZone.removeAttribute("inert");
@@ -774,12 +946,20 @@
     revealBtn.setAttribute("aria-expanded", "true");
     // After the result has rendered, never on the raw click. compute() cannot throw for the slider
     // domain; an unreachable result is a real outcome (lastFreedomAge null -> freedom_age_band "unreachable"),
-    // and so is the at-target state ('at_target'). The existing amount is banded inside analytics.js.
+    // and so is the at-target state ('at_target'). The existing amount and the two lever numbers are
+    // banded inside analytics.js.
     const inputs = readInputs();
-    Analytics.track(firstReveal ? "Freedom Date Revealed" : "Recalculated", {
+    const ctx = {
       age: inputs.age, invest: inputs.invest, retire: inputs.retire, existing: inputs.existing,
       return_scenario: selectedReturn, freedom_age: atTarget ? "at_target" : lastFreedomAge,
-    });
+      lever_shift_years: lastLever ? lastLever.shiftYears : null,
+      delay_months: lastDelay ? lastDelay.months : null,
+    };
+    Analytics.track(firstReveal ? "Freedom Date Revealed" : "Recalculated", ctx);
+    // Recalculated is once per page load, so a third click sends nothing; the context it
+    // rendered still has to be what Lever Viewed, Email Focused and Waitlist Submitted band.
+    Analytics.recordReveal(ctx);
+    armLeverView();
     // Once fully open, drop the height cap so the accordion can grow the zone past it.
     // Overflow is deliberately left alone (see .reveal-zone).
     setTimeout(() => {
@@ -793,40 +973,16 @@
     }, 150);
   });
 
-  // --- Live proof counts ---
-  // The list-size line is shown only when the API returned a real count of at least
-  // STAT_TILE_MIN_N. Nothing is baked into the HTML and nothing is rendered while
-  // loading, on failure, or below the threshold, so the page can never display a
-  // number that did not come from the backend. The line starts display:none and
-  // the card reflows around it when it appears (same gate as about.html's tiles).
-  function renderCount(data) {
-    const n = Number(data && data.count);
-    if (!Number.isFinite(n) || n < STAT_TILE_MIN_N) return;
-    renderCountLine(n);
-  }
-  function renderCountLine(n) {
-    // Built with textContent, never innerHTML: the number comes from the API's JSON.
-    const line = document.getElementById("capture-count");
-    const strong = document.createElement("b");
-    strong.textContent = n.toLocaleString("en-US");
-    line.replaceChildren(strong, document.createTextNode(" people are already on the list."));
-    line.classList.remove("hidden");
-  }
-  function refreshCount() {
-    fetchStats().then(renderCount).catch(() => {
-      /* No fallback by design: the line simply stays hidden. */
-    });
-  }
-  // Attorney screenshot mode (?previewStat=1, local hosts incl. LAN IPs): sample value, no API call.
-  if (PREVIEW_STAT) renderCountLine(PREVIEW_COUNT); else refreshCount();
-
-  // --- Signup flow ---
-  const ts = createTurnstile(form);
-
   document.getElementById("calc-method").addEventListener("toggle", (e) => {
     if (e.target.open) Analytics.track("Explainer Opened");
   });
-  emailInput.addEventListener("focus", () => Analytics.track("Email Focused"));
+
+  // --- Signup flow -------------------------------------------------------------------------
+  // Bound once by mountPostReveal(), when the form exists. Unchanged in behaviour since the form
+  // moved into the capture card (2026-10-24): Turnstile, validation, the loading animation, the
+  // success / pending / error states and the payload are as they were.
+  let pendingEmailMemory = null;
+  let loadingAborted = false;
 
   function showMsg(kind, text) {
     const styles = kind === "error"
@@ -842,7 +998,6 @@
 
   function showSuccess(displayStatus, fadeIn) {
     form.style.display = "none";
-    document.getElementById("capture-cta-note").hidden = true;
     successNote.textContent = STATUS_NOTES[displayStatus] || STATUS_NOTES.already_joined;
     successBlock.classList.remove("hidden");
     if (fadeIn) {
@@ -856,13 +1011,10 @@
 
   // Double opt-in: shown after a new signup until the emailed link is clicked
   // (confirmed.html then stores "confirmed" and clears the pending address).
-  const pendingBlock = document.getElementById("pending-block");
-  // The address also lives here for the session, so "resend" works even when storage is blocked.
-  let pendingEmailMemory = null;
+  // The address also lives in pendingEmailMemory for the session, so "resend" works even when storage is blocked.
   function showPending(email, fadeIn) {
     if (email) pendingEmailMemory = email;
     form.style.display = "none";
-    document.getElementById("capture-cta-note").hidden = true;
     document.getElementById("pending-email").textContent = email || "the address you entered";
     pendingBlock.classList.remove("hidden");
     if (fadeIn) {
@@ -884,62 +1036,7 @@
     resetForm();
     ts.reset();
     form.style.display = "";
-    document.getElementById("capture-cta-note").hidden = false;
   }
-  document.getElementById("pending-reset").addEventListener("click", () => {
-    restoreForm();
-    emailInput.focus();
-  });
-  document.getElementById("pending-resend").addEventListener("click", async () => {
-    const out = document.getElementById("pending-msg");
-    const pendingEmail = getPendingEmail() || pendingEmailMemory;
-    if (!pendingEmail) {
-      // Nothing in storage and nothing in memory (a reload with storage blocked): a
-      // resend needs the address, so bring the form back for it.
-      restoreForm();
-      showMsg("warn", "Enter your email again and we’ll send a new link.");
-      return;
-    }
-    const btn = document.getElementById("pending-resend");
-    btn.disabled = true;
-    try {
-      // Any completed request, whatever its status, gets the same answer: the
-      // response must not reveal whether the address is on the list.
-      await resendConfirmation(pendingEmail);
-      out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-blue-50 border-blue-200 text-blue-800">If that address is on our waitlist, a new confirmation link is on its way. Check your inbox.</div>';
-    } catch (err) {
-      out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-red-50 border-red-200 text-red-700">Could not reach FRED. Please check your connection and try again.</div>';
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  // A returning visitor with a saved state must see it at once, not a calculator that
-  // looks like they never signed up (decision 2026-09-26). The reveal zone opens itself
-  // showing the current result, the calculator stays above it, and no scrolling. It is
-  // not a reveal: `revealed` stays false, so no event fires now and the visitor's first
-  // click on this page load is this page load's Freedom Date Revealed, as for anyone.
-  function openZoneForSavedState() {
-    resultShown = true;
-    render(false);
-    revealZone.removeAttribute("inert");
-    revealZone.classList.add("open");
-    revealZone.style.maxHeight = "none";
-    revealBtn.setAttribute("aria-expanded", "true");
-  }
-
-  // If they already joined on a previous visit, skip the form entirely.
-  const savedStatus = getSavedStatus();
-  if (savedStatus === "pending_confirmation") {
-    // An expired pending state (older than the link itself) reads as absent: the form comes back.
-    const pendingEmail = getPendingEmail();
-    if (pendingEmail) { openZoneForSavedState(); showPending(pendingEmail, false); } else clearStatus();
-  } else if (savedStatus) {
-    openZoneForSavedState();
-    showSuccess(savedStatus, false);
-  }
-
-  let loadingAborted = false;
 
   function showLoading() {
     loadingAborted = false;
@@ -952,6 +1049,7 @@
       if (loadingAborted) return;
       emailInput.style.width = "0";
       emailInput.style.height = "0";
+      emailInput.style.minHeight = "0";
       emailInput.style.padding = "0";
       emailInput.style.border = "none";
       emailInput.style.margin = "0";
@@ -972,6 +1070,7 @@
     emailInput.style.opacity = "";
     emailInput.style.width = "";
     emailInput.style.height = "";
+    emailInput.style.minHeight = "";
     emailInput.style.padding = "";
     emailInput.style.border = "";
     emailInput.style.margin = "";
@@ -989,80 +1088,137 @@
     btnLoading.classList.remove("flex");
   }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    msg.innerHTML = "";
+  function bindCapture() {
+    ts = createTurnstile(form);
+    emailInput.addEventListener("focus", () => Analytics.track("Email Focused"));
 
-    const email = emailInput.value.trim().toLowerCase();
-    if (!email) {
-      showMsg("error", "Please enter your email address.");
-      Analytics.track("Waitlist Failed", { reason: "empty_email" });
-      return;
-    }
-    if (!isValidEmail(email)) {
-      showMsg("error", "Please enter a valid email address.");
-      Analytics.track("Waitlist Failed", { reason: "invalid_email" });
-      return;
-    }
-    const token = ts.getToken();
-    if (!token) {
-      showMsg("warn", "Security verification in progress. Please try again in a moment.");
-      Analytics.track("Waitlist Failed", { reason: "captcha_failed" });
-      return;
-    }
+    document.getElementById("pending-reset").addEventListener("click", () => {
+      restoreForm();
+      emailInput.focus();
+    });
+    document.getElementById("pending-resend").addEventListener("click", async () => {
+      const out = document.getElementById("pending-msg");
+      const pendingEmail = getPendingEmail() || pendingEmailMemory;
+      if (!pendingEmail) {
+        // Nothing in storage and nothing in memory (a reload with storage blocked): a
+        // resend needs the address, so bring the form back for it.
+        restoreForm();
+        showMsg("warn", "Enter your email again and we’ll send a new link.");
+        return;
+      }
+      const btn = document.getElementById("pending-resend");
+      btn.disabled = true;
+      try {
+        // Any completed request, whatever its status, gets the same answer: the
+        // response must not reveal whether the address is on the list.
+        await resendConfirmation(pendingEmail);
+        out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-blue-50 border-blue-200 text-blue-800">If that address is on our waitlist, a new confirmation link is on its way. Check your inbox.</div>';
+      } catch (err) {
+        out.innerHTML = '<div class="mt-2.5 border rounded-xl px-4 py-3 text-sm font-medium bg-red-50 border-red-200 text-red-700">Could not reach FRED. Please check your connection and try again.</div>';
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
-    showLoading();
-    const loadingStartedAt = Date.now();
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.innerHTML = "";
 
-    try {
-      const { age, invest, retire, existing } = readInputs();
-      const payload = {
-        email,
-        turnstileToken: token,
-        age,
-        investMonthly: invest,
-        retireMonthly: retire,
-        existingInvested: existing,
-        interacted: hasInteracted,
-        returnAssumptionPct: currentScenario().pct,
-      };
-      if (lastFreedomAge !== null) payload.freedomAge = lastFreedomAge;
-      if (lastFreedomDateIso !== null) payload.freedomDate = lastFreedomDateIso;
-      if (lastPortfolioTarget !== null) payload.portfolioTarget = lastPortfolioTarget;
-      payload.revealedBeforeSubmit = revealed;
-      Object.assign(payload, Analytics.getAttribution());
-      const data = await submitWaitlist(payload);
-      // Only after a 2xx. An address already on the list is not a new signup, so it is
-      // recorded as a duplicate failure even though the visitor sees the success state.
-      if (data.status === "already_joined") Analytics.track("Waitlist Failed", { reason: "duplicate" });
-      else Analytics.track("Waitlist Submitted", { source_page: "home" });
+      const email = emailInput.value.trim().toLowerCase();
+      if (!email) {
+        showMsg("error", "Please enter your email address.");
+        Analytics.track("Waitlist Failed", { reason: "empty_email" });
+        return;
+      }
+      if (!isValidEmail(email)) {
+        showMsg("error", "Please enter a valid email address.");
+        Analytics.track("Waitlist Failed", { reason: "invalid_email" });
+        return;
+      }
+      const token = ts.getToken();
+      if (!token) {
+        showMsg("warn", "Security verification in progress. Please try again in a moment.");
+        Analytics.track("Waitlist Failed", { reason: "captcha_failed" });
+        return;
+      }
 
-      // Keep the loading animation on screen for at least 2s before the payoff.
-      const elapsed = Date.now() - loadingStartedAt;
-      await new Promise((r) => setTimeout(r, Math.max(0, 2000 - elapsed)));
+      showLoading();
+      const loadingStartedAt = Date.now();
 
-      // Double opt-in: a new signup is pending until the emailed link is clicked.
-      // For already_joined, persist the real status so refreshes show the right card.
-      // (An unconfirmed address entered again is answered like a fresh signup by the backend.)
-      const pending = data.requiresConfirmation === true;
-      saveStatus(pending ? "pending_confirmation" : (data.realStatus || data.status));
-      if (pending) { savePendingEmail(email); pendingEmailMemory = email; }
-      if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
+      try {
+        const { age, invest, retire, existing } = readInputs();
+        const payload = {
+          email,
+          turnstileToken: token,
+          age,
+          investMonthly: invest,
+          retireMonthly: retire,
+          existingInvested: existing,
+          interacted: hasInteracted,
+          returnAssumptionPct: currentScenario().pct,
+        };
+        if (lastFreedomAge !== null) payload.freedomAge = lastFreedomAge;
+        if (lastFreedomDateIso !== null) payload.freedomDate = lastFreedomDateIso;
+        if (lastPortfolioTarget !== null) payload.portfolioTarget = lastPortfolioTarget;
+        payload.revealedBeforeSubmit = revealed;
+        Object.assign(payload, Analytics.getAttribution());
+        const data = await submitWaitlist(payload);
+        // Only after a 2xx. An address already on the list is not a new signup, so it is
+        // recorded as a duplicate failure even though the visitor sees the success state.
+        if (data.status === "already_joined") Analytics.track("Waitlist Failed", { reason: "duplicate" });
+        else Analytics.track("Waitlist Submitted", { source_page: "home" });
 
-      // Fade the loading button out, then fade the success state in.
-      joinBtn.style.opacity = "0";
-      joinBtn.style.transition = "opacity 300ms ease";
-      await new Promise((r) => setTimeout(r, 300));
-      if (pending) showPending(email, true); else showSuccess(data.status, true);
-      // The signup response carries only the total; the line wants the live, confirmed count.
-      refreshCount();
-    } catch (err) {
-      resetForm();
-      showMsg("error", err.message);
-      ts.reset();
-      Analytics.track("Waitlist Failed", { reason: err.reason || "server_error" });
-    }
-  });
+        // Keep the loading animation on screen for at least 2s before the payoff.
+        const elapsed = Date.now() - loadingStartedAt;
+        await new Promise((r) => setTimeout(r, Math.max(0, 2000 - elapsed)));
+
+        // Double opt-in: a new signup is pending until the emailed link is clicked.
+        // For already_joined, persist the real status so refreshes show the right card.
+        // (An unconfirmed address entered again is answered like a fresh signup by the backend.)
+        const pending = data.requiresConfirmation === true;
+        saveStatus(pending ? "pending_confirmation" : (data.realStatus || data.status));
+        if (pending) { savePendingEmail(email); pendingEmailMemory = email; }
+        if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
+
+        // Fade the loading button out, then fade the success state in.
+        joinBtn.style.opacity = "0";
+        joinBtn.style.transition = "opacity 300ms ease";
+        await new Promise((r) => setTimeout(r, 300));
+        if (pending) showPending(email, true); else showSuccess(data.status, true);
+      } catch (err) {
+        resetForm();
+        showMsg("error", err.message);
+        ts.reset();
+        Analytics.track("Waitlist Failed", { reason: err.reason || "server_error" });
+      }
+    });
+  }
+
+  // A returning visitor with a saved state must see it at once, not a calculator that
+  // looks like they never signed up (decision 2026-09-26). The reveal zone opens itself
+  // showing the current result, the calculator stays above it, and no scrolling. It is
+  // not a reveal: `revealed` stays false, so no event fires now and the visitor's first
+  // click on this page load is this page load's Freedom Date Revealed, as for anyone.
+  function openZoneForSavedState() {
+    resultShown = true;
+    mountPostReveal();
+    render(false);
+    revealZone.removeAttribute("inert");
+    revealZone.classList.add("open");
+    revealZone.style.maxHeight = "none";
+    revealBtn.setAttribute("aria-expanded", "true");
+  }
+
+  // If they already joined on a previous visit, skip the form entirely.
+  const savedStatus = getSavedStatus();
+  if (savedStatus === "pending_confirmation") {
+    // An expired pending state (older than the link itself) reads as absent: the form comes back.
+    const pendingEmail = getPendingEmail();
+    if (pendingEmail) { openZoneForSavedState(); showPending(pendingEmail, false); } else clearStatus();
+  } else if (savedStatus) {
+    openZoneForSavedState();
+    showSuccess(savedStatus, false);
+  }
 
   devLinkMap({ "/about": "about.html", "/privacy": "privacy.html", "/terms": "terms.html" });
 })();

@@ -2,6 +2,8 @@
 
 State of the working tree on 2026-09-24. Every statement below is read from the code; where a choice is Andrew's rather than the code's, it says so.
 
+Updated 2026-10-24: post-reveal conversion. index.html's waitlist form now lives in a dark capture card directly under a new "what moves your date" card, both stamped out of a `<template>` on the first reveal (or on load for a saved signup state) and absent from the DOM before that; the old capture block (scarcity pill, count line, payment note) is gone and index.html no longer calls `/api/waitlist/stats`. One new goal, `Lever Viewed`, and two new properties, `lever_shift_band` and `delay_months_band`, which also ride on `Email Focused` (index.html, after a reveal) and `Waitlist Submitted` (when `revealed` is `yes`). The projection moved to `frontend/assets/projection.js` (`project()`, plus `leverScenario()` / `delayScenario()` for the card); `compute()` in index.html wraps it. See "Lever Viewed" below.
+
 Updated 2026-10-22: existing invested amount. The calculator gained a fourth input, "I already have invested" (`#existing-range` / `#existing-number`, the starting balance of the projection). It reaches Plausible only as `existing_invested_band` on `Freedom Date Revealed` and as the `first_field` value `existing_invested`; `freedom_age_band` gained the label `at_target` for the state where the existing amount already meets the portfolio target. Line numbers quoted below predate that change; the ids and function names still hold.
 
 ## Where things live
@@ -30,7 +32,7 @@ How an event leaves the browser, audited 2026-10-15 after a real signup showed `
 
 ## The event vocabulary
 
-Eight event names exist. Seven fire on `index.html` / `about.html`; `Waitlist Confirmed` fires on `confirmed.html`.
+Nine event names exist. Eight fire on `index.html` / `about.html`; `Waitlist Confirmed` fires on `confirmed.html`.
 
 | Event | Page | Trigger | Props |
 |---|---|---|---|
@@ -38,8 +40,9 @@ Eight event names exist. Seven fire on `index.html` / `about.html`; `Waitlist Co
 | `Explainer Opened` | index | `<details id="calc-method">` opened | none |
 | `Freedom Date Revealed` | index | first click on `#reveal-btn` | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `existing_invested_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` |
 | `Recalculated` | index | second click on `#reveal-btn` | `edits_after_reveal_band` |
-| `Email Focused` | index, about | `focus` on `#capture-email` | none |
-| `Waitlist Submitted` | index, about | 2xx from `POST /api/waitlist` with `status` other than `already_joined` (under double opt-in that includes an unconfirmed address entered again, see the duplicate note) | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign`, plus `return_scenario` and `freedom_age_band` only when `revealed` is `yes` |
+| `Lever Viewed` | index | the "what moves your date" card (`#levers-card`) at least half in view, once per click of `#reveal-btn` (since 2026-10-24) | `lever_shift_band`, `delay_months_band`, `freedom_age_band` |
+| `Email Focused` | index, about | `focus` on `#capture-email` | none on about.html; on index.html after a reveal `lever_shift_band`, `delay_months_band` |
+| `Waitlist Submitted` | index, about | 2xx from `POST /api/waitlist` with `status` other than `already_joined` (under double opt-in that includes an unconfirmed address entered again, see the duplicate note) | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign`, plus `return_scenario`, `freedom_age_band`, `lever_shift_band` and `delay_months_band` only when `revealed` is `yes` |
 | `Waitlist Failed` | index, about | any failed submit, or a 2xx answered `already_joined` (under double opt-in a confirmed duplicate; with the flag off any repeat) | `reason` |
 | `Waitlist Confirmed` | confirmed | page load with `?status=confirmed&hours=<band>` (the backend redirect; `tier` rides along and is not a prop) | `hours_to_confirm_band` |
 
@@ -62,9 +65,22 @@ index.html:608-622: on the `#reveal-btn` click, after `render()` has run, the pa
 
 Same click handler; fires when the reveal zone was already open (`firstReveal` false). Builder at `analytics.js:118-125`: dropped unless a `Freedom Date Revealed` already fired in this page load. `edits_after_reveal_band` bands `editCount` minus the count captured at the first reveal. Live re-rendering from slider changes after the reveal (`liveUpdate`) does not fire anything; only a second click of the button does, and only once.
 
+### Lever Viewed
+
+Since 2026-10-24. The "what moves your date" card (`#levers-card`, stamped out of `#post-reveal-template` by `mountPostReveal()` in index.html) shows up to two rows computed by `frontend/assets/projection.js` from the same `project()` the result uses: the lever (monthly amount raised by $100 under $1,000 a month, else $250; shown only when the rounded age moves at least one whole year earlier) and the cost of waiting (contributions start 12 months later, the balance already invested keeps compounding through the delay; shown only when the slip is at least 3 whole months and the rounded age is later than the result). With no rows the card is hidden; with no date (no monthly amount, horizon, at-target) it cannot render at all.
+
+The event: an `IntersectionObserver` with `threshold: 0.5` watches the card (`observeLevers()`); every click of `#reveal-btn` that rendered the card arms it and re-observes the card (`armLeverView()`), which makes the observer report the current visibility at once, so a card already half in view fires without a scroll and one below the fold fires when it scrolls in. The first intersection at or above 50% after a click fires `track('Lever Viewed')` and disarms until the next click. A click that rendered no card arms nothing, and a live slider edit after the click disarms it (`liveUpdate()`), so the event always describes the card the click rendered, never a card a later edit produced. Builder in `analytics.js`: dropped unless a `Freedom Date Revealed` fired in this page load; props are `freedom_age_band` plus the two lever bands below, all from the page's context at the last reveal-button click, which the page records on every click with `FredAnalytics.recordReveal(ctx)` (so a third click, which sends no `Recalculated`, is still the context banded). Guard: at most `LEVER_VIEWED_LIMIT = 3` per page load, so a visitor who keeps clicking the reveal button cannot bill more than three; it is not in `ONCE`, because the spec is once per reveal, not once per load.
+
+The page passes `lever_shift_years` (whole years the lever row moves the date, null when the row is hidden) and `delay_months` (whole months the delay row slips it, null when hidden) with `Freedom Date Revealed` and `Recalculated`; `analytics.js` keeps them in `calc` and bands them:
+
+- `lever_shift_band`: `hidden` when the row is hidden, else `0`, `1-2`, `3-5`, `6+` (edges 1, 3, 6). `0` is unreachable in practice (a shift under one year hides the row) and kept for schema completeness.
+- `delay_months_band`: `hidden` when the row is hidden or the slip is under 3, else `3-6`, `7-11`, `12+` (edges 7, 12). With nothing already invested the slip is always exactly 12 months (`12+`); a balance makes it shorter.
+
+No raw year or month count leaves the page. `tests/post-reveal.spec.js` covers the firing, the once-per-click re-arm, the hidden-card case and the bands; `tests/unit/projection.test.js` proves both scenarios call the shared projection (spy) with the modified inputs.
+
 ### Email Focused
 
-index.html:658 and about.html:981: `focus` on `#capture-email`. When the browser holds a saved `waitlist_status`, the form is hidden and this cannot fire, with two ways back to the form. A pending browser (`waitlist_status` = `pending_confirmation` plus a `localStorage["waitlist_pending"]` record, JSON `{email, at}`, less than 7 days old) shows the pending block instead of the form; its "Wrong address? Use a different one" control (`#pending-reset`, index.html:714-717, about.html:1052-1055) calls `restoreForm()`, which removes `waitlist_pending` and `waitlist_status`, resets the form and the Turnstile widget and shows the form again, after which the focus fires as on a first visit. And a `pending_confirmation` status whose `waitlist_pending` record is missing or older than 7 days reads as absent on load (`getPendingEmail()` clears it, `waitlist.js:68-83`; index.html:744-747, about.html:1081-1084 then call `clearStatus()`), so a browser whose confirmation link was clicked elsewhere gets the form, and this event, back on its next visit.
+index.html (`bindCapture()`, run once when the capture card is mounted) and about.html:981: `focus` on `#capture-email`. On index.html the form exists only after a reveal (or a saved state), and after a reveal the event carries `lever_shift_band` and `delay_months_band` as they stood at the last reveal-button click; on about.html, and on index.html for a form restored without a reveal in this page load, the props are `{}`. When the browser holds a saved `waitlist_status`, the form is hidden and this cannot fire, with two ways back to the form. A pending browser (`waitlist_status` = `pending_confirmation` plus a `localStorage["waitlist_pending"]` record, JSON `{email, at}`, less than 7 days old) shows the pending block instead of the form; its "Wrong address? Use a different one" control (`#pending-reset`, index.html:714-717, about.html:1052-1055) calls `restoreForm()`, which removes `waitlist_pending` and `waitlist_status`, resets the form and the Turnstile widget and shows the form again, after which the focus fires as on a first visit. And a `pending_confirmation` status whose `waitlist_pending` record is missing or older than 7 days reads as absent on load (`getPendingEmail()` clears it, `waitlist.js:68-83`; index.html:744-747, about.html:1081-1084 then call `clearStatus()`), so a browser whose confirmation link was clicked elsewhere gets the form, and this event, back on its next visit.
 
 ### Waitlist Submitted
 
@@ -79,6 +95,7 @@ index.html:847 and about.html:1182, after `submitWaitlist` resolves with a 2xx a
 | `utm_campaign` | same, else `none` |
 | `return_scenario` | only when `revealed` is `yes`: scenario at the last reveal-button click |
 | `freedom_age_band` | only when `revealed` is `yes`: banded freedom age at the last reveal-button click (`at_target` when that click showed the at-target state, `unreachable` when no date was computed) |
+| `lever_shift_band`, `delay_months_band` | only when `revealed` is `yes`: the lever card's two rows at the last reveal-button click (`hidden` for a row that was not shown; both `hidden` when no date existed). Since 2026-10-24. |
 
 `about.html` has no calculator, so its submits always carry `revealed: "no"` and no calculator props. On `index.html` a submit before any reveal also carries `revealed: "no"`. `utm_content` and `utm_term` never go to Plausible (`attribution.js:123-133`).
 
@@ -138,6 +155,8 @@ All numbers are banded inside `analytics.js` (`band()`, :36-48) before they leav
 | `existing_invested_band` | 1, 50000, 250000, 1000000 | `0`, `1-50k`, `50k-250k`, `250k-1m`, `1m+` |
 | `sec_to_reveal_band` | 11, 31, 61, 121 | `0-10`, `11-30`, `31-60`, `61-120`, `120+` |
 | `input_edits_band`, `edits_after_reveal_band` | 1, 4, 9, 16 | `0`, `1-3`, `4-8`, `9-15`, `16+` |
+| `lever_shift_band` | 1, 3, 6 (null input: `hidden`) | `hidden`, `0`, `1-2`, `3-5`, `6+` |
+| `delay_months_band` | 7, 12 (null or under 3: `hidden`) | `hidden`, `3-6`, `7-11`, `12+` |
 | `hours_to_confirm_band` | backend, see above | `<1`, `1-6`, `6-24`, `24-72`, `72+` |
 
 Fixed vocabularies: `first_field` in `age`, `monthly_invest`, `target_income`, `existing_invested`, `return_scenario`; `return_scenario` in `conservative`, `moderate`, `optimistic`; `source_page` in `home`, `about`; `revealed` in `yes`, `no`; `reason` as listed above. Slider ranges (index.html:181, :194, :207) are age 18-60, invest 0-10000, retire 1000-30000, so `55+` means 55-60 and `10000+` means 10000-30000; the existing invested amount is 0-10,000,000 (`#existing-range` is a graduated slider that runs on a tick index, not on dollars: 2,500 steps to 100,000, 25,000 steps to 1,000,000, 250,000 steps above that; `#existing-number` accepts any integer in range), so `1m+` means 1,000,000-10,000,000.
@@ -148,7 +167,7 @@ Fixed vocabularies: `first_field` in `age`, `monthly_invest`, `target_income`, `
 
 1. Unknown event name: dropped.
 2. Name in `ONCE` (`Calc Engaged`, `Explainer Opened`, `Freedom Date Revealed`, `Recalculated`, `Email Focused`, `Waitlist Submitted`, `Waitlist Confirmed`) and already fired: dropped.
-3. `Waitlist Failed` and `failedCount >= 3`: dropped.
+3. `Waitlist Failed` and `failedCount >= 3`: dropped. `Lever Viewed` and `leverViewedCount >= 3`: dropped.
 4. Builder returns `false` (bad context): dropped, and the once-guard is not consumed.
 5. Once-guard marked, failure counter incremented.
 6. Not enabled (hostname gate): logged as `(gated)` off production, not sent.
@@ -163,7 +182,7 @@ Plausible bills pageviews plus custom events. What one page load can send:
 
 | Page | Custom events, happy path | Custom events, ceiling | Billable ceiling (with pageview) |
 |---|---|---|---|
-| index.html | 6 (`Calc Engaged`, `Explainer Opened`, `Freedom Date Revealed`, `Recalculated`, `Email Focused`, `Waitlist Submitted`) | 9 (the 6 plus up to 3 `Waitlist Failed`) | 10 |
+| index.html | 7 (`Calc Engaged`, `Explainer Opened`, `Freedom Date Revealed`, `Lever Viewed`, `Recalculated`, `Email Focused`, `Waitlist Submitted`) | 12 (the 7, a second and third `Lever Viewed` on repeat reveal clicks, plus up to 3 `Waitlist Failed`) | 13 |
 | about.html | 2 (`Email Focused`, `Waitlist Submitted`) | 5 | 6 |
 | confirmed.html | 1 (`Waitlist Confirmed`) | 1 | 2 |
 | privacy.html, terms.html | 0 | 0 | 1 (plus outbound clicks on privacy, see below) |
@@ -220,7 +239,7 @@ Why it is present: commit `74b4a61` (2026-09-18) replaced the direct `<script as
 
 ## Known quirks
 
-- `freedom_age_band` and `return_scenario` on `Waitlist Submitted` reflect the calculator state at the last click of `#reveal-btn` (first or second), because `calc` is only updated by the `Freedom Date Revealed` and `Recalculated` builders and `Recalculated` is once-only. Slider edits after that click re-render the page and update the API payload (`lastFreedomAge`) but not these props.
+- `freedom_age_band`, `return_scenario`, `lever_shift_band` and `delay_months_band` on `Waitlist Submitted` (and the two lever bands on `Email Focused` and `Lever Viewed`) reflect the calculator state at the last click of `#reveal-btn`, whichever click that was: since 2026-10-24 the page calls `FredAnalytics.recordReveal(ctx)` on every click, so the once-guard on `Recalculated` no longer freezes the context at the second click. The lever card itself re-renders live on every slider move, so what the visitor sees at focus or submit time can differ from the bands sent. Slider edits after that click re-render the page and update the API payload (`lastFreedomAge`) but not these props.
 - A `Freedom Date Revealed` cannot send from a preview host without the force flag, but the once-guard is still consumed: the first click logs `(gated) Freedom Date Revealed ...`, the second click logs `(gated) Recalculated ...` (the page never sends `Freedom Date Revealed` twice), and a further `track('Freedom Date Revealed')` from the console logs nothing, which is the same guard shape as production.
 - Known gap (email funnel): a mail scanner that executes JavaScript would submit the two-step confirmation form, confirm the row in the database, and, if it also renders the redirect target and runs its scripts, fire `Waitlist Confirmed` with band `<1` (scanners run at delivery, minutes after `confirmation_sent_at`). The funnel view counts database rows and Plausible counts page events, so the two can disagree by such cases. The unsubscribe page is not exposed the same way: `WaitlistConfirmationController.unsubscribePage` renders a visible button and no `<script>` at all, because a suppression is never cleared and a sandbox that runs JavaScript must not be able to unsubscribe a recipient on delivery; only the confirm page keeps the auto-POST, since a consumed confirmation token is recoverable via resend.
 
@@ -232,7 +251,8 @@ Why it is present: commit `74b4a61` (2026-09-18) replaced the direct `<script as
 | `Explainer Opened` | index | none | once per page load | `analytics.js:99`; index.html:655-657 |
 | `Freedom Date Revealed` | index | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `existing_invested_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` | once per page load; dropped if scenario unknown | `analytics.js:101-116`; index.html:608-622 |
 | `Recalculated` | index | `edits_after_reveal_band` | once per page load; only after a reveal | `analytics.js:118-125`; index.html:619 |
-| `Email Focused` | index, about | none | once per page load | `analytics.js:127`; index.html:658; about.html:981 |
+| `Lever Viewed` | index | `lever_shift_band`, `delay_months_band`, `freedom_age_band` | once per reveal-button click, at most 3 per page load; only after a reveal | `analytics.js` (`'Lever Viewed'` builder, `LEVER_VIEWED_LIMIT`); index.html `observeLevers()` / `armLeverView()` |
+| `Email Focused` | index, about | none (index after a reveal: `lever_shift_band`, `delay_months_band`) | once per page load | `analytics.js:127`; index.html `bindCapture()`; about.html:981 |
 | `Waitlist Submitted` | index, about | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign` (+ `return_scenario`, `freedom_age_band` when revealed) | once per page load; only on 2xx with status other than `already_joined` (an unconfirmed re-submit counts) | `analytics.js:131-145`; index.html:847; about.html:1182 |
 | `Waitlist Failed` | index, about | `reason` | max 3 per page load; unknown reason becomes `server_error`; `duplicate` only for a confirmed address under double opt-in | `analytics.js:147`, `:163`; index.html:809, :814, :820, :846, :871; about.html:1157, :1162, :1168, :1181, :1203; `waitlist.js:129-155` |
 | `Waitlist Confirmed` | confirmed | `hours_to_confirm_band` | once per page load; `hours` and `tier` removed from the URL after firing; dropped unless band is exact | `analytics.js:151-153`; confirmed.html:156-179; `SignupService.java:137-138`, `:198-206` |

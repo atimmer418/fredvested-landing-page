@@ -34,6 +34,8 @@ const VOCAB = {
   edits_after_reveal_band: EDITS,
   source_page: ['home', 'about'],
   revealed: ['yes', 'no'],
+  lever_shift_band: ['hidden', '0', '1-2', '3-5', '6+'],
+  delay_months_band: ['hidden', '3-6', '7-11', '12+'],
   reason: ['invalid_email', 'empty_email', 'duplicate', 'rate_limited', 'server_error', 'network_error', 'timeout', 'geo_blocked', 'captcha_failed'],
 };
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign'];
@@ -43,10 +45,14 @@ const EVENT_KEYS = {
   'Explainer Opened': [],
   'Freedom Date Revealed': ['return_scenario', 'age_band', 'invest_band', 'target_income_band', 'existing_invested_band', 'freedom_age_band', 'sec_to_reveal_band', 'input_edits_band'],
   'Recalculated': ['edits_after_reveal_band'],
-  'Email Focused': [],
-  'Waitlist Submitted': SUBMITTED_KEYS, // plus return_scenario and freedom_age_band when revealed is "yes"
+  'Email Focused': [], // plus the two lever bands after a reveal on index.html (LEVER_KEYS)
+  'Waitlist Submitted': SUBMITTED_KEYS, // plus return_scenario, freedom_age_band and the lever bands when revealed is "yes"
   'Waitlist Failed': ['reason'],
+  'Lever Viewed': ['lever_shift_band', 'delay_months_band', 'freedom_age_band'],
 };
+// The "what moves your date" card (2026-10-24): its two sizes ride along on Email Focused and
+// Waitlist Submitted once the page has revealed, and on Lever Viewed.
+const LEVER_KEYS = ['lever_shift_band', 'delay_months_band'];
 const LANDING_EVENTS = Object.keys(EVENT_KEYS);
 
 // The props Freedom Date Revealed carries for an untouched calculator.
@@ -61,6 +67,8 @@ const DEFAULT_REVEAL = {
   input_edits_band: '0',
 };
 const NO_UTM = { utm_source: 'direct', utm_medium: 'none', utm_campaign: 'none' };
+// The lever bands for the untouched defaults (53; +$250 -> 52, one year; a year later slips 12 months).
+const DEFAULT_LEVERS = { lever_shift_band: '1-2', delay_months_band: '12+' };
 
 // --- API answers used by the failure paths (shapes from WaitlistController) ---
 const SERVER_ERROR = { status: 500, body: { code: 'server_error', message: 'Something went wrong. Please try again.' } };
@@ -78,6 +86,11 @@ const failOnceThenSucceed = (first) => {
 // --- local helpers ----------------------------------------------------------
 const named = (list, name) => list.filter((e) => e.name === name);
 async function eventsNamed(page, name) { return named(await events(page), name); }
+// Lever Viewed fires on its own clock (an IntersectionObserver, when the lever card is half in
+// view), so the ordered sequences below leave it out; tests/post-reveal.spec.js owns it.
+const withoutLever = (list) => list.filter((e) => (typeof e === 'string' ? e : e.name) !== 'Lever Viewed');
+async function sequence(page) { return withoutLever(await eventNames(page)); }
+async function recorded(page) { return withoutLever(await events(page)); }
 
 async function reveal(page) {
   await page.click('#reveal-btn');
@@ -116,10 +129,10 @@ test.describe('index.html: calculator events', () => {
       await forceAnalytics(page);
       await installMocks(page);
       await page.goto('/index.html');
-      expect(await events(page)).toEqual([]);
+      expect(await recorded(page)).toEqual([]);
 
       await page.fill(selector, value);
-      expect(await events(page)).toEqual([{ name: 'Calc Engaged', props: { first_field: field }, url: 'http://localhost:5500/index.html' }]);
+      expect(await recorded(page)).toEqual([{ name: 'Calc Engaged', props: { first_field: field }, url: 'http://localhost:5500/index.html' }]);
     });
   }
 
@@ -135,7 +148,7 @@ test.describe('index.html: calculator events', () => {
     // The reveal is a sentinel: anything the extra inputs fired would sit before it.
     await reveal(page);
 
-    expect(await eventNames(page)).toEqual(['Calc Engaged', 'Freedom Date Revealed']);
+    expect(await sequence(page)).toEqual(['Calc Engaged', 'Freedom Date Revealed']);
     expect((await eventsNamed(page, 'Calc Engaged'))[0].props).toEqual({ first_field: 'age' });
   });
 
@@ -145,10 +158,10 @@ test.describe('index.html: calculator events', () => {
     await page.goto('/index.html');
 
     await page.click('#return-seg [data-return="moderate"]'); // already selected
-    expect(await events(page)).toEqual([]);
+    expect(await recorded(page)).toEqual([]);
 
     await page.click('#return-seg [data-return="conservative"]');
-    expect(await events(page)).toEqual([{ name: 'Calc Engaged', props: { first_field: 'return_scenario' }, url: 'http://localhost:5500/index.html' }]);
+    expect(await recorded(page)).toEqual([{ name: 'Calc Engaged', props: { first_field: 'return_scenario' }, url: 'http://localhost:5500/index.html' }]);
 
     // A scenario change is an edit, counted after the 400 ms debounce (EDIT_DEBOUNCE_MS in
     // analytics.js). Wait for it, as the adjust-every-input test does: revealing inside the
@@ -171,7 +184,7 @@ test.describe('index.html: calculator events', () => {
     await expect(page.locator('#result-age')).toHaveText('53');
     await expect(page.locator('#reveal-btn')).toHaveAttribute('aria-expanded', 'true');
 
-    expect(await events(page)).toEqual([{ name: 'Freedom Date Revealed', props: DEFAULT_REVEAL, url: 'http://localhost:5500/index.html' }]);
+    expect(await recorded(page)).toEqual([{ name: 'Freedom Date Revealed', props: DEFAULT_REVEAL, url: 'http://localhost:5500/index.html' }]);
   });
 
   test('a reveal after adjusting every input bands the new values and counts the debounced edits', async ({ page }) => {
@@ -220,7 +233,8 @@ test.describe('index.html: calculator events', () => {
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
     const submitted = await eventsNamed(page, 'Waitlist Submitted');
     expect(submitted).toHaveLength(1);
-    expect(submitted[0].props).toEqual({ source_page: 'home', revealed: 'yes', ...NO_UTM, return_scenario: 'moderate', freedom_age_band: 'unreachable' });
+    // No date, so no lever card: both bands are 'hidden'.
+    expect(submitted[0].props).toEqual({ source_page: 'home', revealed: 'yes', ...NO_UTM, return_scenario: 'moderate', freedom_age_band: 'unreachable', lever_shift_band: 'hidden', delay_months_band: 'hidden' });
   });
 
   test('a second reveal click fires Recalculated once with edits_after_reveal_band; live edits and a third click add nothing', async ({ page }) => {
@@ -231,14 +245,14 @@ test.describe('index.html: calculator events', () => {
     await reveal(page);
     await page.fill('#age-range', '35'); // re-renders live; fires Calc Engaged, never a reveal event
     await waitForEditsBand(page, '1-3');
-    expect(await eventNames(page)).toEqual(['Freedom Date Revealed', 'Calc Engaged']);
+    expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Calc Engaged']);
 
     await page.click('#reveal-btn');
-    expect(await eventNames(page)).toEqual(['Freedom Date Revealed', 'Calc Engaged', 'Recalculated']);
+    expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Calc Engaged', 'Recalculated']);
     expect((await eventsNamed(page, 'Recalculated'))[0].props).toEqual({ edits_after_reveal_band: '1-3' });
 
     await page.click('#reveal-btn');
-    expect(await eventNames(page)).toEqual(['Freedom Date Revealed', 'Calc Engaged', 'Recalculated']);
+    expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Calc Engaged', 'Recalculated']);
   });
 
   test('opening the explainer fires Explainer Opened once; closing and reopening adds nothing', async ({ page }) => {
@@ -260,7 +274,7 @@ test.describe('index.html: calculator events', () => {
     // The focus is a sentinel: a second Explainer Opened would be recorded before it.
     await page.locator('#capture-email').focus();
 
-    expect(await eventNames(page)).toEqual(['Freedom Date Revealed', 'Explainer Opened', 'Email Focused']);
+    expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Explainer Opened', 'Email Focused']);
   });
 
   test('focusing the email field fires Email Focused once; blur and refocus add nothing', async ({ page }) => {
@@ -277,8 +291,9 @@ test.describe('index.html: calculator events', () => {
     await email.focus();
     // The explainer is a sentinel: a repeated Email Focused would sit before it.
     await page.locator('#calc-method summary').click();
-    await expect.poll(() => eventNames(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Explainer Opened']);
-    expect((await eventsNamed(page, 'Email Focused'))[0].props).toEqual({});
+    await expect.poll(() => sequence(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Explainer Opened']);
+    // After a reveal the focus carries the lever bands of that reveal (defaults: one year, 12 months).
+    expect((await eventsNamed(page, 'Email Focused'))[0].props).toEqual(DEFAULT_LEVERS);
   });
 
   test('a successful submit fires Waitlist Submitted once with source_page home and the calculator bands', async ({ page }) => {
@@ -292,13 +307,14 @@ test.describe('index.html: calculator events', () => {
     await expect(page.locator('#pending-email')).toHaveText('home@example.com');
 
     expect(calls.signup).toHaveLength(1);
-    expect(await eventNames(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Submitted']);
+    expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Submitted']);
     expect((await eventsNamed(page, 'Waitlist Submitted'))[0].props).toEqual({
       source_page: 'home',
       revealed: 'yes',
       ...NO_UTM,
       return_scenario: 'moderate',
       freedom_age_band: '50-54',
+      ...DEFAULT_LEVERS,
     });
     expect(await eventsNamed(page, 'Waitlist Failed')).toEqual([]);
   });
@@ -322,6 +338,7 @@ test.describe('index.html: calculator events', () => {
       utm_campaign: 'launch',
       return_scenario: 'moderate',
       freedom_age_band: '50-54',
+      ...DEFAULT_LEVERS,
     });
   });
 });
@@ -332,13 +349,13 @@ test.describe('about.html: email events without a calculator', () => {
     await forceAnalytics(page);
     const calls = await installMocks(page);
     await page.goto('/about.html');
-    expect(await events(page)).toEqual([]);
+    expect(await recorded(page)).toEqual([]);
 
     const email = page.locator('#capture-email');
     await email.focus();
     await email.blur();
     await email.focus();
-    expect(await events(page)).toEqual([{ name: 'Email Focused', props: {}, url: 'http://localhost:5500/about.html' }]);
+    expect(await recorded(page)).toEqual([{ name: 'Email Focused', props: {}, url: 'http://localhost:5500/about.html' }]);
 
     await submitWaitlist(page, 'about@example.com');
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
@@ -346,7 +363,7 @@ test.describe('about.html: email events without a calculator', () => {
 
     expect(calls.signup).toHaveLength(1);
     expect(calls.signup[0]).toMatchObject({ email: 'about@example.com', revealedBeforeSubmit: false });
-    expect(await eventNames(page)).toEqual(['Email Focused', 'Waitlist Submitted']);
+    expect(await sequence(page)).toEqual(['Email Focused', 'Waitlist Submitted']);
     expect((await eventsNamed(page, 'Waitlist Submitted'))[0].props).toEqual({ source_page: 'about', revealed: 'no', ...NO_UTM });
   });
 });
@@ -363,7 +380,7 @@ test.describe('failure paths', () => {
     await expect(page.locator('#success-note')).toHaveText('You’re already on the list.');
     await expect(page.locator('#pending-block')).toBeHidden();
 
-    expect(await eventNames(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Failed']);
+    expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Failed']);
     expect((await eventsNamed(page, 'Waitlist Failed'))[0].props).toEqual({ reason: 'duplicate' });
     expect(await eventsNamed(page, 'Waitlist Submitted')).toEqual([]);
     // The row's real status is what the browser remembers, not "already_joined".
@@ -382,7 +399,7 @@ test.describe('failure paths', () => {
     await expect(page.locator('#nav-cta')).toHaveText('You’re in ✓');
     await expect(page.locator('#founder-cta')).toContainText('Your spot in line is reserved');
 
-    expect(await eventNames(page)).toEqual(['Email Focused', 'Waitlist Failed']);
+    expect(await sequence(page)).toEqual(['Email Focused', 'Waitlist Failed']);
     expect((await eventsNamed(page, 'Waitlist Failed'))[0].props).toEqual({ reason: 'duplicate' });
     // realStatus is kept verbatim, including the invite-workflow statuses.
     expect(await storage(page, 'waitlist_status')).toBe('INVITED');
@@ -405,7 +422,7 @@ test.describe('failure paths', () => {
     await submitWaitlist(page, 'retry@example.com');
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
     expect(calls.signup).toHaveLength(2);
-    expect(await eventNames(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Failed', 'Waitlist Submitted']);
+    expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Failed', 'Waitlist Submitted']);
   });
 
   for (const [label, answer, reason, message] of [
@@ -425,7 +442,7 @@ test.describe('failure paths', () => {
       await expectFormUsable(page);
       expect(await storage(page, 'waitlist_status')).toBeNull();
 
-      expect(await eventNames(page)).toEqual(['Email Focused', 'Waitlist Failed']);
+      expect(await sequence(page)).toEqual(['Email Focused', 'Waitlist Failed']);
       expect((await eventsNamed(page, 'Waitlist Failed'))[0].props).toEqual({ reason });
     });
   }
@@ -525,7 +542,7 @@ test.describe('hostname gate', () => {
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
 
     expect(calls.signup).toHaveLength(1);
-    expect(await events(page)).toEqual([]);
+    expect(await recorded(page)).toEqual([]);
   });
 
   test('without the force flag about.html records nothing, not even a failure', async ({ page }) => {
@@ -537,7 +554,7 @@ test.describe('hostname gate', () => {
     await submitWaitlist(page, 'gated@example.com');
     await expect(page.locator('#waitlist-msg')).toContainText('Something went wrong');
 
-    expect(await events(page)).toEqual([]);
+    expect(await recorded(page)).toEqual([]);
   });
 });
 
@@ -571,6 +588,9 @@ test.describe('schema sweep', () => {
     await waitForEditsBand(page, '9-15');
     await page.click('#reveal-btn');
     renderedAges.push(await resultAge.textContent());
+    // The lever card half in view fires Lever Viewed (once per reveal click).
+    await page.locator('#levers-card').scrollIntoViewIfNeeded();
+    await expect.poll(() => eventNames(page)).toContain('Lever Viewed');
     await page.locator('#calc-method summary').click();
     await submitWaitlist(page, 'sweep+tag@example.com');
     await expect(page.locator('#waitlist-msg')).toContainText('Something went wrong');
@@ -580,12 +600,13 @@ test.describe('schema sweep', () => {
     const all = await events(page);
     expect(new Set(all.map((e) => e.name))).toEqual(new Set(LANDING_EVENTS));
 
-    const raw = new Set(['47', '48', '3350', '3400', '12250', '12500', '150000', '175000', ...renderedAges.map((a) => String(a).trim())]);
+    const raw = new Set(['47', '48', '3350', '3400', '12250', '12500', '150000', '175000', '12', ...renderedAges.map((a) => String(a).trim())]);
     for (const e of all) {
       const keys = Object.keys(e.props).sort();
       const expected = e.name === 'Waitlist Submitted' && e.props.revealed === 'yes'
-        ? [...SUBMITTED_KEYS, 'return_scenario', 'freedom_age_band']
-        : EVENT_KEYS[e.name];
+        ? [...SUBMITTED_KEYS, 'return_scenario', 'freedom_age_band', ...LEVER_KEYS]
+        : e.name === 'Email Focused' ? LEVER_KEYS // index.html, after the reveal
+          : EVENT_KEYS[e.name];
       expect(keys, `${e.name} prop keys`).toEqual([...expected].sort());
       for (const [k, v] of Object.entries(e.props)) {
         expect(typeof v, `${e.name}.${k} must be a string`).toBe('string');

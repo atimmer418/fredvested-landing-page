@@ -383,7 +383,6 @@ test('a confirmation turns the pending block on index.html into the confirmed su
   await expect(page.locator('#waitlist-form')).toBeHidden();
   await expect(page.locator('#capture-email')).toBeHidden();
   await expect(page.locator('#pending-block')).toBeHidden();
-  await expect(page.locator('#capture-cta-note')).toBeHidden();
   // Let Turnstile finish loading before teardown: a request still in flight when the
   // context closes trips the retain-on-failure trace writer (same quiesce as the
   // third-party-hosts signup test).

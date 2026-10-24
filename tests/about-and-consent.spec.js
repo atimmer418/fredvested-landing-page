@@ -90,7 +90,6 @@ test('index.html with a saved WAITLISTED status shows the on-the-list note in pl
   await expect(page.locator('#success-block')).toBeVisible();
   await expect(page.locator('#success-note')).toHaveText(NOTE_WAITLISTED);
   await expect(page.locator('#waitlist-form')).toBeHidden();
-  await expect(page.locator('#capture-cta-note')).toBeHidden();
   await expect(page.locator('#pending-block')).toBeHidden();
 });
 
@@ -182,47 +181,20 @@ test('about.html never words the join card as a full beta or a priority waitlist
   await expect(page.locator('#join')).not.toContainText('priority waitlist', { ignoreCase: true });
 });
 
-// --- 3b. List-size line on index.html (same gate as about.html's count tile) ----
+// --- 3b. index.html carries no proof number (2026-10-24) ----------------------
+// The capture card is the frozen heading, line, form and consent only; the list-size line, the
+// scarcity pill and the payment / iOS note went with the old capture block, and the page no
+// longer calls the stats endpoint at all (the API is reached only on submit).
 
-test('index.html keeps the list-size line hidden below STAT_TILE_MIN_N', async ({ page }) => {
-  const calls = await installMocks(page, { stats: { ...STATS, count: 12 } });
-  const statsAnswered = page.waitForResponse((r) => /\/api\/waitlist\/stats/.test(r.url()));
+test('index.html never calls the stats endpoint and renders no list-size line, pill or payment note', async ({ page }) => {
+  const calls = await installMocks(page, { stats: { ...STATS, count: 4200 } });
   await page.goto('/index.html');
-  await statsAnswered;
+  await revealIfNeeded(page);
   await page.waitForLoadState('networkidle');
-  expect(calls.stats).toBe(1);
-  await expect(page.locator('#capture-count')).toBeHidden();
-  await expect(page.locator('#capture-count')).toHaveText('');
-  await expect(page.locator('#capture-count-block')).toHaveCount(0);
-  await expect(page.locator('#capture-cta-note')).toContainText('No payment until launch. You only pay if invited and choose to claim your spot.');
-  await expect(page.locator('#capture-cta-note')).toContainText('The private beta is currently iOS only.');
-});
-
-test('index.html shows the list-size line from the live count at or above STAT_TILE_MIN_N', async ({ page }) => {
-  await installMocks(page, { stats: { ...STATS, count: 120 } });
-  await page.goto('/index.html');
-  await revealIfNeeded(page);
-  await expect(page.locator('#capture-count')).toBeVisible();
-  await expect(page.locator('#capture-count')).toHaveText('120 people are already on the list.');
-  await expect(page.locator('#capture-count b')).toHaveText('120');
-  await expect(page.locator('#capture-scarcity-pill')).toBeVisible();
-});
-
-test('index.html keeps the scarcity pill and formats a large count, with no cap or "full" wording anywhere', async ({ page }) => {
-  await installMocks(page, { stats: { ...STATS, count: 4200 } });
-  await page.goto('/index.html');
-  await revealIfNeeded(page);
-  await expect(page.locator('#capture-count')).toHaveText('4,200 people are already on the list.');
-  await expect(page.locator('#capture-scarcity-pill')).toBeVisible();
-  await expect(page.locator('#capture-scarcity-pill')).toHaveText(/Founding member spots are limited/);
-  await expect(page.locator('#capture-count')).not.toContainText('/');
-});
-
-test('index.html states that the private beta is iOS only under the payment sentence', async ({ page }) => {
-  await installMocks(page);
-  await page.goto('/index.html');
-  await revealIfNeeded(page);
-  const iosLine = page.locator('#capture-cta-note p').last();
-  await expect(iosLine).toHaveText('The private beta is currently iOS only.');
-  await expect(iosLine.locator('b')).toHaveText('iOS only');
+  expect(calls.stats).toBe(0);
+  await expect(page.locator('#capture-count')).toHaveCount(0);
+  await expect(page.locator('#capture-scarcity-pill')).toHaveCount(0);
+  await expect(page.locator('#capture-cta-note')).toHaveCount(0);
+  await expect(page.locator('#reveal-zone')).not.toContainText('people are already on the list');
+  await expect(page.locator('#reveal-zone')).not.toContainText('No payment until launch');
 });
