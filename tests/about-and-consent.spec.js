@@ -182,19 +182,49 @@ test('about.html never words the join card as a full beta or a priority waitlist
 });
 
 // --- 3b. index.html carries no proof number (2026-10-24) ----------------------
-// The capture card is the frozen heading, line, form and consent only; the list-size line, the
-// scarcity pill and the payment / iOS note went with the old capture block, and the page no
-// longer calls the stats endpoint at all (the API is reached only on submit).
+// --- 3b. List-size line on index.html (same gate as about.html's count tile) ----
+// Removed with the old capture block on 2026-10-24 and restored into the capture card on
+// 2026-10-25 (Andrew's follow-up) with the same wording, source and threshold. The scarcity
+// pill is NOT restored (Andrew is deciding on it after a description).
 
-test('index.html never calls the stats endpoint and renders no list-size line, pill or payment note', async ({ page }) => {
-  const calls = await installMocks(page, { stats: { ...STATS, count: 4200 } });
+test('index.html keeps the list-size line hidden below STAT_TILE_MIN_N and still shows the payment / iOS note', async ({ page }) => {
+  const calls = await installMocks(page, { stats: { ...STATS, count: 12 } });
+  const statsAnswered = page.waitForResponse((r) => /\/api\/waitlist\/stats/.test(r.url()));
+  await page.goto('/index.html');
+  await statsAnswered;
+  await revealIfNeeded(page);
+  await page.waitForLoadState('networkidle');
+  expect(calls.stats).toBe(1);
+  await expect(page.locator('#capture-count')).toBeHidden();
+  await expect(page.locator('#capture-count')).toHaveText('');
+  await expect(page.locator('#capture-cta-note')).toContainText('No payment until launch. You only pay if invited and choose to claim your spot.');
+  await expect(page.locator('#capture-cta-note')).toContainText('The private beta is currently iOS only.');
+  await expect(page.locator('#capture-scarcity-pill')).toHaveCount(0);
+});
+
+test('index.html shows the list-size line from the live count at or above STAT_TILE_MIN_N', async ({ page }) => {
+  await installMocks(page, { stats: { ...STATS, count: 120 } });
+  await page.goto('/index.html');
+  await revealIfNeeded(page);
+  await expect(page.locator('#capture-count')).toBeVisible();
+  await expect(page.locator('#capture-count')).toHaveText('120 people are already on the list.');
+  await expect(page.locator('#capture-count b')).toHaveText('120');
+});
+
+test('index.html formats a large count, with no cap or "full" wording anywhere', async ({ page }) => {
+  await installMocks(page, { stats: { ...STATS, count: 4200 } });
+  await page.goto('/index.html');
+  await revealIfNeeded(page);
+  await expect(page.locator('#capture-count')).toHaveText('4,200 people are already on the list.');
+  await expect(page.locator('#reveal-zone')).not.toContainText(/spots? left|full|closed/i);
+});
+
+test('index.html with the stats request failing keeps the count line hidden and the form working', async ({ page }) => {
+  await installMocks(page);
+  await page.route('**/api/waitlist/stats', (route) => route.fulfill({ status: 500, contentType: 'text/plain', body: 'nope' }));
   await page.goto('/index.html');
   await revealIfNeeded(page);
   await page.waitForLoadState('networkidle');
-  expect(calls.stats).toBe(0);
-  await expect(page.locator('#capture-count')).toHaveCount(0);
-  await expect(page.locator('#capture-scarcity-pill')).toHaveCount(0);
-  await expect(page.locator('#capture-cta-note')).toHaveCount(0);
-  await expect(page.locator('#reveal-zone')).not.toContainText('people are already on the list');
-  await expect(page.locator('#reveal-zone')).not.toContainText('No payment until launch');
+  await expect(page.locator('#capture-count')).toBeHidden();
+  await expect(page.locator('#capture-email')).toBeVisible();
 });

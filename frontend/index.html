@@ -379,12 +379,25 @@
 
         <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
 
+        <!-- List-size line (restored 2026-10-25, Andrew's follow-up; wording, source and gate as in commit 600ebb8):
+             no baked number. Renders only when the API reports count >= STAT_TILE_MIN_N; otherwise it stays
+             hidden and the card reflows. Same light token as the supporting line, since it now sits on navy. -->
+        <p id="capture-count" class="hidden mt-3.5 text-[13.5px] font-medium text-[#dbe7ff]" aria-live="polite"></p>
+
         <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
              attorney review pending. The form itself needs JavaScript (Turnstile, fetch), so a
              script-off visitor never reaches a submit without this text. -->
         <!-- The shared constant's link carries hover:text-primary for the light surface on about.html; on navy that
              hover colour is 3.2:1, so the card keeps the link white on hover. -->
         <p id="consent-note" class="mt-3.5 text-[11px] leading-relaxed text-[#c7d6f5] text-left [&_a:hover]:text-white" role="note"></p>
+
+        <!-- Payment / iOS note (restored 2026-10-25, Andrew's follow-up; the two sentences verbatim from commit 600ebb8,
+             attorney-approved; same sentences as about.html's Founder Access block and waitlist note). Last line of the
+             card, in the consent sentence's style. Hidden with the form once a signup succeeds, as before. -->
+        <div id="capture-cta-note" class="mt-3 text-[11px] leading-relaxed text-[#c7d6f5] text-left">
+          <p>No payment until launch. You only pay if invited and choose to claim your spot.</p>
+          <p class="mt-1">The private beta is currently <b>iOS only</b>.</p>
+        </div>
       </div>
     </template>
 
@@ -492,7 +505,7 @@
   // "an 8%", "a 10%", "a 12%": the article follows the spoken number.
   const articleFor = (pct) => (/^(8|11|18)/.test(String(pct)) ? "an" : "a");
 
-  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent } = window.FredWaitlist;
+  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
   // The projection (assets/projection.js): compute() below wraps project() and adds the calendar
   // date; the two lever-card scenarios call the same project() with modified inputs.
   const { project, scenarios: computeScenarios, roundAge } = window.FredProjection;
@@ -722,6 +735,37 @@
   let lastLever = null;
   let lastDelay = null;
 
+  // --- Live proof count (restored 2026-10-25; same source, gate and wording as before) ---------
+  // The list-size line is shown only when the API returned a real count of at least
+  // STAT_TILE_MIN_N. Nothing is baked into the HTML and nothing is rendered while loading, on
+  // failure, or below the threshold, so the page can never display a number that did not come
+  // from the backend (same gate as about.html's tiles). Fetched on load, as it always was; the
+  // line itself exists only once the capture card is mounted, so the count waits in liveCount
+  // and mountPostReveal() writes it then.
+  let liveCount = null;
+  function renderCount(data) {
+    const n = Number(data && data.count);
+    if (!Number.isFinite(n) || n < STAT_TILE_MIN_N) return;
+    renderCountLine(n);
+  }
+  function renderCountLine(n) {
+    liveCount = n;
+    const line = document.getElementById("capture-count");
+    if (!line) return;
+    // Built with textContent, never innerHTML: the number comes from the API's JSON.
+    const strong = document.createElement("b");
+    strong.textContent = n.toLocaleString("en-US");
+    line.replaceChildren(strong, document.createTextNode(" people are already on the list."));
+    line.classList.remove("hidden");
+  }
+  function refreshCount() {
+    fetchStats().then(renderCount).catch(() => {
+      /* No fallback by design: the line simply stays hidden. */
+    });
+  }
+  // Attorney screenshot mode (?previewStat=1, local hosts incl. LAN IPs): sample value, no API call.
+  if (PREVIEW_STAT) renderCountLine(PREVIEW_COUNT); else refreshCount();
+
   // --- Post-reveal section: stamped out of #post-reveal-template on the first reveal ---------
   // (or on load for a saved signup state), never before, so the page holds no email input until
   // a result is on screen. mountPostReveal() binds the whole signup flow once; the element
@@ -730,7 +774,7 @@
   let mounted = false;
   let leversCard, leversHeading, leverRow, leverTitle, leverText, delayRow, delayTitle, delayText;
   let captureHeading, captureSupport;
-  let form, emailInput, joinBtn, btnText, btnLoading, successBlock, successNote, msg, pendingBlock;
+  let form, emailInput, joinBtn, btnText, btnLoading, successBlock, successNote, msg, pendingBlock, ctaNote;
   let ts = { getToken: () => null, reset: () => {} };
 
   function mountPostReveal() {
@@ -746,7 +790,9 @@
     form = $("waitlist-form"); emailInput = $("capture-email"); joinBtn = $("join-waitlist-btn");
     btnText = $("btn-text"); btnLoading = $("btn-loading");
     successBlock = $("success-block"); successNote = $("success-note"); msg = $("waitlist-msg");
-    pendingBlock = $("pending-block");
+    pendingBlock = $("pending-block"); ctaNote = $("capture-cta-note");
+    // The count the API reported before the card existed, if any.
+    if (liveCount !== null) renderCountLine(liveCount);
     // The fixed sentences, from COPY. Variable ones are written by renderPostReveal().
     leversHeading.textContent = COPY.LEVERS_HEADING;
     delayTitle.textContent = COPY.DELAY_TITLE;
@@ -998,6 +1044,7 @@
 
   function showSuccess(displayStatus, fadeIn) {
     form.style.display = "none";
+    ctaNote.hidden = true;
     successNote.textContent = STATUS_NOTES[displayStatus] || STATUS_NOTES.already_joined;
     successBlock.classList.remove("hidden");
     if (fadeIn) {
@@ -1015,6 +1062,7 @@
   function showPending(email, fadeIn) {
     if (email) pendingEmailMemory = email;
     form.style.display = "none";
+    ctaNote.hidden = true;
     document.getElementById("pending-email").textContent = email || "the address you entered";
     pendingBlock.classList.remove("hidden");
     if (fadeIn) {
@@ -1036,6 +1084,7 @@
     resetForm();
     ts.reset();
     form.style.display = "";
+    ctaNote.hidden = false;
   }
 
   function showLoading() {
@@ -1185,6 +1234,8 @@
         joinBtn.style.transition = "opacity 300ms ease";
         await new Promise((r) => setTimeout(r, 300));
         if (pending) showPending(email, true); else showSuccess(data.status, true);
+        // The signup response carries only the total; the line wants the live, confirmed count.
+        refreshCount();
       } catch (err) {
         resetForm();
         showMsg("error", err.message);

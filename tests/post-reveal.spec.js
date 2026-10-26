@@ -195,6 +195,10 @@ test.describe('the capture card', () => {
       const b = document.getElementById('join-waitlist-btn');
       const card = document.getElementById('join');
       const consent = document.getElementById('consent-note');
+      const count = document.getElementById('capture-count');
+      const note = document.getElementById('capture-cta-note');
+      const top = (el) => el.getBoundingClientRect().top;
+      const bottom = (el) => el.getBoundingClientRect().bottom;
       return {
         inputHeight: i.getBoundingClientRect().height,
         inputFont: parseFloat(getComputedStyle(i).fontSize),
@@ -203,7 +207,13 @@ test.describe('the capture card', () => {
         formWidth: document.getElementById('waitlist-form').getBoundingClientRect().width,
         buttons: card.querySelectorAll('button:not([hidden])').length,
         visibleButtons: [...card.querySelectorAll('button')].filter((x) => x.offsetParent !== null).length,
-        consentBelowButton: consent.getBoundingClientRect().top >= b.getBoundingClientRect().bottom,
+        // Order inside the card (Andrew's follow-up, 2026-10-25): button, count line, consent sentence, note.
+        countBelowButton: top(count) >= bottom(b),
+        consentBelowCount: top(consent) >= bottom(count),
+        noteBelowConsent: top(note) >= bottom(consent),
+        noteIsLast: card.lastElementChild === note,
+        noteStyle: [getComputedStyle(note).fontSize, getComputedStyle(note).color],
+        consentStyle: [getComputedStyle(consent).fontSize, getComputedStyle(consent).color],
         cardBg: getComputedStyle(card).backgroundColor,
       };
     });
@@ -212,10 +222,19 @@ test.describe('the capture card', () => {
     expect(m.btnHeight).toBeGreaterThanOrEqual(48);
     expect(Math.round(m.btnWidth)).toBe(Math.round(m.formWidth));
     expect(m.visibleButtons).toBe(1);
-    expect(m.consentBelowButton).toBe(true);
+    expect(m.countBelowButton).toBe(true);
+    expect(m.consentBelowCount).toBe(true);
+    expect(m.noteBelowConsent).toBe(true);
+    expect(m.noteIsLast).toBe(true);
+    expect(m.noteStyle).toEqual(m.consentStyle);
     // The navy text token (#0F172A) as the dark surface.
     expect(m.cardBg).toBe('rgb(15, 23, 42)');
+    // The mocked stats answer 40, at or above STAT_TILE_MIN_N (25): the live count line shows.
+    await expect(page.locator('#capture-count')).toBeVisible();
+    await expect(page.locator('#capture-count')).toHaveText('40 people are already on the list.');
     await expect(page.locator('#consent-note')).toContainText('By signing up for our waitlist');
+    await expect(page.locator('#capture-cta-note p').nth(0)).toHaveText('No payment until launch. You only pay if invited and choose to claim your spot.');
+    await expect(page.locator('#capture-cta-note p').nth(1)).toHaveText('The private beta is currently iOS only.');
   });
 
   test('anchor links to #join land on the capture card', async ({ page }) => {
@@ -419,16 +438,24 @@ test.describe('analytics', () => {
     assertOnlyAllowedHosts(seen);
   });
 
-  test('index.html reaches the API only on submit: no stats call', async ({ page }) => {
+  // The count line's traffic is exactly what it was before 2026-10-24 (restored 2026-10-25): one
+  // stats call on load, one more after a successful signup, and nothing else before submit.
+  test('index.html calls the stats endpoint once on load and once after a signup, and nothing else before submit', async ({ page }) => {
     const calls = await installMocks(page);
+    const statsAnswered = page.waitForResponse((r) => /\/api\/waitlist\/stats/.test(r.url()));
     await page.goto('/index.html');
+    await statsAnswered;
     await reveal(page);
     await page.waitForLoadState('networkidle');
-    expect(calls.stats).toBe(0);
+    expect(calls.stats).toBe(1);
+    expect(calls.signup).toHaveLength(0);
     await submitWaitlist(page, 'only-submit@example.com');
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
-    expect(calls.stats).toBe(0);
+    await expect.poll(() => calls.stats).toBe(2);
     expect(calls.signup).toHaveLength(1);
+    // The payment / iOS note goes with the form once the signup is in; the count line stays.
+    await expect(page.locator('#capture-cta-note')).toBeHidden();
+    await expect(page.locator('#capture-count')).toBeVisible();
   });
 
   test('a live edit after the click never fires Lever Viewed with the click\'s stale bands', async ({ page }) => {
