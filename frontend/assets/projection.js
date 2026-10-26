@@ -23,12 +23,21 @@
   const DELAY_MONTHS = 12;
   // A slip under this many months is hidden: a tiny number undercuts the point.
   const DELAY_MIN_MONTHS = 3;
+  // The "do nothing vs this plan" comparison (2026-10-25). "Do nothing" that never reaches the
+  // target before this age reads "65+", and 65 is the number it counts as in the difference.
+  const USUAL_RETIREMENT_AGE = 65;
+  // A difference under this many whole years is not shown: the ladder moves to the lever
+  // age, then hides the comparison.
+  const STAKES_MIN_YEARS = 2;
 
   // `existing` is the money already invested: the projection's starting balance,
   // growing at the same selected rate as the contributions.
   // Returns { feasible, target, months, years, ageAtFreedom } or, when no date exists,
   // { feasible: false, target, atTarget: true } (balance already meets the target) or
   // { feasible: false, target, reason: 'no-investment' | 'horizon' }.
+  // `growthOnly: true` lets a $0 monthly amount project the balance on its own (the "do
+  // nothing" comparison cell); the page's own result never passes it, so a growth-only
+  // date is still never shown as the result (Andrew, 2026-10-23).
   function project(inputs) {
     const age = inputs.age;
     const invest = inputs.invest;
@@ -40,7 +49,9 @@
     if (existing >= target) return { feasible: false, atTarget: true, target: target };
     // A monthly amount is required even with a balance (Andrew, 2026-10-23): the tool projects
     // ongoing investing, so a growth-only date is never shown.
-    if (invest <= 0) return { feasible: false, target: target, reason: 'no-investment' };
+    if (invest <= 0 && !inputs.growthOnly) return { feasible: false, target: target, reason: 'no-investment' };
+    // Nothing invested and nothing being invested never reaches anything.
+    if (invest <= 0 && existing <= 0) return { feasible: false, target: target, reason: 'horizon' };
     const monthlyRate = inputs.ratePct / 100 / 12;
     // Months until starting balance plus contributions reach the target, one rate on everything.
     // With existing = 0 this is the original ln(target * r / invest + 1) / ln(1 + r).
@@ -106,20 +117,71 @@
     return { age: delayAge, months: months };
   }
 
-  // Both rows at once, for the page: { lever, delay }, each null when hidden.
+  // The comparison's left cell, "do nothing": the same projection with the monthly amount set
+  // to $0 and every other input unchanged, including the money already invested (which is
+  // what grows). Returns { age, reaches }: `reaches` true with the rounded age when that
+  // balance alone meets the target before USUAL_RETIREMENT_AGE (rounded age under 65), else
+  // false with age 65, which the page shows as "65+". Never null: a $0 balance simply never
+  // reaches the target.
+  function doNothingScenario(inputs, projectFn) {
+    const run = projectFn || project;
+    const alone = run(Object.assign({}, inputs, { invest: 0, growthOnly: true }));
+    if (alone.feasible) {
+      const age = roundAge(alone.ageAtFreedom);
+      if (age < USUAL_RETIREMENT_AGE) return { age: age, reaches: true };
+    }
+    return { age: USUAL_RETIREMENT_AGE, reaches: false };
+  }
+
+  // The comparison and the number it argues with, as the page's ladder:
+  //   N = left-cell age (65+ counting as 65) minus the right-cell age, whole year for whole year.
+  //   1. N >= STAKES_MIN_YEARS with the plan's own age on the right: source 'plan'.
+  //   2. Else, with a visible lever row, the right cell becomes the lever age and N is recomputed
+  //      from it: source 'lever'.
+  //   3. Else the comparison is hidden: source 'hidden', years null.
+  // Returns { left, right, years, source } for a feasible result, null otherwise. `lever` is the
+  // lever row already computed for the card (so it is not projected twice); it is computed here
+  // when not passed.
+  function stakes(inputs, projectFn, lever) {
+    const run = projectFn || project;
+    const current = run(inputs);
+    if (!current.feasible) return null;
+    const left = doNothingScenario(inputs, run);
+    const planAge = roundAge(current.ageAtFreedom);
+    const planYears = left.age - planAge;
+    if (planYears >= STAKES_MIN_YEARS) {
+      return { left: left, right: { age: planAge, step: null }, years: planYears, source: 'plan' };
+    }
+    const row = lever === undefined ? leverScenario(inputs, run) : lever;
+    if (row) {
+      const leverYears = left.age - row.age;
+      if (leverYears >= STAKES_MIN_YEARS) {
+        return { left: left, right: { age: row.age, step: row.step }, years: leverYears, source: 'lever' };
+      }
+    }
+    return { left: left, right: null, years: null, source: 'hidden' };
+  }
+
+  // Everything the page renders after a result, at once: { lever, delay, stakes }, the rows
+  // null when hidden, stakes null when there is no date.
   function scenarios(inputs, projectFn) {
-    return { lever: leverScenario(inputs, projectFn), delay: delayScenario(inputs, projectFn) };
+    const lever = leverScenario(inputs, projectFn);
+    return { lever: lever, delay: delayScenario(inputs, projectFn), stakes: stakes(inputs, projectFn, lever) };
   }
 
   return {
     WITHDRAWAL_RATE: WITHDRAWAL_RATE,
     DELAY_MONTHS: DELAY_MONTHS,
     DELAY_MIN_MONTHS: DELAY_MIN_MONTHS,
+    USUAL_RETIREMENT_AGE: USUAL_RETIREMENT_AGE,
+    STAKES_MIN_YEARS: STAKES_MIN_YEARS,
     project: project,
     roundAge: roundAge,
     leverStep: leverStep,
     leverScenario: leverScenario,
     delayScenario: delayScenario,
+    doNothingScenario: doNothingScenario,
+    stakes: stakes,
     scenarios: scenarios,
   };
 });

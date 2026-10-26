@@ -1,37 +1,52 @@
-// Post-reveal conversion (2026-10-24): the result context line, the "what moves your date" card,
-// the waitlist form moved up into a dark capture card directly under it, and the Lever Viewed
-// goal. Nothing of this exists in the DOM before the reveal; after it there is exactly one email
-// input on the page. Copy is frozen (COPY in index.html) and checked verbatim here so a reworded
-// sentence fails before counsel sees it.
+// Post-reveal conversion. 2026-10-24: the "what moves your date" card and the Lever Viewed goal.
+// 2026-10-25: the waitlist form moved into the reveal card itself, under a "do nothing vs this
+// plan" comparison computed from the visitor's inputs, and the dark capture card went. Nothing of
+// this exists in the DOM before the reveal; after it there is exactly one email input on the page.
+// Copy is frozen (COPY in index.html) and checked verbatim here so a reworded sentence fails
+// before counsel sees it.
 //
 // Reference numbers (frontend/assets/projection.js, checked in Node; moderate 10% unless said):
-//   defaults 30 / $2,000 / $7,500 / $0:          53; +$250 -> 52; a year later -> 54, 12 months; 12 years before 65
-//   42 / $500 / $4,000 / $0:                      73 (65+); +$100 -> 71; a year later -> 74, 12 months
-//   30 / $2,000 / $7,500 / $250,000 (tick 46):    46; +$250 rounds to 46 (row 1 hidden); a year later -> 47, 6 months
-//   30 / $2,000 / $7,500 / $1,000,000 (tick 76):  37; both rows hidden (lever flat, slip 2 months)
-//   30 / $500 / $7,500 / $0 (recalculate):        67; +$100 -> 65; a year later -> 68, 12 months
-//   41 / $2,000 / $7,500 / $0:                    64; "1 year before the usual 65"
+//   defaults 30 / $2,000 / $7,500 / $0:          53; do nothing: 65+; N 12; +$250 -> 52; a year later -> 54, 12 months
+//   42 / $500 / $4,000 / $0:                      73; do nothing 65+ (N -8); +$100 -> 71 (N -6): comparison hidden
+//   30 / $2,000 / $7,500 / $250,000 (tick 46):    46; do nothing on the balance alone: 52; N 6; row 1 hidden; a year later -> 47, 6 months
+//   30 / $2,000 / $7,500 / $1,000,000 (tick 76):  37; do nothing: 38 (N 1), no lever: comparison hidden; both rows hidden
+//   38 / $1,000 / $5,000 / $0:                    64; do nothing 65+ (N 1); +$250 -> 62: right cell is the lever, N 3
+//   41 / $2,000 / $7,500 / $0:                    64; "1 year before the usual 65"; +$250 -> 63: lever, N 2
+//   30 / $500 / $7,500 / $0 (recalculate):        67; do nothing 65+ (N -2); +$100 -> 65 (N 0): comparison hidden
 const { test, expect } = require('@playwright/test');
 const { installMocks, forceAnalytics, events, eventNames, collectHosts, assertOnlyAllowedHosts, submitWaitlist, seedStorage } = require('./helpers');
 
+const RSQUO = String.fromCharCode(0x2019);
 const COPY = {
-  CONTEXT_65_PLUS: 'Here is what moves this date.',
+  COMPARE_LEFT_LABEL: 'Do nothing.',
+  COMPARE_LEFT_NEVER: '65+',
+  COMPARE_LEFT_CAPTION_NEVER: 'the usual retirement',
+  COMPARE_LEFT_CAPTION_EXISTING: 'on what you already have',
+  COMPARE_RIGHT_LABEL: 'Stick to this plan.',
+  COMPARE_RIGHT_CAPTION: 'your Freedom Date',
+  SUB: `A number you don${RSQUO}t act on is just a number. Save this plan and we${RSQUO}ll walk you through making it automatic the day FRED opens.`,
+  HEADLINE_STILL: 'This date can still move.',
+  SUB_STILL: `Save it and we${RSQUO}ll show you what moves it the day FRED opens.`,
+  BUTTON_SAVE: 'Save my Freedom Date',
+  EMAIL_LABEL: 'Email',
   LEVERS_HEADING: 'This date is not fixed. Here is what moves it.',
   DELAY_TITLE: 'Start one year later',
-  CAPTURE_HEADING_SAVE: 'Save this Freedom Date.',
-  CAPTURE_SUPPORT: 'We will save this Freedom Date and email you the exact steps when FRED opens. No app needed yet.',
-  EMAIL_LABEL: 'Email',
-  BUTTON: 'Save my Freedom Date',
+  DISCLAIMER: 'Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.',
 };
+const stakes = (n) => `That is ${n} years of your life.`;
+const headline = (n) => `Don${RSQUO}t leave ${n} years on the table.`;
+const button = (n) => `Keep my ${n} years`;
 const NO_DATE_HEADING = 'Put your financial future on autopilot.';
 const EM_DASH = String.fromCharCode(0x2014);
-// Words the feature may never render (spec rule); "FRED gets you" and any percentage return included.
+// Words the feature may never render (spec rule); "FRED gets you" and any percentage return included
+// (the fine-print block carries the scenario's return and is checked separately).
 const FORBIDDEN = [/guarantee/i, /will retire/i, /FRED gets you/i, /\d+\s*%/];
 
 const VIEWPORTS = [
-  { name: '375px', width: 375, height: 667 },
+  { name: '390px', width: 390, height: 660 },
   { name: '1280px', width: 1280, height: 800 },
 ];
+const PHONE = { width: 390, height: 660 };
 
 const named = (list, name) => list.filter((e) => e.name === name);
 
@@ -39,68 +54,139 @@ async function reveal(page) {
   await page.click('#reveal-btn');
   await expect(page.locator('#capture-email')).toBeVisible();
 }
+/**
+ * Scrolls an element into view once the page has finished its own reveal motion. Right after a
+ * reveal click the zone is still opening (its max-height transition) and the page scrolls the
+ * result card to the top 150 ms in; a test scroll during that window is clamped by the still-short
+ * document and then undone, which is not what a visitor does.
+ */
 async function scrollTo(page, selector) {
+  await page.waitForFunction(() => document.getElementById('reveal-zone').style.maxHeight === 'none');
+  await page.waitForTimeout(500);
   await page.locator(selector).scrollIntoViewIfNeeded();
 }
-/** Text of the whole post-reveal section (lever card + capture card), for the copy sweeps. */
-async function postRevealText(page) {
-  return page.locator('#post-reveal').innerText();
+/** Text of everything the reveal renders (result card + lever card), for the copy sweeps. */
+async function revealText(page) {
+  return (await page.locator('#result-card').innerText()) + '\n' + (await page.locator('#post-reveal').innerText());
+}
+/** Text of the reveal minus the fine-print block (which legitimately carries the scenario's return). */
+async function argumentText(page) {
+  const all = await revealText(page);
+  const fine = await page.locator('#result-fineprint').innerText();
+  return all.replace(fine, '');
+}
+/** getBoundingClientRect of the card and the capture controls, in viewport coordinates. */
+async function rects(page) {
+  return page.evaluate(() => {
+    const r = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, height: b.height }; };
+    return { card: r('result-card'), input: r('capture-email'), button: r('join-waitlist-btn'), vh: window.innerHeight, vw: window.innerWidth };
+  });
+}
+async function expectComparison(page, { left, leftCaption, rightLabel, right, n }) {
+  await expect(page.locator('#compare')).toBeVisible();
+  await expect(page.locator('#compare-left-label')).toHaveText(COPY.COMPARE_LEFT_LABEL);
+  await expect(page.locator('#compare-left-age')).toHaveText(left);
+  await expect(page.locator('#compare-left-caption')).toHaveText(leftCaption);
+  await expect(page.locator('#compare-right-label')).toHaveText(rightLabel);
+  await expect(page.locator('#compare-right-age')).toHaveText(right);
+  await expect(page.locator('#compare-right-caption')).toHaveText(COPY.COMPARE_RIGHT_CAPTION);
+  await expect(page.locator('#stakes-line')).toHaveText(stakes(n));
+  await expect(page.locator('#capture-heading')).toHaveText(headline(n));
+  await expect(page.locator('#capture-support')).toHaveText(COPY.SUB);
+  await expect(page.locator('#btn-label')).toHaveText(button(n));
+  await expect(page.locator('#join-waitlist-btn')).toContainText(button(n) + ' →');
+}
+async function expectCollapsed(page) {
+  await expect(page.locator('#compare')).toBeHidden();
+  await expect(page.locator('#stakes-line')).toBeHidden();
+  await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_STILL);
+  await expect(page.locator('#capture-support')).toHaveText(COPY.SUB_STILL);
+  await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
+  await expect(page.locator('#join-waitlist-btn')).toContainText(COPY.BUTTON_SAVE + ' →');
 }
 
 for (const vp of VIEWPORTS) {
   test.describe(`at ${vp.name}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
 
-    test('before the reveal there is no lever card, no capture card and no email input in the DOM', async ({ page }) => {
+    test('before the reveal there is no comparison block, no form, no lever card and no email input in the DOM', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
+      await expect(page.locator('#compare')).toHaveCount(0);
+      await expect(page.locator('#stakes-line')).toHaveCount(0);
+      await expect(page.locator('#capture')).toHaveCount(0);
       await expect(page.locator('#levers-card')).toHaveCount(0);
       await expect(page.locator('#join')).toHaveCount(0);
       await expect(page.locator('input[type="email"]')).toHaveCount(0);
       await expect(page.locator('#waitlist-form')).toHaveCount(0);
+      await expect(page.locator('#compare-host')).toBeEmpty();
+      await expect(page.locator('#capture-host')).toBeEmpty();
       await expect(page.locator('#post-reveal')).toBeEmpty();
       // The template holds the markup but is not part of the rendered document.
       await expect(page.locator('#post-reveal-template')).toHaveCount(1);
     });
 
-    test('defaults (53): context line, both rows, lever heading, one email input, capture card right under the result', async ({ page }) => {
+    test('defaults (53): 65+ against 53, twelve years, the form inside the reveal card, one email input, the lever card below', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('53');
-      await expect(page.locator('#result-context')).toHaveText('12 years before the usual 65');
+      await expect(page.locator('#result-context')).toHaveText('years old · 12 years before the usual 65');
+      await expect(page.locator('#result-chip')).toHaveCount(0);
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '53', n: 12 });
+      await expect(page.locator('input[type="email"]')).toHaveCount(1);
+      await expect(page.locator('#result-card #capture-email')).toHaveCount(1);
+      await expect(page.locator('#result-card #join')).toHaveCount(1);
+      await expect(page.locator('#result-fineprint')).toHaveText('Assumes a 10% avg annual return (Moderate scenario) & 4% withdrawal rate. Projected portfolio target: $2,250,000. ' + COPY.DISCLAIMER);
 
       const card = page.locator('#levers-card');
       await expect(card).toBeVisible();
       await expect(page.locator('#levers-heading')).toHaveText(COPY.LEVERS_HEADING);
-      await expect(page.locator('#lever-row')).toBeVisible();
       await expect(page.locator('#lever-title')).toHaveText('Invest $250 more each month');
       await expect(page.locator('#lever-text')).toHaveText('Freedom Date moves to 52');
-      await expect(page.locator('#delay-row')).toBeVisible();
       await expect(page.locator('#delay-title')).toHaveText(COPY.DELAY_TITLE);
       await expect(page.locator('#delay-text')).toHaveText('Freedom Date slips to 54. Waiting costs about 12 months per year.');
-      // Each row carries one inline icon (the page's SVG treatment, no icon font).
-      await expect(page.locator('#lever-row svg')).toHaveCount(1);
-      await expect(page.locator('#delay-row svg')).toHaveCount(1);
 
-      await expect(page.locator('#capture-heading')).toHaveText('Get the plan that gets you to 52.');
-      await expect(page.locator('#capture-support')).toHaveText(COPY.CAPTURE_SUPPORT);
-      await expect(page.locator('input[type="email"]')).toHaveCount(1);
-      await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
-      await expect(page.locator('#join-waitlist-btn')).toContainText(COPY.BUTTON);
-
-      // Order: result card, lever card, capture card, then the methodology accordion.
-      const tops = await page.evaluate(() => ['result-card', 'levers-card', 'join', 'calc-method'].map((id) => document.getElementById(id).getBoundingClientRect().top));
-      expect(tops[0]).toBeLessThan(tops[1]);
-      expect(tops[1]).toBeLessThan(tops[2]);
-      expect(tops[2]).toBeLessThan(tops[3]);
-      if (vp.width === 375) {
-        // The form is within 1.5 viewport heights of the result.
-        expect(tops[2] - tops[0]).toBeLessThan(1.5 * vp.height);
-      }
+      // Order top to bottom inside the card, then the lever card, then the accordion.
+      const tops = await page.evaluate(() => ['result-age', 'result-context', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email', 'join-waitlist-btn', 'capture-count', 'consent-note', 'capture-cta-note', 'result-fineprint', 'levers-card', 'calc-method']
+        .map((id) => document.getElementById(id).getBoundingClientRect().top));
+      for (let i = 1; i < tops.length; i++) expect(tops[i], `order at ${i}`).toBeGreaterThan(tops[i - 1]);
+      const cardBottom = await page.evaluate(() => document.getElementById('result-card').getBoundingClientRect().bottom);
+      expect(tops[11]).toBeLessThan(cardBottom); // fine print inside the card
+      expect(tops[12]).toBeGreaterThanOrEqual(cardBottom); // lever card below it
     });
 
-    test('an age of 65 or more reads "Here is what moves this date." with no negative framing', async ({ page }) => {
+    test('a large balance that reaches the target alone before 65 shows that age on the left, "on what you already have"', async ({ page }) => {
+      await installMocks(page);
+      await page.goto('/index.html');
+      await page.fill('#existing-range', '46'); // $250,000
+      await reveal(page);
+      await expect(page.locator('#result-age')).toHaveText('46');
+      await expect(page.locator('#result-context')).toHaveText('years old · 19 years before the usual 65');
+      await expectComparison(page, { left: '52', leftCaption: COPY.COMPARE_LEFT_CAPTION_EXISTING, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '46', n: 6 });
+      await expect(page.locator('#lever-row')).toBeHidden();
+      await expect(page.locator('#delay-text')).toHaveText('Freedom Date slips to 47. Waiting costs about 6 months per year.');
+    });
+
+    test('at 64 with a visible lever row the right cell becomes "This plan + $250/mo" and N comes from the lever age', async ({ page }) => {
+      await installMocks(page);
+      await page.goto('/index.html');
+      await page.fill('#age-range', '38');
+      await page.fill('#invest-range', '1000');
+      await page.fill('#retire-range', '5000');
+      await reveal(page);
+      await expect(page.locator('#result-age')).toHaveText('64');
+      await expect(page.locator('#result-context')).toHaveText('years old · 1 year before the usual 65');
+      await expect(page.locator('#lever-text')).toHaveText('Freedom Date moves to 62');
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: 'This plan + $250/mo', right: '62', n: 3 });
+      // The two ages stay level even when the right label wraps (subgrid rows).
+      const tops = await page.evaluate(() => ['compare-left-age', 'compare-right-age'].map((id) => Math.round(document.getElementById(id).getBoundingClientRect().top)));
+      expect(tops[0]).toBe(tops[1]);
+      // The live region hears the number with what it is measured against.
+      expect(await page.locator('#result-sr').textContent()).toContain('Do nothing: 65+. This plan + $250/mo: 62. That is 3 years of your life.');
+    });
+
+    test('when both paths collapse (73, lever 71) the comparison and the stakes line are hidden and the still-moves copy shows', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await page.fill('#age-range', '42');
@@ -108,60 +194,53 @@ for (const vp of VIEWPORTS) {
       await page.fill('#retire-range', '4000');
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('73');
-      await expect(page.locator('#result-context')).toHaveText(COPY.CONTEXT_65_PLUS);
-      await expect(page.locator('#lever-title')).toHaveText('Invest $100 more each month');
+      await expect(page.locator('#result-context')).toHaveText('years old');
+      await expectCollapsed(page);
       await expect(page.locator('#lever-text')).toHaveText('Freedom Date moves to 71');
-      await expect(page.locator('#delay-text')).toHaveText('Freedom Date slips to 74. Waiting costs about 12 months per year.');
-      await expect(page.locator('#capture-heading')).toHaveText('Get the plan that gets you to 71.');
-      expect(await postRevealText(page)).not.toMatch(/behind/i);
+      expect(await argumentText(page)).not.toMatch(/behind|table|of your life/i);
     });
 
-    test('when the lever cannot move the date a whole year, row 1 is hidden and the heading reads "Save this Freedom Date."', async ({ page }) => {
-      await installMocks(page);
-      await page.goto('/index.html');
-      await page.fill('#existing-range', '46'); // $250,000
-      await reveal(page);
-      await expect(page.locator('#result-age')).toHaveText('46');
-      await expect(page.locator('#levers-card')).toBeVisible();
-      await expect(page.locator('#lever-row')).toBeHidden();
-      await expect(page.locator('#delay-row')).toBeVisible();
-      await expect(page.locator('#delay-text')).toHaveText('Freedom Date slips to 47. Waiting costs about 6 months per year.');
-      await expect(page.locator('#capture-heading')).toHaveText(COPY.CAPTURE_HEADING_SAVE);
-      // Never "moves to 46" under a 46.
-      expect(await postRevealText(page)).not.toContain('moves to 46');
-    });
-
-    test('recalculating rewrites the context line, both rows and the heading', async ({ page }) => {
+    test('recalculating rewrites every number and scrolls the card back to the top', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await reveal(page);
-      await expect(page.locator('#capture-heading')).toHaveText('Get the plan that gets you to 52.');
+      await expect(page.locator('#btn-label')).toHaveText(button(12));
+      await expect.poll(async () => Math.round((await rects(page)).card.top)).toBe(8);
 
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.fill('#invest-range', '500');
+      await page.fill('#retire-range', '7000'); // 30 / $500 / $7,000: 66, target $2.1M, +$100 -> 64, nothing to compare
       await page.click('#reveal-btn'); // Recalculate
-      await expect(page.locator('#result-age')).toHaveText('67');
-      await expect(page.locator('#result-context')).toHaveText(COPY.CONTEXT_65_PLUS);
-      await expect(page.locator('#lever-title')).toHaveText('Invest $100 more each month');
-      await expect(page.locator('#lever-text')).toHaveText('Freedom Date moves to 65');
-      await expect(page.locator('#delay-text')).toHaveText('Freedom Date slips to 68. Waiting costs about 12 months per year.');
-      await expect(page.locator('#capture-heading')).toHaveText('Get the plan that gets you to 65.');
+      await expect(page.locator('#result-age')).toHaveText('66');
+      await expect(page.locator('#result-context')).toHaveText('years old');
+      await expectCollapsed(page);
+      await expect(page.locator('#lever-text')).toHaveText('Freedom Date moves to 64');
+      await expect(page.locator('#result-fineprint')).toContainText('Projected portfolio target: $2,100,000.');
+      await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
 
-      // Live slider edits keep the rows current too (same path as a drag).
-      await page.locator('#existing-range').evaluate((el) => { el.value = '76'; el.dispatchEvent(new Event('input', { bubbles: true })); }); // $1,000,000
+      // Back to a comparison: the lever path this time (41: 64, +$250 -> 63, two years).
       await page.fill('#invest-range', '2000');
+      await page.fill('#retire-range', '7500');
+      await page.fill('#age-range', '41');
+      await page.click('#reveal-btn');
+      await expect(page.locator('#result-age')).toHaveText('64');
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: 'This plan + $250/mo', right: '63', n: 2 });
+
+      // Live slider edits keep everything current too (same path as a drag): $1,000,000, 37 vs 38, hidden.
+      await page.fill('#age-range', '30');
+      await page.locator('#existing-range').evaluate((el) => { el.value = '76'; el.dispatchEvent(new Event('input', { bubbles: true })); });
       await expect(page.locator('#result-age')).toHaveText('37');
+      await expectCollapsed(page);
       await expect(page.locator('#levers-card')).toBeHidden();
-      await expect(page.locator('#capture-heading')).toHaveText(COPY.CAPTURE_HEADING_SAVE);
       await expect(page.locator('input[type="email"]')).toHaveCount(1);
     });
 
-    test('nothing scrolls sideways and the whole post-reveal section stays inside the viewport width', async ({ page }) => {
+    test('nothing scrolls sideways and every new element stays inside the viewport width', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await reveal(page);
-      await scrollTo(page, '#join');
       const r = await page.evaluate(() => {
-        const ids = ['levers-card', 'join', 'capture-email', 'join-waitlist-btn'];
+        const ids = ['result-card', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'join', 'capture-email', 'join-waitlist-btn', 'consent-note', 'capture-cta-note', 'result-fineprint', 'levers-card'];
         const boxes = ids.map((id) => document.getElementById(id).getBoundingClientRect());
         return {
           scrollWidth: document.documentElement.scrollWidth,
@@ -177,10 +256,83 @@ for (const vp of VIEWPORTS) {
   });
 }
 
-test.describe('the capture card', () => {
-  test.use({ viewport: { width: 375, height: 667 } });
+test.describe('the fit at 390 x 660 (iPhone with the Instagram in-app browser bar)', () => {
+  test.use({ viewport: PHONE });
 
-  test('email input and button meet the one-tap spec; the button is the only one in the card; consent sits under it', async ({ page }) => {
+  test('after the reveal and its own scroll, the card top sits 8px down and the email input and button are fully in view with no scroll by the test', async ({ page }) => {
+    await installMocks(page);
+    await page.goto('/index.html');
+    await reveal(page);
+    // Only the page scrolls: wait for its smooth scroll to settle (150 ms delay plus the motion).
+    await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
+    await page.waitForTimeout(300);
+    const r = await rects(page);
+    expect(Math.round(r.card.top)).toBe(8);
+    for (const box of [r.input, r.button]) {
+      expect(box.top).toBeGreaterThanOrEqual(0);
+      expect(box.bottom).toBeLessThanOrEqual(r.vh);
+      expect(box.left).toBeGreaterThanOrEqual(0);
+      expect(box.right).toBeLessThanOrEqual(r.vw);
+      expect(box.height).toBeGreaterThanOrEqual(48);
+    }
+    expect(r.input.bottom).toBeLessThan(r.button.top);
+  });
+
+  test('the same holds for the longest copy case (65+ against a two-digit age, lever label) and the collapsed case', async ({ page }) => {
+    await installMocks(page);
+    await page.goto('/index.html');
+    await page.fill('#age-range', '38');
+    await page.fill('#invest-range', '1000');
+    await page.fill('#retire-range', '5000');
+    await reveal(page);
+    await expect(page.locator('#compare-right-label')).toHaveText('This plan + $250/mo');
+    await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
+    let r = await rects(page);
+    expect(r.button.bottom).toBeLessThanOrEqual(r.vh);
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.fill('#age-range', '42');
+    await page.fill('#invest-range', '500');
+    await page.fill('#retire-range', '4000');
+    await page.click('#reveal-btn');
+    await expectCollapsed(page);
+    await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
+    r = await rects(page);
+    expect(r.button.bottom).toBeLessThanOrEqual(r.vh);
+  });
+
+  test('with reduced motion the scroll is instant and lands in the same place', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await installMocks(page);
+    await page.goto('/index.html');
+    await page.click('#reveal-btn');
+    // 300 ms after the click the smooth scroll would still be hundreds of pixels away; instant is already there.
+    await page.waitForTimeout(300);
+    const r = await rects(page);
+    expect(Math.round(r.card.top)).toBe(8);
+    expect(r.button.bottom).toBeLessThanOrEqual(r.vh);
+    // And the age did not count up.
+    await expect(page.locator('#result-age')).not.toHaveAttribute('aria-hidden', 'true');
+  });
+
+  test('the page re-runs its scroll only when the first one was clamped: a visitor who scrolls after it is not pulled back', async ({ page }) => {
+    await installMocks(page);
+    await page.goto('/index.html');
+    await reveal(page);
+    await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
+    // Recalculate: the document is already full height, so the first scroll lands and the retry must not fire.
+    await page.click('#reveal-btn');
+    await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
+    await page.evaluate(() => window.scrollBy(0, 600));
+    await page.waitForTimeout(900);
+    expect(Math.round((await rects(page)).card.top)).toBe(8 - 600);
+  });
+});
+
+test.describe('the capture section', () => {
+  test.use({ viewport: PHONE });
+
+  test('email input and button meet the one-tap spec; one visible button; count line, consent and note follow in order', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await reveal(page);
@@ -193,7 +345,7 @@ test.describe('the capture card', () => {
     const m = await page.evaluate(() => {
       const i = document.getElementById('capture-email');
       const b = document.getElementById('join-waitlist-btn');
-      const card = document.getElementById('join');
+      const card = document.getElementById('result-card');
       const consent = document.getElementById('consent-note');
       const count = document.getElementById('capture-count');
       const note = document.getElementById('capture-cta-note');
@@ -205,16 +357,17 @@ test.describe('the capture card', () => {
         btnHeight: b.getBoundingClientRect().height,
         btnWidth: b.getBoundingClientRect().width,
         formWidth: document.getElementById('waitlist-form').getBoundingClientRect().width,
-        buttons: card.querySelectorAll('button:not([hidden])').length,
         visibleButtons: [...card.querySelectorAll('button')].filter((x) => x.offsetParent !== null).length,
-        // Order inside the card (Andrew's follow-up, 2026-10-25): button, count line, consent sentence, note.
+        // Order (Andrew's follow-up, 2026-10-25): button, count line, consent sentence, note; the note is the
+        // capture section's last line and the fine print follows it.
         countBelowButton: top(count) >= bottom(b),
         consentBelowCount: top(consent) >= bottom(count),
         noteBelowConsent: top(note) >= bottom(consent),
-        noteIsLast: card.lastElementChild === note,
+        noteIsLast: document.getElementById('capture').lastElementChild === note,
+        consentFont: parseFloat(getComputedStyle(consent).fontSize),
         noteStyle: [getComputedStyle(note).fontSize, getComputedStyle(note).color],
         consentStyle: [getComputedStyle(consent).fontSize, getComputedStyle(consent).color],
-        cardBg: getComputedStyle(card).backgroundColor,
+        consentAlign: getComputedStyle(consent).textAlign,
       };
     });
     expect(m.inputHeight).toBeGreaterThanOrEqual(48);
@@ -227,77 +380,105 @@ test.describe('the capture card', () => {
     expect(m.noteBelowConsent).toBe(true);
     expect(m.noteIsLast).toBe(true);
     expect(m.noteStyle).toEqual(m.consentStyle);
-    // The navy text token (#0F172A) as the dark surface.
-    expect(m.cardBg).toBe('rgb(15, 23, 42)');
+    expect(m.consentFont).toBe(11); // never below its size
+    expect(m.consentAlign).toBe('left');
     // The mocked stats answer 40, at or above STAT_TILE_MIN_N (25): the live count line shows.
     await expect(page.locator('#capture-count')).toBeVisible();
     await expect(page.locator('#capture-count')).toHaveText('40 people are already on the list.');
     await expect(page.locator('#consent-note')).toContainText('By signing up for our waitlist');
     await expect(page.locator('#capture-cta-note p').nth(0)).toHaveText('No payment until launch. You only pay if invited and choose to claim your spot.');
     await expect(page.locator('#capture-cta-note p').nth(1)).toHaveText('The private beta is currently iOS only.');
+    // A visible focus indicator on the white field: the primary border and ring, not white on white.
+    await input.focus();
+    await page.waitForTimeout(650); // the input's colour transition is 500 ms
+    const focusBorder = await input.evaluate((el) => getComputedStyle(el).borderColor);
+    expect(focusBorder).not.toBe('rgb(255, 255, 255)');
+    expect(focusBorder).toBe('rgb(19, 91, 236)');
   });
 
-  test('anchor links to #join land on the capture card', async ({ page }) => {
+  test('anchor links to #join land on the form', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await reveal(page);
     await expect(page.locator('#join #waitlist-form')).toHaveCount(1);
-    // Let the reveal's own smooth scroll to the result settle first; a hash set while it is in
-    // flight is overridden by it (the reveal scrolls 150 ms after the click).
+    // Let the reveal's own smooth scroll settle first; a hash set while it is in flight is
+    // overridden by it.
     await page.waitForTimeout(1200);
-    await page.evaluate(() => { location.hash = '#join'; });
+    await page.evaluate(() => { window.scrollTo(0, 0); location.hash = '#join'; });
     await expect.poll(() => page.evaluate(() => {
       const r = document.getElementById('join').getBoundingClientRect();
       return r.top >= -2 && r.top < window.innerHeight;
     })).toBe(true);
   });
 
-  test('a no-date result keeps the form, falls back to the approved capture heading and shows no lever card', async ({ page }) => {
+  test('a no-date result keeps the form, hides the comparison and falls back to the approved capture heading and the save button', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#invest-range', '0');
     await reveal(page);
     await expect(page.locator('#infeasible-block')).toBeVisible();
     await expect(page.locator('#result-context')).toBeHidden();
+    await expect(page.locator('#compare')).toBeHidden();
+    await expect(page.locator('#stakes-line')).toBeHidden();
     await expect(page.locator('#levers-card')).toBeHidden();
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
     await expect(page.locator('#capture-support')).toBeHidden();
+    await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
+    await expect(page.locator('#result-assumptions')).toBeHidden();
+    await expect(page.locator('#result-fineprint')).toHaveText(COPY.DISCLAIMER);
     await expect(page.locator('input[type="email"]')).toHaveCount(1);
-    // Back to a date: the lever copy returns.
+    // Back to a date: the argument returns.
     await page.fill('#invest-range', '2000');
-    await expect(page.locator('#capture-heading')).toHaveText('Get the plan that gets you to 52.');
-    await expect(page.locator('#capture-support')).toBeVisible();
+    await expect(page.locator('#capture-heading')).toHaveText(headline(12));
+    await expect(page.locator('#compare')).toBeVisible();
+    await expect(page.locator('#result-fineprint')).toContainText('Assumes a 10%');
   });
 
-  test('the at-target state keeps the form with the approved heading and no lever card', async ({ page }) => {
+  test('the at-target state keeps the form with the approved heading, no comparison and no lever card', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#retire-range', '1000');
     await page.fill('#existing-range', '48'); // $300,000, the target
     await reveal(page);
     await expect(page.locator('#at-target-block')).toBeVisible();
+    await expect(page.locator('#compare')).toBeHidden();
     await expect(page.locator('#levers-card')).toBeHidden();
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
+    await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
     await expect(page.locator('#capture-email')).toBeVisible();
   });
 
-  test('the submit flow is unchanged: the pending block replaces the form inside the capture card', async ({ page }) => {
+  test('the submit flow is unchanged: the pending block replaces the form inside the reveal card and the note goes with the form', async ({ page }) => {
     const calls = await installMocks(page);
     await page.goto('/index.html');
     await submitWaitlist(page, 'moved@example.com');
-    await expect(page.locator('#join #pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#result-card #join #pending-block')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#waitlist-form')).toBeHidden();
-    await expect(page.locator('#capture-heading')).toHaveText('Get the plan that gets you to 52.');
+    await expect(page.locator('#capture-cta-note')).toBeHidden();
+    // The pitch goes with the form: no "Don't leave 12 years on the table" above "you got mail".
+    await expect(page.locator('#capture-pitch')).toBeHidden();
+    await expect(page.locator('#capture-heading')).toBeHidden();
+    await expect(page.locator('#compare')).toBeVisible();
+    await expect(page.locator('#capture-count')).toBeVisible();
     expect(calls.signup[0]).toMatchObject({ email: 'moved@example.com', freedomAge: 53, revealedBeforeSubmit: true });
+    // "Use a different one" brings the form, the pitch and the note back.
+    await page.click('#pending-reset');
+    await expect(page.locator('#waitlist-form')).toBeVisible();
+    await expect(page.locator('#capture-pitch')).toBeVisible();
+    await expect(page.locator('#capture-heading')).toHaveText(headline(12));
+    await expect(page.locator('#capture-cta-note')).toBeVisible();
   });
 
-  test('a returning visitor gets the capture card mounted on load with the success state and the lever card for the current inputs', async ({ page }) => {
+  test('a returning visitor gets the comparison, the success state and the lever card mounted on load for the current inputs', async ({ page }) => {
     await seedStorage(page, { waitlist_status: 'WAITLISTED' });
     await installMocks(page);
     await page.goto('/index.html');
     await expect(page.locator('#reveal-zone')).toHaveClass(/open/);
     await expect(page.locator('#success-block')).toBeVisible();
     await expect(page.locator('#waitlist-form')).toBeHidden();
+    await expect(page.locator('#capture-pitch')).toBeHidden();
+    await expect(page.locator('#compare')).toBeVisible();
+    await expect(page.locator('#compare-right-age')).toHaveText('53');
     await expect(page.locator('#levers-card')).toBeVisible();
     await expect(page.locator('#lever-text')).toHaveText('Freedom Date moves to 52');
     await expect(page.locator('input[type="email"]')).toHaveCount(1);
@@ -309,40 +490,41 @@ test.describe('copy', () => {
     await installMocks(page);
     await page.goto('/index.html');
     await reveal(page);
-    const text = await postRevealText(page);
-    for (const re of FORBIDDEN) expect(text).not.toMatch(re);
-    expect(text).not.toContain(EM_DASH);
-    expect(await page.locator('#result-context').innerText()).not.toContain(EM_DASH);
-    // One disclosure near the output (the attorney-approved sentence in the result card); the lever and
-    // capture cards add none, so there are never two.
+    const argument = await argumentText(page);
+    for (const re of FORBIDDEN) expect(argument).not.toMatch(re);
+    expect(await revealText(page)).not.toContain(EM_DASH);
+    // One disclosure near the output (the attorney-approved sentence, now in the merged fine-print
+    // block); nothing else in the zone outside the accordion repeats it.
     const zone = await page.locator('#reveal-zone').innerText();
     const accordion = await page.locator('#calc-method').innerText();
     const outsideAccordion = zone.replace(accordion, '');
     expect(outsideAccordion.match(/Hypothetical illustration/g) || []).toHaveLength(1);
-    await expect(page.locator('#result-card')).toContainText('Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.');
+    await expect(page.locator('#result-fineprint')).toContainText(COPY.DISCLAIMER);
+    // The fine print carries the scenario's return once, with the word "guarantee" only inside the approved sentence.
+    const fine = await page.locator('#result-fineprint').innerText();
+    expect(fine.match(/\d+\s*%/g)).toEqual(['10%', '4%']);
+    expect(fine.match(/guarantee/g)).toHaveLength(1);
   });
 
-  test('at 65 or more with no card to point at, the context line is not shown and the live region has no double stop', async ({ page }) => {
+  test('the screen-reader summary keeps the month and year and the stakes sentence, with no double stop', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
+    await reveal(page);
+    const sr = await page.locator('#result-sr').textContent();
+    expect(sr).toMatch(/^You could be free at 53 years old\. 12 years before the usual 65\. Freedom Date: [A-Z][a-z]+ \d{4}\. Do nothing: 65\+\. Stick to this plan: 53\. That is 12 years of your life\. Projected portfolio target: \$2,250,000\. Assumes a 10% average annual return \(Moderate scenario\) and 4% withdrawal rate\. Hypothetical illustration/);
+    expect(sr).not.toContain('..');
+    // 69 on a large balance, nothing to compare: just the age, the date and the fine print.
     await page.fill('#age-range', '60');
     await page.fill('#invest-range', '50');
-    await page.fill('#existing-range', '72'); // $900,000: 69, lever flat, slip rounds to 0
-    await reveal(page);
+    await page.fill('#existing-range', '72'); // $900,000
     await expect(page.locator('#result-age')).toHaveText('69');
+    await expect(page.locator('#result-context')).toHaveText('years old');
+    await expect(page.locator('#compare')).toBeHidden();
     await expect(page.locator('#levers-card')).toBeHidden();
-    await expect(page.locator('#result-context')).toBeHidden();
-    await expect(page.locator('#result-context')).toHaveText('');
-    expect(await page.locator('#result-sr').textContent()).not.toContain('..');
-    // With a card, the sentence is there and the announcement still reads with one stop.
-    await page.fill('#existing-range', '0');
-    await page.fill('#invest-range', '500');
-    await page.fill('#age-range', '42');
-    await page.fill('#retire-range', '4000');
-    await expect(page.locator('#result-context')).toHaveText(COPY.CONTEXT_65_PLUS);
-    const sr = await page.locator('#result-sr').textContent();
-    expect(sr).toContain('Here is what moves this date. Freedom Date:');
-    expect(sr).not.toContain('..');
+    const sr2 = await page.locator('#result-sr').textContent();
+    expect(sr2).toMatch(/^You could be free at 69 years old\. Freedom Date: /);
+    expect(sr2).not.toContain('of your life');
+    expect(sr2).not.toContain('..');
   });
 
   test('"1 year before the usual 65" is singular at 64', async ({ page }) => {
@@ -351,19 +533,98 @@ test.describe('copy', () => {
     await page.fill('#age-range', '41');
     await reveal(page);
     await expect(page.locator('#result-age')).toHaveText('64');
-    await expect(page.locator('#result-context')).toHaveText('1 year before the usual 65');
+    await expect(page.locator('#result-context')).toHaveText('years old · 1 year before the usual 65');
   });
 });
 
 test.describe('analytics', () => {
   const LEVER_KEYS = ['lever_shift_band', 'delay_months_band', 'freedom_age_band'];
-  const SHIFT_BANDS = ['hidden', '0', '1-2', '3-5', '6+'];
-  const DELAY_BANDS = ['hidden', '3-6', '7-11', '12+'];
+  const STAKE_BANDS = ['hidden', '2-5', '6-10', '11+'];
+  const STAKE_SOURCES = ['plan', 'lever', 'hidden'];
+  const DEFAULT_STAKE = { stake_years_band: '11+', stake_source: 'plan' };
+  const HIDDEN_STAKE = { stake_years_band: 'hidden', stake_source: 'hidden' };
 
-  test('Lever Viewed fires once per reveal when the card is in view, with the three banded properties and no raw number', async ({ page }) => {
+  test('stake_years_band and stake_source ride on Freedom Date Revealed, Email Focused and Waitlist Submitted, banded, and on nothing else', async ({ page }) => {
     await forceAnalytics(page);
     await installMocks(page);
-    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/index.html');
+    await reveal(page);
+    await scrollTo(page, '#levers-card');
+    await expect.poll(() => eventNames(page)).toContain('Lever Viewed');
+    await submitWaitlist(page, 'stake@example.com');
+    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    const all = await events(page);
+    expect(named(all, 'Freedom Date Revealed')[0].props).toMatchObject({ freedom_age_band: '50-54', ...DEFAULT_STAKE });
+    expect(named(all, 'Email Focused')[0].props).toEqual({ lever_shift_band: '1-2', delay_months_band: '12+', ...DEFAULT_STAKE });
+    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ revealed: 'yes', ...DEFAULT_STAKE });
+    // No new goals (untouched sliders: no Calc Engaged), and the stake keys stay off Lever Viewed.
+    expect(new Set(all.map((e) => e.name))).toEqual(new Set(['Freedom Date Revealed', 'Lever Viewed', 'Email Focused', 'Waitlist Submitted']));
+    for (const e of all) {
+      if (['Freedom Date Revealed', 'Email Focused', 'Waitlist Submitted'].includes(e.name)) {
+        expect(STAKE_BANDS).toContain(e.props.stake_years_band);
+        expect(STAKE_SOURCES).toContain(e.props.stake_source);
+      } else {
+        expect(e.props).not.toHaveProperty('stake_years_band');
+        expect(e.props).not.toHaveProperty('stake_source');
+      }
+    }
+    // The twelve years never travel as a bare number.
+    expect(JSON.stringify(all)).not.toContain('"12"');
+  });
+
+  test('the lever path is reported as stake_source lever, the hidden comparison as hidden, the balance case as plan 6-10', async ({ page }) => {
+    await forceAnalytics(page);
+    await installMocks(page);
+    await page.goto('/index.html');
+    // 38 / $1,000 / $5,000: 64, lever 62, three years from the lever.
+    await page.fill('#age-range', '38');
+    await page.fill('#invest-range', '1000');
+    await page.fill('#retire-range', '5000');
+    await reveal(page);
+    expect(named(await events(page), 'Freedom Date Revealed')[0].props).toMatchObject({ freedom_age_band: '60-64', stake_years_band: '2-5', stake_source: 'lever' });
+    // 42 / $500 / $4,000: 73, nothing to compare.
+    await page.fill('#age-range', '42');
+    await page.fill('#invest-range', '500');
+    await page.fill('#retire-range', '4000');
+    await page.click('#reveal-btn');
+    await expectCollapsed(page);
+    // $250,000 at the defaults: 52 against 46 from the plan itself.
+    await page.fill('#age-range', '30');
+    await page.fill('#invest-range', '2000');
+    await page.fill('#retire-range', '7500');
+    await page.fill('#existing-range', '46');
+    await page.click('#reveal-btn'); // third click: no Recalculated, context still recorded
+    await expect(page.locator('#compare-left-age')).toHaveText('52');
+    await submitWaitlist(page, 'plan@example.com');
+    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    const all = await events(page);
+    expect(named(all, 'Email Focused')[0].props).toEqual({ lever_shift_band: 'hidden', delay_months_band: '3-6', stake_years_band: '6-10', stake_source: 'plan' });
+    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ freedom_age_band: '45-49', stake_years_band: '6-10', stake_source: 'plan' });
+    const raw = ['250000', '46', '47', '52', '6', '3', '62', '64'];
+    for (const e of all) for (const v of Object.values(e.props)) expect(raw).not.toContain(v);
+  });
+
+  test('a hidden comparison (and no date at all) bands as hidden on all three events', async ({ page }) => {
+    await forceAnalytics(page);
+    await installMocks(page);
+    await page.goto('/index.html');
+    await page.fill('#existing-range', '76'); // $1,000,000: 37 against 38, no lever
+    await reveal(page);
+    await expectCollapsed(page);
+    await submitWaitlist(page, 'hidden@example.com');
+    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    const all = await events(page);
+    expect(named(all, 'Freedom Date Revealed')[0].props).toMatchObject(HIDDEN_STAKE);
+    expect(named(all, 'Email Focused')[0].props).toEqual({ lever_shift_band: 'hidden', delay_months_band: 'hidden', ...HIDDEN_STAKE });
+    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ revealed: 'yes', freedom_age_band: '<45', ...HIDDEN_STAKE });
+    expect(named(all, 'Lever Viewed')).toEqual([]);
+    expect(JSON.stringify(all)).not.toContain('1000000');
+  });
+
+  test('Lever Viewed fires once per reveal when the card is in view, with its three banded properties only', async ({ page }) => {
+    await forceAnalytics(page);
+    await installMocks(page);
+    await page.setViewportSize(PHONE);
     await page.goto('/index.html');
     await reveal(page);
     await scrollTo(page, '#levers-card');
@@ -372,57 +633,20 @@ test.describe('analytics', () => {
     expect(viewed).toHaveLength(1);
     expect(Object.keys(viewed[0].props).sort()).toEqual([...LEVER_KEYS].sort());
     expect(viewed[0].props).toEqual({ lever_shift_band: '1-2', delay_months_band: '12+', freedom_age_band: '50-54' });
-    for (const v of Object.values(viewed[0].props)) expect(/^\d+(\.\d+)?$/.test(v)).toBe(false);
 
-    // Scrolling away and back adds nothing within the same reveal.
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(300);
     await scrollTo(page, '#levers-card');
     await page.waitForTimeout(300);
     expect(named(await events(page), 'Lever Viewed')).toHaveLength(1);
 
-    // A second reveal click re-arms it: once more, with the new bands.
     await page.fill('#invest-range', '500');
     await page.click('#reveal-btn');
     await scrollTo(page, '#levers-card');
     await expect.poll(async () => named(await events(page), 'Lever Viewed').length).toBe(2);
     viewed = named(await events(page), 'Lever Viewed');
     expect(viewed[1].props).toEqual({ lever_shift_band: '1-2', delay_months_band: '12+', freedom_age_band: '65+' });
-    expect(SHIFT_BANDS).toContain(viewed[1].props.lever_shift_band);
-    expect(DELAY_BANDS).toContain(viewed[1].props.delay_months_band);
-    // Nothing else new was invented: the only names are the documented ones.
     expect(new Set(await eventNames(page))).toEqual(new Set(['Freedom Date Revealed', 'Lever Viewed', 'Calc Engaged', 'Recalculated']));
-  });
-
-  test('Lever Viewed never fires when the card is hidden, and Email Focused / Waitlist Submitted band both rows as hidden', async ({ page }) => {
-    await forceAnalytics(page);
-    await installMocks(page);
-    await page.goto('/index.html');
-    await page.fill('#existing-range', '76'); // $1,000,000: lever flat, slip 2 months
-    await reveal(page);
-    await expect(page.locator('#levers-card')).toBeHidden();
-    await submitWaitlist(page, 'hidden@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
-    const all = await events(page);
-    expect(named(all, 'Lever Viewed')).toEqual([]);
-    expect(named(all, 'Email Focused')[0].props).toEqual({ lever_shift_band: 'hidden', delay_months_band: 'hidden' });
-    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ revealed: 'yes', freedom_age_band: '<45', lever_shift_band: 'hidden', delay_months_band: 'hidden' });
-    expect(JSON.stringify(all)).not.toContain('1000000');
-  });
-
-  test('Email Focused and Waitlist Submitted carry the lever bands of the last reveal click', async ({ page }) => {
-    await forceAnalytics(page);
-    await installMocks(page);
-    await page.goto('/index.html');
-    await page.fill('#existing-range', '46'); // $250,000: row 1 hidden, slip 6 months
-    await reveal(page);
-    await submitWaitlist(page, 'bands@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
-    const all = await events(page);
-    expect(named(all, 'Email Focused')[0].props).toEqual({ lever_shift_band: 'hidden', delay_months_band: '3-6' });
-    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ lever_shift_band: 'hidden', delay_months_band: '3-6', freedom_age_band: '45-49' });
-    const raw = ['250000', '46', '47', '6'];
-    for (const e of all) for (const v of Object.values(e.props)) expect(raw).not.toContain(v);
   });
 
   test('a full post-reveal journey talks only to our origin and Turnstile', async ({ page }) => {
@@ -453,17 +677,13 @@ test.describe('analytics', () => {
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
     await expect.poll(() => calls.stats).toBe(2);
     expect(calls.signup).toHaveLength(1);
-    // The payment / iOS note goes with the form once the signup is in; the count line stays.
-    await expect(page.locator('#capture-cta-note')).toBeHidden();
-    await expect(page.locator('#capture-count')).toBeVisible();
   });
 
   test('a live edit after the click never fires Lever Viewed with the click\'s stale bands', async ({ page }) => {
     await forceAnalytics(page);
     await installMocks(page);
-    await page.setViewportSize({ width: 375, height: 667 });
+    await page.setViewportSize(PHONE);
     await page.goto('/index.html');
-    // Click with no date: no card, nothing armed. A live edit then shows the card: still nothing.
     await page.fill('#invest-range', '0');
     await reveal(page);
     await expect(page.locator('#levers-card')).toBeHidden();
@@ -472,12 +692,10 @@ test.describe('analytics', () => {
     await scrollTo(page, '#levers-card');
     await page.waitForTimeout(400);
     expect(named(await events(page), 'Lever Viewed')).toEqual([]);
-    // The next click records this card and fires once.
     await page.click('#reveal-btn');
     await scrollTo(page, '#levers-card');
     await expect.poll(async () => named(await events(page), 'Lever Viewed').length).toBe(1);
     expect(named(await events(page), 'Lever Viewed')[0].props).toEqual({ lever_shift_band: '1-2', delay_months_band: '12+', freedom_age_band: '50-54' });
-    // A click whose card is hidden, then a live edit that shows it: no event either.
     await page.fill('#existing-range', '76'); // $1,000,000
     await page.click('#reveal-btn');
     await expect(page.locator('#levers-card')).toBeHidden();
@@ -492,8 +710,6 @@ test.describe('analytics', () => {
     await forceAnalytics(page);
     await installMocks(page);
     await page.goto('/index.html');
-    // Each click's event is awaited before the next edit: a slider move right after a click
-    // disarms the observer (the card on screen is no longer the one the click recorded).
     const viewedCount = async () => named(await events(page), 'Lever Viewed').length;
     await reveal(page);
     await scrollTo(page, '#levers-card');
@@ -513,7 +729,7 @@ test.describe('analytics', () => {
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
     const all = await events(page);
     expect(named(all, 'Recalculated')).toHaveLength(1);
-    expect(named(all, 'Email Focused')[0].props).toEqual({ lever_shift_band: 'hidden', delay_months_band: '3-6' });
-    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ return_scenario: 'moderate', freedom_age_band: '45-49', lever_shift_band: 'hidden', delay_months_band: '3-6' });
+    expect(named(all, 'Email Focused')[0].props).toEqual({ lever_shift_band: 'hidden', delay_months_band: '3-6', stake_years_band: '6-10', stake_source: 'plan' });
+    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ return_scenario: 'moderate', freedom_age_band: '45-49', lever_shift_band: 'hidden', delay_months_band: '3-6', stake_years_band: '6-10', stake_source: 'plan' });
   });
 });

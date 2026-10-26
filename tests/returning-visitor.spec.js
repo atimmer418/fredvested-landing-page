@@ -77,13 +77,14 @@ test('after the automatic open, moving a slider updates the shown date live, wit
   await installMocks(page);
   await page.goto('/index.html');
   await expect(page.locator('#reveal-zone')).toHaveClass(/open/);
-  const before = await page.locator('#result-chip').textContent();
+  // The month and year live in the screen-reader summary since the date pill went (2026-10-25).
+  const before = await page.locator('#result-sr').textContent();
   // Same path a real drag takes: set the range's value and fire `input` on it.
   await page.locator('#invest-range').evaluate((el) => {
     el.value = el.max;
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  await expect(page.locator('#result-chip')).not.toHaveText(before);
+  await expect(page.locator('#result-sr')).not.toHaveText(before);
   // Still not a reveal: the first slider touch is Calc Engaged as always, nothing more.
   expect(await eventNames(page)).toEqual(['Calc Engaged']);
 });
@@ -110,10 +111,10 @@ test('a joined visitor who recalculates overwrites the saved freedom date the ab
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
   const age = Number(await page.locator('#result-age').textContent());
-  const chip = await page.locator('#result-chip').textContent();
+  const summary = await page.locator('#result-sr').textContent();
   const saved = JSON.parse(await storage(page, 'waitlist_freedom'));
   expect(saved.age).toBe(age);
-  expect(chip).toContain(saved.monthYear);
+  expect(summary).toContain('Freedom Date: ' + saved.monthYear + '.');
   expect(saved).not.toEqual({ age: 45, monthYear: 'March 2040' });
 
   await page.goto('/about.html');

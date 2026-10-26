@@ -129,10 +129,107 @@ test.describe('delayScenario', () => {
   });
 });
 
-test('scenarios() returns both rows from the same spy, four projection calls in all', () => {
+test('scenarios() returns both rows from the same spy', () => {
   const s = spy();
   const out = P.scenarios(CASES.A, s);
-  assert.equal(s.calls.length, 4);
-  assert.deepEqual(out, { lever: { step: 250, age: 52, shiftYears: 1 }, delay: { age: 54, months: 12 } });
-  assert.deepEqual(P.scenarios(CASES.C), { lever: null, delay: { age: 47, months: 6 } });
+  assert.deepEqual(out.lever, { step: 250, age: 52, shiftYears: 1 });
+  assert.deepEqual(out.delay, { age: 54, months: 12 });
+  assert.deepEqual(P.scenarios(CASES.C).lever, null);
+  assert.deepEqual(P.scenarios(CASES.C).delay, { age: 47, months: 6 });
+});
+
+// --- "Do nothing vs this plan" (2026-10-25) ---------------------------------------------
+// Reference numbers (same formula, same rounding):
+//   A: $0 alone never reaches the target -> 65+; 65 - 53 = 12, from the plan.
+//   B: 65+ against 73 is -8 and against the lever's 71 is -6: hidden.
+//   C: $250,000 alone at 10%: ln(9) / ln(1 + 0.10/12) = 264.8 months -> 52.07 -> 52; 52 - 46 = 6, from the plan.
+//   D: 38 / $1,000 / $5,000 / $0: 64.2 -> 64; 65 - 64 = 1 (under 2); +$250 -> 62.3 -> 62; 65 - 62 = 3, from the lever.
+//   E: $1,000,000 at the defaults: 37.4 -> 37; alone 38.1 -> 38; 1 year, no lever row: hidden.
+const CASES2 = {
+  D: { age: 38, invest: 1000, retire: 5000, existing: 0, ratePct: 10 },
+  E: { age: 30, invest: 2000, retire: 7500, existing: 1000000, ratePct: 10 },
+};
+
+test('project() with growthOnly projects the balance alone; without it a $0 amount is still no-investment', () => {
+  assert.deepEqual(P.project({ ...CASES.C, invest: 0 }), { feasible: false, target: 2250000, reason: 'no-investment' });
+  const alone = P.project({ ...CASES.C, invest: 0, growthOnly: true });
+  assert.equal(alone.feasible, true);
+  assert.ok(nearly(Math.round(alone.months * 10) / 10, 264.8), `months ${alone.months}`);
+  assert.equal(P.roundAge(alone.ageAtFreedom), 52);
+  // Nothing invested and nothing added: no date, and no division by zero.
+  assert.equal(P.project({ ...CASES.A, invest: 0, growthOnly: true }).reason, 'horizon');
+});
+
+test.describe('doNothingScenario', () => {
+  test('A: calls the projection once, with invest 0 and growthOnly on every other input unchanged, and reads 65+', () => {
+    const s = spy();
+    const out = P.doNothingScenario(CASES.A, s);
+    assert.equal(s.calls.length, 1);
+    assert.deepEqual(s.calls[0], { ...CASES.A, invest: 0, growthOnly: true });
+    assert.deepEqual(out, { age: 65, reaches: false });
+  });
+
+  test('C: the balance alone reaches the target at 52, before 65', () => {
+    const s = spy();
+    const out = P.doNothingScenario(CASES.C, s);
+    assert.deepEqual(s.calls[0], { ...CASES.C, invest: 0, growthOnly: true });
+    assert.deepEqual(out, { age: 52, reaches: true });
+  });
+
+  test('a balance that reaches the target only at 65 or later is 65+ (the cutoff is a rounded age under 65)', () => {
+    // $100,000 at the defaults: alone, ln(22.5) / ln(1 + 0.10/12) = 374.6 months -> 61.2: reaches.
+    assert.deepEqual(P.doNothingScenario({ ...CASES.A, existing: 100000 }, spy()), { age: 61, reaches: true });
+    // $50,000: 458.2 months -> 68.2: not before 65.
+    assert.deepEqual(P.doNothingScenario({ ...CASES.A, existing: 50000 }, spy()), { age: 65, reaches: false });
+  });
+});
+
+test.describe('stakes (the N ladder)', () => {
+  test('A: 65+ against 53 is 12 from the plan; the projection is called for the plan and for doing nothing', () => {
+    const s = spy();
+    const out = P.stakes(CASES.A, s, null);
+    assert.deepEqual(s.calls[0], CASES.A);
+    assert.deepEqual(s.calls[1], { ...CASES.A, invest: 0, growthOnly: true });
+    assert.equal(s.calls.length, 2);
+    assert.deepEqual(out, { left: { age: 65, reaches: false }, right: { age: 53, step: null }, years: 12, source: 'plan' });
+  });
+
+  test('C: 52 against 46 is 6 from the plan, with the balance case on the left', () => {
+    assert.deepEqual(P.stakes(CASES.C, spy()), { left: { age: 52, reaches: true }, right: { age: 46, step: null }, years: 6, source: 'plan' });
+  });
+
+  test('D: under 2 from the plan (65 - 64), so the lever age 62 goes on the right and N is 3', () => {
+    const s = spy();
+    const out = P.stakes(CASES2.D, s);
+    assert.deepEqual(out, { left: { age: 65, reaches: false }, right: { age: 62, step: 250 }, years: 3, source: 'lever' });
+    // The lever was projected through the same spy (raised amount), not a formula of its own.
+    assert.ok(s.calls.some((c) => c.invest === 1250 && c.age === 38));
+    // When the page passes the lever row it already computed, it is not projected again.
+    const s2 = spy();
+    assert.deepEqual(P.stakes(CASES2.D, s2, { step: 250, age: 62, shiftYears: 2 }).years, 3);
+    assert.equal(s2.calls.length, 2);
+  });
+
+  test('B and E: still under 2 after the lever, or no lever row at all: hidden', () => {
+    assert.deepEqual(P.stakes(CASES.B, spy()), { left: { age: 65, reaches: false }, right: null, years: null, source: 'hidden' });
+    assert.deepEqual(P.stakes(CASES2.E, spy()), { left: { age: 38, reaches: true }, right: null, years: null, source: 'hidden' });
+    // A hidden lever row passed in explicitly is honoured as hidden.
+    assert.equal(P.stakes(CASES2.D, spy(), null).source, 'hidden');
+  });
+
+  test('no current date: null, after one projection call', () => {
+    const s = spy();
+    assert.equal(P.stakes({ ...CASES.A, invest: 0 }, s), null);
+    assert.equal(s.calls.length, 1);
+    assert.equal(P.stakes({ age: 30, invest: 2000, retire: 1000, existing: 300000, ratePct: 10 }, spy()), null);
+  });
+});
+
+test('scenarios() carries the comparison alongside the rows and projects six times in all', () => {
+  const s = spy();
+  const out = P.scenarios(CASES.A, s);
+  // lever (2) + delay (2) + stakes (plan, do nothing; the lever row is reused) = 6
+  assert.equal(s.calls.length, 6);
+  assert.deepEqual(out.stakes, { left: { age: 65, reaches: false }, right: { age: 53, step: null }, years: 12, source: 'plan' });
+  assert.deepEqual(P.scenarios(CASES.C).stakes.years, 6);
 });

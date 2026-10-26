@@ -59,6 +59,13 @@
   // (null when hidden; the page never shows a slip under 3). Raw numbers stay here.
   const leverShiftBand = (v) => (v === null || v === undefined ? 'hidden' : band(v, [1, 3, 6], ['0', '1-2', '3-5', '6+']));
   const delayMonthsBand = (v) => (v === null || v === undefined || Number(v) < 3 ? 'hidden' : band(v, [7, 12], ['3-6', '7-11', '12+']));
+  // The "do nothing vs this plan" comparison in the reveal card (2026-10-25). The page passes
+  // the whole years between the two cells (null when the comparison is hidden; it never shows
+  // under 2) and which right cell was shown: 'plan' (the result's own age), 'lever' (the lever
+  // age, when the plan alone was under 2 years) or 'hidden'.
+  const stakeYearsBand = (v) => (v === null || v === undefined || Number(v) < 2 ? 'hidden' : band(v, [6, 11], ['2-5', '6-10', '11+']));
+  const STAKE_SOURCES = new Set(['plan', 'lever', 'hidden']);
+  const stakeSource = (v) => (STAKE_SOURCES.has(v) ? v : 'hidden');
 
   // --- session state (in memory only; a new page load starts over) --------
   const fired = new Set();
@@ -73,12 +80,17 @@
   // leverShift / delayMonths: the lever card's two numbers at the last reveal-button
   // click (null when that row was hidden), carried onto Email Focused and Waitlist
   // Submitted so conversion can be read against the size of the lever the visitor saw.
-  let calc = { scenario: null, freedomAge: undefined, revealed: false, leverShift: null, delayMonths: null };
+  // stakeYears / stakeSource: the comparison block the same click rendered, carried onto
+  // Freedom Date Revealed, Email Focused and Waitlist Submitted.
+  let calc = { scenario: null, freedomAge: undefined, revealed: false, leverShift: null, delayMonths: null, stakeYears: null, stakeSource: 'hidden' };
   function rememberLevers(ctx) {
     calc.leverShift = (ctx.lever_shift_years === null || ctx.lever_shift_years === undefined) ? null : ctx.lever_shift_years;
     calc.delayMonths = (ctx.delay_months === null || ctx.delay_months === undefined) ? null : ctx.delay_months;
+    calc.stakeYears = (ctx.stake_years === null || ctx.stake_years === undefined) ? null : ctx.stake_years;
+    calc.stakeSource = stakeSource(ctx.stake_source);
   }
   const leverProps = () => ({ lever_shift_band: leverShiftBand(calc.leverShift), delay_months_band: delayMonthsBand(calc.delayMonths) });
+  const stakeProps = () => ({ stake_years_band: stakeYearsBand(calc.stakeYears), stake_source: calc.stakeSource });
 
   function log() {
     if (debug && global.console) global.console.log.apply(global.console, ['[analytics]'].concat([].slice.call(arguments)));
@@ -138,6 +150,8 @@
         freedom_age_band: freedomAgeBand(unreachable ? null : ctx.freedom_age),
         sec_to_reveal_band: secondsBand(secs),
         input_edits_band: editsBand(editCount),
+        stake_years_band: stakeYearsBand(calc.stakeYears),
+        stake_source: calc.stakeSource,
       };
     },
 
@@ -161,7 +175,7 @@
 
     // On index.html the form exists only after a reveal, so the lever bands ride along
     // there; about.html (and a form restored without a reveal) sends no props.
-    'Email Focused': () => (calc.revealed ? leverProps() : {}),
+    'Email Focused': () => (calc.revealed ? Object.assign(leverProps(), stakeProps()) : {}),
 
     // No calculator properties when the page never revealed (about.html, or
     // a submit before revealing): revealed:'no' and the utm keys only.
@@ -177,7 +191,7 @@
       if (calc.revealed) {
         props.return_scenario = calc.scenario;
         props.freedom_age_band = freedomAgeBand(calc.freedomAge);
-        Object.assign(props, leverProps());
+        Object.assign(props, leverProps(), stakeProps());
       }
       return props;
     },
@@ -269,6 +283,8 @@
       freedom_age_band: calc.revealed ? freedomAgeBand(calc.freedomAge) : null,
       lever_shift_band: calc.revealed ? leverShiftBand(calc.leverShift) : null,
       delay_months_band: calc.revealed ? delayMonthsBand(calc.delayMonths) : null,
+      stake_years_band: calc.revealed ? stakeYearsBand(calc.stakeYears) : null,
+      stake_source: calc.revealed ? calc.stakeSource : null,
       input_edits_band: editsBand(editCount),
     };
   }

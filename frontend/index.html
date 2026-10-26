@@ -129,6 +129,8 @@
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  /* The submit button is white on the result card's blue (2026-10-25), so its spinner is the primary colour */
+  .spinner-primary { border-color: rgba(19, 91, 236, 0.3); border-top-color: #135bec; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -265,13 +267,13 @@
         <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
         <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
         <p id="result-age" class="mt-2 font-montserrat font-black text-[clamp(56px,16vw,92px)] leading-[0.95] tracking-[-0.03em] text-white"></p>
-        <p class="mt-1 text-base font-medium text-[#dbe7ff]">years old</p>
-        <!-- Result context line (2026-10-24): the number is a starting point, not a verdict. Text from COPY in the page script. -->
-        <!-- ATTORNEY REVIEW PENDING 2026-10-24 -->
-        <p id="result-context" class="mt-2.5 text-[14px] font-semibold text-[#e3edff]"></p>
-        <p id="result-chip" class="mt-[18px] inline-block rounded-full border border-white/35 bg-white/15 px-[18px] py-[9px] font-montserrat font-bold text-base text-white"></p>
-        <p id="result-assumptions" class="mt-4 text-xs text-[#c7d6f5]"></p>
-        <p id="result-target" class="mt-1 text-[12.5px] text-[#c7d6f5]"></p>
+        <!-- One line (2026-10-25): "years old · {N} years before the usual 65", or just "years old" at 65 and
+             above. Text from COPY in the page script. The "Freedom Date · Month Year" pill was dropped to save
+             height; the month and year stay in the screen-reader summary (#result-sr). -->
+        <!-- ATTORNEY REVIEW PENDING 2026-10-25 -->
+        <p id="result-context" class="mt-1 text-base font-medium text-[#dbe7ff]"></p>
+        <!-- "Do nothing vs this plan": stamped out of #post-reveal-template on the first reveal, never before. -->
+        <div id="compare-host"></div>
       </div>
       <div id="infeasible-block" hidden>
         <p id="infeasible-message" class="font-montserrat font-bold text-[22px] leading-snug text-white"></p>
@@ -283,26 +285,132 @@
         <p id="at-target-body" class="mt-3 text-[12px] leading-relaxed text-[#dbe7ff]">Based on your inputs, you meet the portfolio target for the income you chose. This is a hypothetical illustration, not an assessment of whether you can retire.</p>
       </div>
 
-      <!-- Short-form hypothetical / no-guarantee disclosure, in close proximity to the output.
+      <!-- The stakes line, the capture headline and sub line, the one waitlist form, the count line, the consent
+           sentence and the payment / iOS note: stamped out of #post-reveal-template on the first reveal (or on
+           load for a saved signup state), never before, so no email input exists in the DOM until a result is
+           on screen (2026-10-25: the form moved here from the dark capture card, which is gone). -->
+      <div id="capture-host"></div>
+
+      <!-- Assumptions line and short-form hypothetical / no-guarantee disclosure, one small block (merged
+           2026-10-25 to save height), in close proximity to the output. The assumptions and target sentences are
+           written by render() from COPY and hidden when no date exists; the disclosure sentence is the approved one.
            Full paragraph lives at the end of the "How this calculation works" accordion. -->
-      <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
-      <div class="mt-6 border-t border-white/20 pt-4">
-        <p class="text-[11.5px] leading-relaxed text-[#dbe7ff] text-center">
-          Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.<br class="hidden md:inline"> Actual returns may vary.
-        </p>
+      <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure): the disclosure sentence. -->
+      <div class="mt-5 border-t border-white/20 pt-3.5">
+        <p id="result-fineprint" class="text-[11.5px] leading-relaxed text-[#dbe7ff] text-center"><span id="result-assumptions"></span> <span id="result-target"></span> <span id="result-disclaimer">Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.</span></p>
       </div>
     </div>
 
-    <!-- Post-reveal section (2026-10-24, post-reveal conversion). The "what moves your date" card and
-         the capture card are stamped out of the template below on the first reveal (or on load for a
-         browser with a saved signup state) and never before, so no email input exists in the DOM until
-         a result is on screen. Every new sentence lives in COPY at the top of the page script; this
-         markup carries structure only. Surfaces, type and spacing are the calculator's own: the white
-         card is the input card, the dark card is the navy text token, the button and input are the
-         capture form's, the row icons are inline SVGs with the page's stroke treatment. -->
+    <!-- Post-reveal section. Everything that exists only once a result is on screen is stamped out of the
+         template below by mountPostReveal() on the first reveal (or on load for a browser with a saved signup
+         state) and never before: the "do nothing vs this plan" comparison (into #compare-host in the result
+         card), the capture section with the one waitlist form (into #capture-host in the result card) and the
+         "what moves your date" card (into #post-reveal, directly below the result card). Every sentence lives in
+         COPY at the top of the page script; this markup carries structure only. Surfaces, type and spacing are
+         the result card's own: the translucent cell is the old date pill's surface, the solid cell is white
+         with the navy and primary text tokens, the white card is the input card, the button and input are the
+         capture form's with the card's white focus ring, the row icons are inline SVGs with the page's stroke
+         treatment. The dark capture card of 2026-10-24 is gone (2026-10-25). -->
     <div id="post-reveal"></div>
     <template id="post-reveal-template">
-      <!-- "What moves your date". Hidden (not rendered empty) when neither row has something to show. -->
+      <!-- Comparison block: two cells, full card width. Hidden (not rendered empty) when the ladder in
+           projection.js finds under two whole years between the cells. -->
+      <!-- ATTORNEY REVIEW PENDING 2026-10-25: comparison copy (COPY.COMPARE_*) -->
+      <!-- Each cell is a subgrid over the block's three rows, so label, age and caption share rows and the two
+           ages stay level when one label wraps ("This plan + $250/mo" does at phone widths). The left cell's text
+           is white: the lighter tokens fall under 4.5:1 on the translucent fill. -->
+      <div id="compare" class="mt-4 grid grid-cols-2 gap-2.5 text-center" hidden>
+        <div class="grid grid-rows-subgrid row-span-3 items-end rounded-[14px] border border-white/35 bg-white/15 px-3 py-3">
+          <p id="compare-left-label" class="text-[13px] font-semibold text-white"></p>
+          <p id="compare-left-age" class="mt-1 font-montserrat font-black text-[28px] leading-none tracking-[-0.02em] text-white"></p>
+          <p id="compare-left-caption" class="mt-1 self-start text-[11.5px] leading-snug text-white"></p>
+        </div>
+        <div class="grid grid-rows-subgrid row-span-3 items-end rounded-[14px] bg-white px-3 py-3">
+          <p id="compare-right-label" class="text-[13px] font-semibold text-navy"></p>
+          <p id="compare-right-age" class="mt-1 font-montserrat font-black text-[28px] leading-none tracking-[-0.02em] text-primary"></p>
+          <p id="compare-right-caption" class="mt-1 self-start text-[11.5px] leading-snug text-slate-text"></p>
+        </div>
+      </div>
+
+      <!-- Capture section: stakes line, headline, sub line, the one waitlist form (id "join" so anchor links
+           land here, as on about.html), the count line, the consent sentence and the payment / iOS note.
+           Turnstile, submit handling and the success / pending / error states are the ones the form always had;
+           only the position and the wrapper changed (2026-10-24 into the dark card, 2026-10-25 into this card). -->
+      <!-- ATTORNEY REVIEW PENDING 2026-10-25: capture copy (COPY.STAKES, COPY.HEADLINE*, COPY.SUB*, COPY.BUTTON*).
+           The headline and button carry a number computed from the visitor's inputs, a departure from the
+           product-neutral capture ruling of 2026-08-18 made by the founder in this spec. -->
+      <div id="capture">
+        <!-- The pitch goes with the form: hidden once a signup is in (success / pending), back with "Use a different one". -->
+        <div id="capture-pitch">
+          <p id="stakes-line" class="mt-4 text-[14px] font-semibold text-[#e3edff]" hidden></p>
+          <h2 id="capture-heading" class="mt-2 font-montserrat font-extrabold text-[22px] sm:text-[26px] leading-[1.15] tracking-[-0.02em] text-white"></h2>
+          <p id="capture-support" class="mx-auto mt-2 max-w-[46ch] text-[14px] leading-relaxed text-[#dbe7ff]"></p>
+        </div>
+
+        <div id="join" class="relative mt-4 min-h-[52px] text-left">
+          <form id="waitlist-form" class="flex flex-col gap-2.5" novalidate>
+            <label id="capture-email-label" class="sr-only" for="capture-email"></label>
+            <input id="capture-email" name="email" type="email" inputmode="email" enterkeyhint="go" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required
+              class="w-full min-h-[48px] rounded-[14px] border-gray-200 px-4 py-[14px] text-[16px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
+            <button type="submit" id="join-waitlist-btn"
+              class="group w-full min-h-[48px] rounded-[14px] bg-white px-6 py-[15px] font-montserrat font-extrabold text-[16px] text-primary shadow-[0_10px_24px_-6px_rgba(14,58,150,0.5)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-dark">
+              <span id="btn-text"><span id="btn-label"></span> <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
+              <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
+                <span class="spinner spinner-primary" aria-hidden="true"></span>
+                <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
+              </span>
+            </button>
+          </form>
+
+          <!-- Success state (hidden until signup completes or a saved status is found) -->
+          <div id="success-block" class="hidden opacity-0 transition-opacity duration-300 text-center">
+            <a href="/about" id="success-link"
+              class="group flex w-full items-center justify-center gap-1.5 rounded-[14px] bg-white px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-primary shadow-[0_10px_24px_-6px_rgba(14,58,150,0.5)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-dark">
+              <span>You&rsquo;re in! See how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+            </a>
+            <p id="success-note" class="mt-2.5 text-[13px] font-medium text-[#dbe7ff]"></p>
+          </div>
+
+          <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
+          <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300 text-left rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+            <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: you got mail.</p>
+            <p class="mt-1.5 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy break-all"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
+            <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">Resend the email</button>.</p>
+            <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
+            <div id="pending-msg" aria-live="polite"></div>
+            <!-- One secondary link only (Andrew, 2026-10-10): the about page already holds the Founder offer, and
+                 the inbox stays the primary action, so this is outlined rather than the success button's fill. -->
+            <a href="/about" id="pending-link"
+              class="group mt-4 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-2 border-primary bg-white px-6 py-3 font-montserrat font-extrabold text-[15px] text-primary transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+              <span>Find out how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
+            </a>
+          </div>
+        </div>
+
+        <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
+
+        <!-- List-size line (Andrew's follow-up, 2026-10-25; wording, source and gate as in commit 600ebb8): no baked
+             number. Renders only when the API reports count >= STAT_TILE_MIN_N; otherwise it stays hidden. -->
+        <p id="capture-count" class="hidden mt-3 text-[13.5px] font-medium text-[#dbe7ff]" aria-live="polite"></p>
+
+        <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
+             attorney review pending. The form itself needs JavaScript (Turnstile, fetch), so a
+             script-off visitor never reaches a submit without this text. -->
+        <!-- The shared constant's link carries hover:text-primary for the light surface on about.html; on this
+             blue surface that hover colour is near-invisible, so the card keeps the link white on hover. -->
+        <p id="consent-note" class="mt-3 text-[11px] leading-relaxed text-[#c7d6f5] text-left [&_a:hover]:text-white" role="note"></p>
+
+        <!-- Payment / iOS note (Andrew's follow-up, 2026-10-25; the two sentences verbatim from commit 600ebb8,
+             attorney-approved; same sentences as about.html's Founder Access block and waitlist note). Last line
+             of the capture section, in the consent sentence's style. Hidden with the form once a signup succeeds. -->
+        <div id="capture-cta-note" class="mt-2.5 text-[11px] leading-relaxed text-[#c7d6f5] text-left">
+          <p>No payment until launch. You only pay if invited and choose to claim your spot.</p>
+          <p class="mt-1">The private beta is currently <b>iOS only</b>.</p>
+        </div>
+      </div>
+
+      <!-- "What moves your date", directly below the result card. Hidden (not rendered empty) when neither row
+           has something to show. -->
       <!-- ATTORNEY REVIEW PENDING 2026-10-24: lever card copy (COPY.LEVERS_*, COPY.LEVER_*, COPY.DELAY_*) -->
       <div id="levers-card" class="mt-3 sm:mt-4 rounded-[20px] border border-gray-200 bg-white p-5 sm:p-7 text-left shadow-[0_1px_3px_rgba(15,23,42,0.04),0_20px_50px_-16px_rgba(19,91,236,0.22)]" hidden>
         <h2 id="levers-heading" class="font-montserrat font-extrabold text-[20px] sm:text-[22px] leading-[1.2] tracking-[-0.02em] text-navy"></h2>
@@ -326,78 +434,6 @@
             </div>
           </li>
         </ul>
-      </div>
-
-      <!-- Capture card: the one waitlist form on the page (id "join" so anchor links land here, as on about.html).
-           Turnstile, submit handling and the success / pending / error states are the ones the form always had;
-           only the position and the wrapper changed (2026-10-24). -->
-      <!-- ATTORNEY REVIEW PENDING 2026-10-24: capture card copy (COPY.CAPTURE_*, COPY.BUTTON). The heading can carry the
-           lever age, a departure from the product-neutral capture ruling of 2026-08-18 made by the founder in this spec. -->
-      <div id="join" class="relative mt-3 sm:mt-4 overflow-hidden rounded-[20px] bg-navy px-5 py-6 sm:px-7 sm:py-8 text-center text-white shadow-[0_24px_60px_-18px_rgba(15,23,42,0.5)]">
-        <h2 id="capture-heading" class="font-montserrat font-extrabold text-[22px] sm:text-[26px] leading-[1.15] tracking-[-0.02em] text-white"></h2>
-        <p id="capture-support" class="mx-auto mt-2.5 max-w-[46ch] text-[14.5px] leading-relaxed text-[#dbe7ff]"></p>
-
-        <div class="relative mt-5 min-h-[52px]">
-          <form id="waitlist-form" class="flex flex-col gap-2.5" novalidate>
-            <label id="capture-email-label" class="sr-only" for="capture-email"></label>
-            <input id="capture-email" name="email" type="email" inputmode="email" enterkeyhint="go" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required
-              class="w-full min-h-[48px] rounded-[14px] border-gray-200 px-4 py-[14px] text-[16px] text-navy shadow-sm transition-all duration-500 focus:border-primary focus:ring-primary">
-            <button type="submit" id="join-waitlist-btn"
-              class="group w-full min-h-[48px] rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[15px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition-all duration-[600ms] whitespace-nowrap overflow-hidden cursor-pointer disabled:cursor-default hover:brightness-105 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy">
-              <span id="btn-text"><span id="btn-label"></span> <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span>
-              <span id="btn-loading" class="hidden items-center justify-center gap-2.5">
-                <span class="spinner" aria-hidden="true"></span>
-                <span class="text-sm font-semibold">FRED&rsquo;s saving your spot&hellip;</span>
-              </span>
-            </button>
-          </form>
-
-          <!-- Success state (hidden until signup completes or a saved status is found) -->
-          <div id="success-block" class="hidden opacity-0 transition-opacity duration-300">
-            <a href="/about" id="success-link"
-              class="group flex w-full items-center justify-center gap-1.5 rounded-[14px] bg-gradient-to-b from-primary to-primary-dark px-6 py-[16px] font-montserrat font-extrabold text-[16px] text-white shadow-[0_10px_24px_-6px_rgba(19,91,236,0.55)] transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy">
-              <span>You&rsquo;re in! See how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
-            </a>
-            <p id="success-note" class="mt-2.5 text-[13px] font-medium text-[#dbe7ff]"></p>
-          </div>
-
-          <!-- Double opt-in pending state: the signup is not complete until the emailed link is clicked -->
-          <div id="pending-block" tabindex="-1" class="hidden opacity-0 transition-opacity duration-300 text-left rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
-            <p class="font-montserrat font-extrabold text-[16px] text-navy">One more step: you got mail.</p>
-            <p class="mt-1.5 text-sm text-slate-text">We sent a confirmation link to <span id="pending-email" class="font-semibold text-navy"></span>. Click it to lock in your spot. The link expires in 7 days.</p>
-            <p class="mt-2.5 text-[13px] text-slate-text">Didn&rsquo;t get it? <button type="button" id="pending-resend" class="underline font-medium hover:text-primary">Resend the email</button>.</p>
-            <p class="mt-1 text-[13px] text-slate-text">Wrong address? <button type="button" id="pending-reset" class="underline font-medium hover:text-primary">Use a different one</button>.</p>
-            <div id="pending-msg" aria-live="polite"></div>
-            <!-- One secondary link only (Andrew, 2026-10-10): the about page already holds the Founder offer, and
-                 the inbox stays the primary action, so this is outlined rather than the success button's gradient. -->
-            <a href="/about" id="pending-link"
-              class="group mt-4 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-2 border-primary bg-white px-6 py-3 font-montserrat font-extrabold text-[15px] text-primary transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-              <span>Find out how FRED <span class="whitespace-nowrap">works <span class="inline-block transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span></span></span>
-            </a>
-          </div>
-        </div>
-
-        <div id="waitlist-msg" class="text-left" aria-live="polite"></div>
-
-        <!-- List-size line (restored 2026-10-25, Andrew's follow-up; wording, source and gate as in commit 600ebb8):
-             no baked number. Renders only when the API reports count >= STAT_TILE_MIN_N; otherwise it stays
-             hidden and the card reflows. Same light token as the supporting line, since it now sits on navy. -->
-        <p id="capture-count" class="hidden mt-3.5 text-[13.5px] font-medium text-[#dbe7ff]" aria-live="polite"></p>
-
-        <!-- Consent sentence: rendered from the ONE constant in assets/waitlist.js (CONSENT_SENTENCE_HTML),
-             attorney review pending. The form itself needs JavaScript (Turnstile, fetch), so a
-             script-off visitor never reaches a submit without this text. -->
-        <!-- The shared constant's link carries hover:text-primary for the light surface on about.html; on navy that
-             hover colour is 3.2:1, so the card keeps the link white on hover. -->
-        <p id="consent-note" class="mt-3.5 text-[11px] leading-relaxed text-[#c7d6f5] text-left [&_a:hover]:text-white" role="note"></p>
-
-        <!-- Payment / iOS note (restored 2026-10-25, Andrew's follow-up; the two sentences verbatim from commit 600ebb8,
-             attorney-approved; same sentences as about.html's Founder Access block and waitlist note). Last line of the
-             card, in the consent sentence's style. Hidden with the form once a signup succeeds, as before. -->
-        <div id="capture-cta-note" class="mt-3 text-[11px] leading-relaxed text-[#c7d6f5] text-left">
-          <p>No payment until launch. You only pay if invited and choose to claim your spot.</p>
-          <p class="mt-1">The private beta is currently <b>iOS only</b>.</p>
-        </div>
       </div>
     </template>
 
@@ -457,38 +493,58 @@
   // Swappable term: change here if legal requires different phrasing in the result/capture areas.
   const FREEDOM_LABEL = "Freedom Date";
 
-  // ---- Post-reveal copy (2026-10-24, post-reveal conversion) ---------------------------------
-  // Every new user-facing sentence of the result context line, the "what moves your date" card
-  // and the capture card lives in this one block and nowhere else, so counsel's edits land in
-  // one place. {placeholders} are filled by the page script below; nothing is reworded in code.
-  // ATTORNEY REVIEW PENDING 2026-10-24.
+  // ---- Post-reveal copy (2026-10-24 lever card; 2026-10-25 comparison and capture in the reveal card) -------
+  // Every user-facing sentence of the reveal card below the age, the "what moves your date" card
+  // and the capture section lives in this one block and nowhere else, so counsel's edits land in
+  // one place. {placeholders} are filled by the page script below with numbers or fixed words,
+  // never user text; nothing is reworded in code. Apostrophes are the page's typographic ones.
+  // ATTORNEY REVIEW PENDING 2026-10-25.
   const COPY = {
-    // Under the revealed age. {N} = 65 minus the shown age ({unit} is "years", or "year" when N is 1).
-    CONTEXT_BEFORE_65: "{N} {unit} before the usual 65",
-    CONTEXT_65_PLUS: "Here is what moves this date.",
-    // The "what moves your date" card.
+    // Under the revealed age, one line. {N} = 65 minus the shown age ({unit} is "years", or "year"
+    // when N is 1); at 65 and above the line is YEARS_OLD alone.
+    YEARS_OLD: "years old",
+    YEARS_OLD_BEFORE_65: "years old \u00b7 {N} {unit} before the usual 65",
+    // The "do nothing vs this plan" comparison. Left cell: the balance already invested, with
+    // nothing added. Right cell: the plan's own age, or the lever age when the plan alone is
+    // under two years ahead of doing nothing.
+    COMPARE_LEFT_LABEL: "Do nothing.",
+    COMPARE_LEFT_NEVER: "65+",
+    COMPARE_LEFT_CAPTION_NEVER: "the usual retirement",
+    COMPARE_LEFT_CAPTION_EXISTING: "on what you already have",
+    COMPARE_RIGHT_LABEL: "Stick to this plan.",
+    COMPARE_RIGHT_LABEL_LEVER: "This plan + ${step}/mo",
+    COMPARE_RIGHT_CAPTION: "your Freedom Date",
+    // The capture section. {N} = the comparison's difference in whole years.
+    STAKES: "That is {N} years of your life.",
+    HEADLINE: "Don\u2019t leave {N} years on the table.",
+    SUB: "A number you don\u2019t act on is just a number. Save this plan and we\u2019ll walk you through making it automatic the day FRED opens.",
+    BUTTON: "Keep my {N} years",
+    // When the comparison is hidden (under two years either way).
+    HEADLINE_STILL: "This date can still move.",
+    SUB_STILL: "Save it and we\u2019ll show you what moves it the day FRED opens.",
+    BUTTON_SAVE: "Save my Freedom Date",
+    EMAIL_LABEL: "Email",
+    // The small block under the capture section: assumptions, target and the approved disclosure
+    // sentence (2026-09-01), which is static in the markup (#result-disclaimer). {article} is
+    // "a" or "an" for the spoken rate, as the line always had.
+    ASSUMPTIONS: "Assumes {article} {rate}% avg annual return ({scenario} scenario) & 4% withdrawal rate.",
+    TARGET: "Projected portfolio target: {target}.",
+    // The "what moves your date" card (2026-10-24).
     LEVERS_HEADING: "This date is not fixed. Here is what moves it.",
     LEVER_TITLE: "Invest ${step} more each month",
     LEVER_TEXT: "Freedom Date moves to {leverAge}",
     DELAY_TITLE: "Start one year later",
     DELAY_TEXT: "Freedom Date slips to {delayAge}. Waiting costs about {delayMonths} months per year.",
-    // The capture card.
-    CAPTURE_HEADING_LEVER: "Get the plan that gets you to {leverAge}.",
-    CAPTURE_HEADING_SAVE: "Save this Freedom Date.",
-    CAPTURE_SUPPORT: "We will save this Freedom Date and email you the exact steps when FRED opens. No app needed yet.",
-    EMAIL_LABEL: "Email",
-    BUTTON: "Save my Freedom Date",
-    // Specified for under the capture card and NOT rendered: the result card already carries the
-    // attorney-approved disclosure (2026-09-01) directly under the output, and the spec keeps one,
-    // not two. Listed so counsel sees the full set.
-    DISCLAIMER_NOT_RENDERED: "Hypothetical illustration based on the inputs and assumptions shown. Not a prediction or a guarantee of any outcome.",
   };
   // No-date states (no monthly amount, target more than a lifetime away, balance already at the
-  // target): there is no Freedom Date to save, so the capture card falls back to the capture
-  // headline the attorney approved on 2026-09-01 and shows no supporting line. Not new copy.
+  // target): there is no date to keep or save, so the capture headline falls back to the one the
+  // attorney approved on 2026-09-01, with no stakes line and no sub line. Not new copy.
   const CAPTURE_HEADING_NO_DATE = "Put your financial future on autopilot.";
-  // Age at or above which the context line stops counting years before 65.
+  // Age at or above which the line under the age stops counting years before 65 (also the
+  // comparison's "65+" cutoff, in assets/projection.js).
   const USUAL_RETIREMENT_AGE = 65;
+  // The reveal and recalculate scroll put the top of the result card this far below the top of the viewport.
+  const SCROLL_MARGIN_PX = 8;
 
   // Return scenarios the user can select (Marketing Rule interactive-analysis-tool requirement).
   // Change the percentages here; the segmented control, result copy, and payload all read from these.
@@ -507,7 +563,8 @@
 
   const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
   // The projection (assets/projection.js): compute() below wraps project() and adds the calendar
-  // date; the two lever-card scenarios call the same project() with modified inputs.
+  // date; the two lever-card scenarios and the "do nothing" comparison call the same project()
+  // with modified inputs.
   const { project, scenarios: computeScenarios, roundAge } = window.FredProjection;
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
@@ -517,10 +574,11 @@
   const infeasibleBlock = document.getElementById("infeasible-block");
   const atTargetBlock = document.getElementById("at-target-block");
   const ageEl = document.getElementById("result-age");
+  const resultCard = document.getElementById("result-card");
   const contextEl = document.getElementById("result-context");
-  const chipEl = document.getElementById("result-chip");
   const assumptionsEl = document.getElementById("result-assumptions");
   const targetEl = document.getElementById("result-target");
+  const disclaimerEl = document.getElementById("result-disclaimer");
   const srEl = document.getElementById("result-sr");
 
   const infeasibleMessageEl = document.getElementById("infeasible-message");
@@ -734,6 +792,10 @@
   // sizes (whole years, whole months) reach analytics, banded there.
   let lastLever = null;
   let lastDelay = null;
+  // The comparison at the last render: { years, source } with years null and source 'hidden'
+  // when the block is hidden, null when no date exists. Only the whole years and the source
+  // word reach analytics, banded there.
+  let lastStakes = null;
 
   // --- Live proof count (restored 2026-10-25; same source, gate and wording as before) ---------
   // The list-size line is shown only when the API returned a real count of at least
@@ -773,16 +835,23 @@
   const postRevealHost = document.getElementById("post-reveal");
   let mounted = false;
   let leversCard, leversHeading, leverRow, leverTitle, leverText, delayRow, delayTitle, delayText;
-  let captureHeading, captureSupport;
-  let form, emailInput, joinBtn, btnText, btnLoading, successBlock, successNote, msg, pendingBlock, ctaNote;
+  let compareBlock, compareLeftAge, compareLeftCaption, compareRightLabel, compareRightAge;
+  let stakesLine, captureHeading, captureSupport;
+  let form, emailInput, joinBtn, btnText, btnLoading, successBlock, successNote, msg, pendingBlock, ctaNote, capturePitch;
   let ts = { getToken: () => null, reset: () => {} };
 
   function mountPostReveal() {
     if (mounted) return;
     mounted = true;
-    const tpl = document.getElementById("post-reveal-template");
-    postRevealHost.appendChild(tpl.content.cloneNode(true));
+    const tpl = document.getElementById("post-reveal-template").content.cloneNode(true);
+    // The comparison and the capture section go into the result card, the lever card below it.
+    document.getElementById("compare-host").appendChild(tpl.getElementById("compare"));
+    document.getElementById("capture-host").appendChild(tpl.getElementById("capture"));
+    postRevealHost.appendChild(tpl);
     const $ = (id) => document.getElementById(id);
+    compareBlock = $("compare"); compareLeftAge = $("compare-left-age"); compareLeftCaption = $("compare-left-caption");
+    compareRightLabel = $("compare-right-label"); compareRightAge = $("compare-right-age");
+    stakesLine = $("stakes-line");
     leversCard = $("levers-card"); leversHeading = $("levers-heading");
     leverRow = $("lever-row"); leverTitle = $("lever-title"); leverText = $("lever-text");
     delayRow = $("delay-row"); delayTitle = $("delay-title"); delayText = $("delay-text");
@@ -790,15 +859,15 @@
     form = $("waitlist-form"); emailInput = $("capture-email"); joinBtn = $("join-waitlist-btn");
     btnText = $("btn-text"); btnLoading = $("btn-loading");
     successBlock = $("success-block"); successNote = $("success-note"); msg = $("waitlist-msg");
-    pendingBlock = $("pending-block"); ctaNote = $("capture-cta-note");
+    pendingBlock = $("pending-block"); ctaNote = $("capture-cta-note"); capturePitch = $("capture-pitch");
     // The count the API reported before the card existed, if any.
     if (liveCount !== null) renderCountLine(liveCount);
     // The fixed sentences, from COPY. Variable ones are written by renderPostReveal().
+    $("compare-left-label").textContent = COPY.COMPARE_LEFT_LABEL;
+    $("compare-right-caption").textContent = COPY.COMPARE_RIGHT_CAPTION;
     leversHeading.textContent = COPY.LEVERS_HEADING;
     delayTitle.textContent = COPY.DELAY_TITLE;
-    captureSupport.textContent = COPY.CAPTURE_SUPPORT;
     $("capture-email-label").textContent = COPY.EMAIL_LABEL;
-    $("btn-label").textContent = COPY.BUTTON;
     renderConsent("consent-note");
     bindCapture();
     observeLevers();
@@ -807,38 +876,65 @@
     devLinkMap({ "/about": "about.html", "/privacy": "privacy.html", "/terms": "terms.html" });
   }
 
-  // Writes the result context line, the two lever rows and the capture heading for the result
-  // on screen. `res` is compute()'s result; the rows exist only for a feasible one.
+  // Writes everything below the age for the result on screen: the line under the age, the
+  // comparison, the stakes line, the capture headline, sub line and button, and the two lever
+  // rows. `res` is compute()'s result; the comparison and the rows exist only for a feasible one.
   function renderPostReveal(res, inputs) {
     if (!mounted) return;
+    const btnLabel = document.getElementById("btn-label");
     if (!res.feasible) {
       lastLever = null;
       lastDelay = null;
+      lastStakes = null;
       contextEl.textContent = "";
       contextEl.hidden = true;
+      compareBlock.hidden = true;
+      stakesLine.hidden = true;
       leversCard.hidden = true;
       leverRow.hidden = true;
       delayRow.hidden = true;
       captureHeading.textContent = CAPTURE_HEADING_NO_DATE;
+      captureSupport.textContent = "";
       captureSupport.hidden = true;
+      btnLabel.textContent = COPY.BUTTON_SAVE;
       return;
     }
     const sc = computeScenarios({ age: inputs.age, invest: inputs.invest, retire: inputs.retire, existing: inputs.existing, ratePct: currentScenario().pct });
     lastLever = sc.lever;
     lastDelay = sc.delay;
-    const hasRows = !!(sc.lever || sc.delay);
+    lastStakes = { years: sc.stakes.years, source: sc.stakes.source };
 
+    // The line under the age.
     const shownAge = roundAge(res.ageAtFreedom);
     const yearsBefore = USUAL_RETIREMENT_AGE - shownAge;
-    if (yearsBefore > 0) {
-      contextEl.textContent = fill(COPY.CONTEXT_BEFORE_65, { N: yearsBefore, unit: yearsBefore === 1 ? "year" : "years" });
-      contextEl.hidden = false;
+    contextEl.textContent = yearsBefore > 0
+      ? fill(COPY.YEARS_OLD_BEFORE_65, { N: yearsBefore, unit: yearsBefore === 1 ? "year" : "years" })
+      : COPY.YEARS_OLD;
+    contextEl.hidden = false;
+
+    // The comparison and the capture copy that argues with it.
+    const st = sc.stakes;
+    if (st.source !== "hidden") {
+      compareLeftAge.textContent = st.left.reaches ? String(st.left.age) : COPY.COMPARE_LEFT_NEVER;
+      compareLeftCaption.textContent = st.left.reaches ? COPY.COMPARE_LEFT_CAPTION_EXISTING : COPY.COMPARE_LEFT_CAPTION_NEVER;
+      compareRightLabel.textContent = st.source === "lever"
+        ? fill(COPY.COMPARE_RIGHT_LABEL_LEVER, { step: formatNum(st.right.step) })
+        : COPY.COMPARE_RIGHT_LABEL;
+      compareRightAge.textContent = String(st.right.age);
+      stakesLine.textContent = fill(COPY.STAKES, { N: st.years });
+      captureHeading.textContent = fill(COPY.HEADLINE, { N: st.years });
+      captureSupport.textContent = COPY.SUB;
+      btnLabel.textContent = fill(COPY.BUTTON, { N: st.years });
     } else {
-      // "Here is what moves this date." points at the card below; with no card to point at
-      // (both rows hidden, which a large balance can produce) the line stays out.
-      contextEl.textContent = hasRows ? COPY.CONTEXT_65_PLUS : "";
-      contextEl.hidden = !hasRows;
+      captureHeading.textContent = COPY.HEADLINE_STILL;
+      captureSupport.textContent = COPY.SUB_STILL;
+      btnLabel.textContent = COPY.BUTTON_SAVE;
     }
+    compareBlock.hidden = st.source === "hidden";
+    stakesLine.hidden = st.source === "hidden";
+    captureSupport.hidden = false;
+
+    // The lever card.
     if (sc.lever) {
       leverTitle.textContent = fill(COPY.LEVER_TITLE, { step: formatNum(sc.lever.step) });
       leverText.textContent = fill(COPY.LEVER_TEXT, { leverAge: sc.lever.age });
@@ -848,12 +944,7 @@
       delayText.textContent = fill(COPY.DELAY_TEXT, { delayAge: sc.delay.age, delayMonths: sc.delay.months });
     }
     delayRow.hidden = !sc.delay;
-    leversCard.hidden = !hasRows;
-
-    captureHeading.textContent = sc.lever
-      ? fill(COPY.CAPTURE_HEADING_LEVER, { leverAge: sc.lever.age })
-      : COPY.CAPTURE_HEADING_SAVE;
-    captureSupport.hidden = false;
+    leversCard.hidden = !(sc.lever || sc.delay);
   }
 
   // Lever Viewed: once per reveal-button click, when the lever card is at least half in view.
@@ -906,27 +997,24 @@
         ageEl.textContent = roundedAge;
         ageEl.removeAttribute("aria-hidden");
       }
-      chipEl.textContent = FREEDOM_LABEL + " · " + formatMonthYear(res.date);
       const sc = currentScenario();
-      // The scenario name is desktop-only (Andrew, 2026-10-11): the selected segment already
-      // shows it, and the line wraps badly on phones. The screen-reader text keeps it.
-      const scenarioNote = document.createElement("span");
-      scenarioNote.className = "hidden sm:inline";
-      scenarioNote.textContent = " (" + sc.name + " scenario)";
-      assumptionsEl.replaceChildren(
-        document.createTextNode("Assumes " + articleFor(sc.pct) + " " + sc.pct + "% avg annual return"),
-        scenarioNote,
-        document.createTextNode(" & 4% withdrawal rate."),
-      );
-      targetEl.textContent = "Projected portfolio target: " + formatUSD(res.target) + ".";
+      // One small block with the disclosure (2026-10-25): the scenario name is back on every width,
+      // as the frozen sentence has it.
+      assumptionsEl.textContent = fill(COPY.ASSUMPTIONS, { article: articleFor(sc.pct), rate: sc.pct, scenario: sc.name });
+      targetEl.textContent = fill(COPY.TARGET, { target: formatUSD(res.target) });
+      assumptionsEl.hidden = false;
+      targetEl.hidden = false;
       renderPostReveal(res, inputs);
+      // The month and year live here since the pill went (2026-10-25).
+      const yearsBefore = USUAL_RETIREMENT_AGE - roundedAge;
       srEl.textContent =
         "You could be free at " + roundedAge + " years old. " +
-        (contextEl.textContent ? contextEl.textContent.replace(/\.$/, "") + ". " : "") +
+        (yearsBefore > 0 ? yearsBefore + (yearsBefore === 1 ? " year" : " years") + " before the usual 65. " : "") +
         FREEDOM_LABEL + ": " + formatMonthYear(res.date) + ". " +
-        "Projected portfolio target: " + formatUSD(res.target) + ". " +
+        (lastStakes && lastStakes.source !== "hidden" ? compareSummary() + fill(COPY.STAKES, { N: lastStakes.years }) + " " : "") +
+        targetEl.textContent + " " +
         "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% average annual return (" + sc.name + " scenario) and 4% withdrawal rate. " +
-        "Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.";
+        disclaimerEl.textContent;
     } else if (res.atTarget) {
       feasibleBlock.hidden = true;
       infeasibleBlock.hidden = true;
@@ -935,6 +1023,8 @@
       lastFreedomMonthYear = null;
       lastFreedomDateIso = null;
       lastPortfolioTarget = Math.round(res.target);
+      assumptionsEl.hidden = true;
+      targetEl.hidden = true;
       renderPostReveal(res, inputs);
       // The copy is static in the markup (attorney-reviewed text); read it back rather than duplicate it.
       srEl.textContent =
@@ -948,6 +1038,8 @@
       lastFreedomMonthYear = null;
       lastFreedomDateIso = null;
       lastPortfolioTarget = Math.round(res.target);
+      assumptionsEl.hidden = true;
+      targetEl.hidden = true;
       renderPostReveal(res, inputs);
       const message = INFEASIBLE_MESSAGES[res.reason] || INFEASIBLE_MESSAGES["no-investment"];
       infeasibleMessageEl.textContent = message;
@@ -1000,24 +1092,47 @@
       return_scenario: selectedReturn, freedom_age: atTarget ? "at_target" : lastFreedomAge,
       lever_shift_years: lastLever ? lastLever.shiftYears : null,
       delay_months: lastDelay ? lastDelay.months : null,
+      stake_years: lastStakes ? lastStakes.years : null,
+      stake_source: lastStakes ? lastStakes.source : "hidden",
     };
     Analytics.track(firstReveal ? "Freedom Date Revealed" : "Recalculated", ctx);
     // Recalculated is once per page load, so a third click sends nothing; the context it
     // rendered still has to be what Lever Viewed, Email Focused and Waitlist Submitted band.
     Analytics.recordReveal(ctx);
     armLeverView();
+    // Scroll so the top of the result card sits SCROLL_MARGIN_PX below the top of the viewport
+    // (2026-10-25): the number, the comparison and the email field on one screen. Starts once the
+    // zone has begun to open; on the first reveal the document is still growing with the zone's
+    // max-height transition, so a target the page cannot yet reach is clamped, and the scroll runs
+    // once more when the cap comes off (a no-op when the first one landed).
+    setTimeout(() => { revealScrollClamped = !scrollToResult(); }, 150);
     // Once fully open, drop the height cap so the accordion can grow the zone past it.
-    // Overflow is deliberately left alone (see .reveal-zone).
+    // Overflow is deliberately left alone (see .reveal-zone). The scroll runs again only when
+    // the first one could not reach its target; a visitor who has scrolled since is left alone.
     setTimeout(() => {
       revealZone.style.maxHeight = "none";
+      if (revealScrollClamped) { revealScrollClamped = false; scrollToResult(); }
     }, 750);
-    setTimeout(() => {
-      revealZone.scrollIntoView({
-        behavior: prefersReducedMotion() ? "auto" : "smooth",
-        block: "start",
-      });
-    }, 150);
   });
+
+  // True while the 150 ms scroll of the last click was clamped by a document still growing
+  // with the zone's max-height transition.
+  let revealScrollClamped = false;
+  // Returns false when the page was too short to put the card where asked.
+  // The two comparison cells as a sentence for the live region, so the stakes number is heard
+  // with what it is measured against ("Do nothing: 65+. This plan + $250/mo: 62."): the cells'
+  // own frozen strings, nothing new.
+  function compareSummary() {
+    const cell = (label, age) => label.replace(/\.$/, "") + ": " + age + ". ";
+    return cell(COPY.COMPARE_LEFT_LABEL, compareLeftAge.textContent) + cell(compareRightLabel.textContent, compareRightAge.textContent);
+  }
+
+  function scrollToResult() {
+    const top = Math.max(0, resultCard.getBoundingClientRect().top + window.scrollY - SCROLL_MARGIN_PX);
+    const maxTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    window.scrollTo({ top: top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    return top <= maxTop + 1;
+  }
 
   document.getElementById("calc-method").addEventListener("toggle", (e) => {
     if (e.target.open) Analytics.track("Explainer Opened");
@@ -1025,8 +1140,8 @@
 
   // --- Signup flow -------------------------------------------------------------------------
   // Bound once by mountPostReveal(), when the form exists. Unchanged in behaviour since the form
-  // moved into the capture card (2026-10-24): Turnstile, validation, the loading animation, the
-  // success / pending / error states and the payload are as they were.
+  // moved (2026-10-24 into the dark card, 2026-10-25 into the result card): Turnstile, validation,
+  // the loading animation, the success / pending / error states and the payload are as they were.
   let pendingEmailMemory = null;
   let loadingAborted = false;
 
@@ -1045,6 +1160,7 @@
   function showSuccess(displayStatus, fadeIn) {
     form.style.display = "none";
     ctaNote.hidden = true;
+    capturePitch.hidden = true;
     successNote.textContent = STATUS_NOTES[displayStatus] || STATUS_NOTES.already_joined;
     successBlock.classList.remove("hidden");
     if (fadeIn) {
@@ -1063,6 +1179,7 @@
     if (email) pendingEmailMemory = email;
     form.style.display = "none";
     ctaNote.hidden = true;
+    capturePitch.hidden = true;
     document.getElementById("pending-email").textContent = email || "the address you entered";
     pendingBlock.classList.remove("hidden");
     if (fadeIn) {
@@ -1085,6 +1202,7 @@
     ts.reset();
     form.style.display = "";
     ctaNote.hidden = false;
+    capturePitch.hidden = false;
   }
 
   function showLoading() {

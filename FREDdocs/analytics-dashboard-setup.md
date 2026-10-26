@@ -63,11 +63,11 @@ Create one custom event goal per event name. The names are case-sensitive litera
 |---|---|---|---|
 | `Calc Engaged` | `index.html`, first slider drag, number edit or return-scenario change (`FredAnalytics.recordInput`) | once per page load | `first_field` |
 | `Explainer Opened` | `index.html`, the `<details id="calc-method">` element opening | once per page load | none |
-| `Freedom Date Revealed` | `index.html`, first click on `#reveal-btn` | once per page load | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `existing_invested_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band` |
+| `Freedom Date Revealed` | `index.html`, first click on `#reveal-btn` | once per page load | `return_scenario`, `age_band`, `invest_band`, `target_income_band`, `existing_invested_band`, `freedom_age_band`, `sec_to_reveal_band`, `input_edits_band`, `stake_years_band`, `stake_source` |
 | `Recalculated` | `index.html`, a later click on `#reveal-btn` (the button stays in place after the reveal) | once per page load, and only after `Freedom Date Revealed` | `edits_after_reveal_band` |
 | `Lever Viewed` | `index.html`, the "what moves your date" card at least half in view after a click on `#reveal-btn` (since 2026-10-24) | once per reveal-button click, at most 3 per page load, only after `Freedom Date Revealed` | `lever_shift_band`, `delay_months_band`, `freedom_age_band` |
-| `Email Focused` | `index.html` and `about.html`, focus on `#capture-email` | once per page load | none on `about.html`; on `index.html` after a reveal, `lever_shift_band` and `delay_months_band` |
-| `Waitlist Submitted` | `index.html` and `about.html`, after a 2xx from `POST /api/waitlist` whose `status` is not `already_joined` | once per page load | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign`; plus `return_scenario`, `freedom_age_band`, `lever_shift_band` and `delay_months_band` when `revealed` is `yes` |
+| `Email Focused` | `index.html` and `about.html`, focus on `#capture-email` | once per page load | none on `about.html`; on `index.html` after a reveal, `lever_shift_band`, `delay_months_band`, `stake_years_band` and `stake_source` |
+| `Waitlist Submitted` | `index.html` and `about.html`, after a 2xx from `POST /api/waitlist` whose `status` is not `already_joined` | once per page load | `source_page`, `revealed`, `utm_source`, `utm_medium`, `utm_campaign`; plus `return_scenario`, `freedom_age_band`, `lever_shift_band` and `delay_months_band`, `stake_years_band` and `stake_source` when `revealed` is `yes` |
 | `Waitlist Failed` | `index.html` and `about.html`, client-side validation failure, missing Turnstile token, non-2xx, timeout, network error, or a 2xx with `status` `already_joined` | at most 3 per page load | `reason` |
 | `Waitlist Confirmed` | `confirmed.html`, when the URL carries `status=confirmed` and an `hours` value that is one of the five bands | once per page load; `hours` is removed from the address bar with `history.replaceState` so a reload cannot fire it again | `hours_to_confirm_band` |
 
@@ -96,6 +96,8 @@ Plausible stores every property it receives, but the dashboard only breaks down 
 | `first_field` | Calc Engaged | `age`, `monthly_invest`, `existing_invested`, `target_income`, `return_scenario` |
 | `return_scenario` | Freedom Date Revealed, Waitlist Submitted (when revealed) | `conservative`, `moderate`, `optimistic` |
 | `lever_shift_band` | Lever Viewed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `hidden`, `0`, `1-2`, `3-5`, `6+` (whole years the "invest more" row moves the date; `hidden` when that row was not shown; since 2026-10-24) |
+| `stake_years_band` | Freedom Date Revealed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `hidden`, `2-5`, `6-10`, `11+` (whole years between the reveal card's "do nothing" cell and its right cell; `hidden` when the comparison was not shown; since 2026-10-25) |
+| `stake_source` | Freedom Date Revealed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `plan`, `lever`, `hidden` (which right cell was shown: the result's own age, the lever age, or none; since 2026-10-25) |
 | `delay_months_band` | Lever Viewed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `hidden`, `3-6`, `7-11`, `12+` (whole months the "start a year later" row slips the date; `12+` for anyone with nothing already invested; since 2026-10-24) |
 | `age_band` | Freedom Date Revealed | `18-24`, `25-29`, `30-34`, `35-39`, `40-44`, `45-49`, `50-54`, `55+` |
 | `invest_band` | Freedom Date Revealed | `0-99`, `100-249`, `250-499`, `500-999`, `1000-1999`, `2000-4999`, `5000+` (monthly investment, USD) |
