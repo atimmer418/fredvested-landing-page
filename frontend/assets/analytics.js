@@ -10,8 +10,7 @@
 // Plausible bills pageviews + custom events (its automatic "engagement" events
 // are excluded from billing). Per visitor per page session this file can send
 // at most: Calc Engaged, Explainer Opened, Freedom Date Revealed, Recalculated,
-// Email Focused, Waitlist Submitted (each once), Lever Viewed (once per reveal
-// click, capped at 3) and Waitlist Failed (max 3). Waitlist Confirmed fires
+// Email Focused, Waitlist Submitted (each once) and Waitlist Failed (max 3). Waitlist Confirmed fires
 // once on confirmed.html, a separate page load with its own pageview, so it
 // sits outside that budget.
 (function (global) {
@@ -25,10 +24,6 @@
   ]);
   const CONFIRM_BANDS = new Set(['<1', '1-6', '6-24', '24-72', '72+']);
   const FAILED_LIMIT = 3;
-  // Lever Viewed is once per reveal click (the page re-arms it on every click of the
-  // reveal button), not once per page load; this cap bounds what a visitor who keeps
-  // clicking can bill, the same way FAILED_LIMIT bounds Waitlist Failed.
-  const LEVER_VIEWED_LIMIT = 3;
   const FAILED_REASONS = new Set([
     'invalid_email', 'empty_email', 'duplicate', 'rate_limited', 'server_error',
     'network_error', 'timeout', 'geo_blocked', 'captcha_failed',
@@ -54,15 +49,12 @@
   const existingInvestedBand = (v) => band(v, [1, 50000, 250000, 1000000], ['0', '1-50k', '50k-250k', '250k-1m', '1m+']);
   const secondsBand = (v) => band(v, [11, 31, 61, 121], ['0-10', '11-30', '31-60', '61-120', '120+']);
   const editsBand = (v) => band(v, [1, 4, 9, 16], ['0', '1-3', '4-8', '9-15', '16+']);
-  // The "what moves your date" card. The page passes the whole years the lever row moves
-  // the date (null when the row is hidden) and the whole months the delay row slips it
-  // (null when hidden; the page never shows a slip under 3). Raw numbers stay here.
-  const leverShiftBand = (v) => (v === null || v === undefined ? 'hidden' : band(v, [1, 3, 6], ['0', '1-2', '3-5', '6+']));
-  const delayMonthsBand = (v) => (v === null || v === undefined || Number(v) < 3 ? 'hidden' : band(v, [7, 12], ['3-6', '7-11', '12+']));
   // The "do nothing vs this plan" comparison in the reveal card (2026-10-25). The page passes
   // the whole years between the two cells (null when the comparison is hidden; it never shows
-  // under 2) and which right cell was shown: 'plan' (the result's own age), 'lever' (the lever
-  // age, when the plan alone was under 2 years) or 'hidden'.
+  // under 2) and which right cell was shown: 'plan' (the result's own age), 'lever' (the age
+  // with the next step of monthly investment, when the plan alone was under 2 years) or 'hidden'.
+  // (The "what moves your date" card of 2026-10-24 and its Lever Viewed event, lever_shift_band
+  // and delay_months_band went on 2026-10-26.)
   const stakeYearsBand = (v) => (v === null || v === undefined || Number(v) < 2 ? 'hidden' : band(v, [6, 11], ['2-5', '6-10', '11+']));
   const STAKE_SOURCES = new Set(['plan', 'lever', 'hidden']);
   const stakeSource = (v) => (STAKE_SOURCES.has(v) ? v : 'hidden');
@@ -70,26 +62,20 @@
   // --- session state (in memory only; a new page load starts over) --------
   const fired = new Set();
   let failedCount = 0;
-  let leverViewedCount = 0;
   let enabled = false;
   let debug = false;
   let firstInteractionAt = null;
   let editCount = 0;
   let editsAtFirstReveal = null;
   const editTimers = {};
-  // leverShift / delayMonths: the lever card's two numbers at the last reveal-button
-  // click (null when that row was hidden), carried onto Email Focused and Waitlist
-  // Submitted so conversion can be read against the size of the lever the visitor saw.
-  // stakeYears / stakeSource: the comparison block the same click rendered, carried onto
-  // Freedom Date Revealed, Email Focused and Waitlist Submitted.
-  let calc = { scenario: null, freedomAge: undefined, revealed: false, leverShift: null, delayMonths: null, stakeYears: null, stakeSource: 'hidden' };
-  function rememberLevers(ctx) {
-    calc.leverShift = (ctx.lever_shift_years === null || ctx.lever_shift_years === undefined) ? null : ctx.lever_shift_years;
-    calc.delayMonths = (ctx.delay_months === null || ctx.delay_months === undefined) ? null : ctx.delay_months;
+  // stakeYears / stakeSource: the comparison block the last reveal-button click rendered,
+  // carried onto Freedom Date Revealed, Email Focused and Waitlist Submitted so conversion can
+  // be read against the size of the gap the visitor saw.
+  let calc = { scenario: null, freedomAge: undefined, revealed: false, stakeYears: null, stakeSource: 'hidden' };
+  function rememberStakes(ctx) {
     calc.stakeYears = (ctx.stake_years === null || ctx.stake_years === undefined) ? null : ctx.stake_years;
     calc.stakeSource = stakeSource(ctx.stake_source);
   }
-  const leverProps = () => ({ lever_shift_band: leverShiftBand(calc.leverShift), delay_months_band: delayMonthsBand(calc.delayMonths) });
   const stakeProps = () => ({ stake_years_band: stakeYearsBand(calc.stakeYears), stake_source: calc.stakeSource });
 
   function log() {
@@ -138,7 +124,7 @@
       calc.scenario = ctx.return_scenario;
       calc.freedomAge = unreachable ? null : ctx.freedom_age;
       calc.revealed = true;
-      rememberLevers(ctx);
+      rememberStakes(ctx);
       if (editsAtFirstReveal === null) editsAtFirstReveal = editCount;
       const secs = firstInteractionAt === null ? 0 : Math.round((Date.now() - firstInteractionAt) / 1000);
       return {
@@ -160,22 +146,14 @@
       if (SCENARIOS.has(ctx.return_scenario)) {
         calc.scenario = ctx.return_scenario;
         calc.freedomAge = (ctx.freedom_age === null || ctx.freedom_age === undefined) ? null : ctx.freedom_age;
-        rememberLevers(ctx);
+        rememberStakes(ctx);
       }
       return { edits_after_reveal_band: editsBand(editCount - (editsAtFirstReveal || 0)) };
     },
 
-    // Fired by the page when the "what moves your date" card is at least half in view,
-    // once per reveal-button click (the page re-arms it on each click; the card is not
-    // rendered, so this cannot fire, when no date exists). Dropped without a reveal.
-    'Lever Viewed': () => {
-      if (!calc.revealed) return false;
-      return Object.assign({ freedom_age_band: freedomAgeBand(calc.freedomAge) }, leverProps());
-    },
-
-    // On index.html the form exists only after a reveal, so the lever bands ride along
+    // On index.html the form exists only after a reveal, so the stake bands ride along
     // there; about.html (and a form restored without a reveal) sends no props.
-    'Email Focused': () => (calc.revealed ? Object.assign(leverProps(), stakeProps()) : {}),
+    'Email Focused': () => (calc.revealed ? stakeProps() : {}),
 
     // No calculator properties when the page never revealed (about.html, or
     // a submit before revealing): revealed:'no' and the utm keys only.
@@ -191,7 +169,7 @@
       if (calc.revealed) {
         props.return_scenario = calc.scenario;
         props.freedom_age_band = freedomAgeBand(calc.freedomAge);
-        Object.assign(props, leverProps(), stakeProps());
+        Object.assign(props, stakeProps());
       }
       return props;
     },
@@ -222,12 +200,10 @@
       if (!build) { log('unknown event dropped:', name); finish(); return false; }
       if (ONCE.has(name) && fired.has(name)) { finish(); return false; }
       if (name === 'Waitlist Failed' && failedCount >= FAILED_LIMIT) { finish(); return false; }
-      if (name === 'Lever Viewed' && leverViewedCount >= LEVER_VIEWED_LIMIT) { finish(); return false; }
       const props = build(ctx || {});
       if (props === false) { finish(); return false; }
       if (ONCE.has(name)) fired.add(name);
       if (name === 'Waitlist Failed') failedCount++;
-      if (name === 'Lever Viewed') leverViewedCount++;
       if (!enabled) { log('(gated)', name, props); finish(); return false; }
       if (typeof global.plausible !== 'function') { finish(); return false; }
       if (typeof done === 'function') {
@@ -260,14 +236,14 @@
   }
 
   // Called by the page on every click of the reveal button, after track(): the click's
-  // context is what Lever Viewed, Email Focused and Waitlist Submitted band, and the once
-  // guard on Recalculated would otherwise leave a third click's context unrecorded.
+  // context is what Email Focused and Waitlist Submitted band, and the once guard on
+  // Recalculated would otherwise leave a third click's context unrecorded.
   function recordReveal(ctx) {
     try {
       if (!calc.revealed || !ctx || !SCENARIOS.has(ctx.return_scenario)) return;
       calc.scenario = ctx.return_scenario;
       calc.freedomAge = (ctx.freedom_age === null || ctx.freedom_age === undefined) ? null : ctx.freedom_age;
-      rememberLevers(ctx);
+      rememberStakes(ctx);
     } catch (e) { /* never break the calculator */ }
   }
 
@@ -281,8 +257,6 @@
       revealed: calc.revealed ? 'yes' : 'no',
       return_scenario: calc.scenario,
       freedom_age_band: calc.revealed ? freedomAgeBand(calc.freedomAge) : null,
-      lever_shift_band: calc.revealed ? leverShiftBand(calc.leverShift) : null,
-      delay_months_band: calc.revealed ? delayMonthsBand(calc.delayMonths) : null,
       stake_years_band: calc.revealed ? stakeYearsBand(calc.stakeYears) : null,
       stake_source: calc.revealed ? calc.stakeSource : null,
       input_edits_band: editsBand(editCount),

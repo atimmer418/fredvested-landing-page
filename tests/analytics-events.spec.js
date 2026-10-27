@@ -34,8 +34,6 @@ const VOCAB = {
   edits_after_reveal_band: EDITS,
   source_page: ['home', 'about'],
   revealed: ['yes', 'no'],
-  lever_shift_band: ['hidden', '0', '1-2', '3-5', '6+'],
-  delay_months_band: ['hidden', '3-6', '7-11', '12+'],
   stake_years_band: ['hidden', '2-5', '6-10', '11+'],
   stake_source: ['plan', 'lever', 'hidden'],
   reason: ['invalid_email', 'empty_email', 'duplicate', 'rate_limited', 'server_error', 'network_error', 'timeout', 'geo_blocked', 'captcha_failed'],
@@ -47,16 +45,15 @@ const EVENT_KEYS = {
   'Explainer Opened': [],
   'Freedom Date Revealed': ['return_scenario', 'age_band', 'invest_band', 'target_income_band', 'existing_invested_band', 'freedom_age_band', 'sec_to_reveal_band', 'input_edits_band', 'stake_years_band', 'stake_source'],
   'Recalculated': ['edits_after_reveal_band'],
-  'Email Focused': [], // plus the lever and stake bands after a reveal on index.html (LEVER_KEYS)
-  'Waitlist Submitted': SUBMITTED_KEYS, // plus return_scenario, freedom_age_band and the lever and stake bands when revealed is "yes"
+  'Email Focused': [], // plus the stake bands after a reveal on index.html (STAKE_KEYS)
+  'Waitlist Submitted': SUBMITTED_KEYS, // plus return_scenario, freedom_age_band and the stake bands when revealed is "yes"
   'Waitlist Failed': ['reason'],
-  'Lever Viewed': ['lever_shift_band', 'delay_months_band', 'freedom_age_band'],
 };
-// The "what moves your date" card (2026-10-24): its two sizes ride along on Email Focused and
-// Waitlist Submitted once the page has revealed, and on Lever Viewed. The "do nothing vs this
-// plan" comparison (2026-10-25) adds its two keys to Email Focused and Waitlist Submitted (and to
-// Freedom Date Revealed), never to Lever Viewed.
-const LEVER_KEYS = ['lever_shift_band', 'delay_months_band', 'stake_years_band', 'stake_source'];
+// The "do nothing vs this plan" comparison (2026-10-25): its two keys ride along on Email Focused
+// and Waitlist Submitted once the page has revealed, and on Freedom Date Revealed. The lever card's
+// goal and two properties of 2026-10-24 went on 2026-10-26 and must appear on no event (LEVER_GONE).
+const STAKE_KEYS = ['stake_years_band', 'stake_source'];
+const LEVER_GONE = ['lever_shift_band', 'delay_months_band'];
 const LANDING_EVENTS = Object.keys(EVENT_KEYS);
 
 // The props Freedom Date Revealed carries for an untouched calculator.
@@ -73,9 +70,8 @@ const DEFAULT_REVEAL = {
   stake_source: 'plan',
 };
 const NO_UTM = { utm_source: 'direct', utm_medium: 'none', utm_campaign: 'none' };
-// The lever and stake bands for the untouched defaults (53; +$250 -> 52, one year; a year later
-// slips 12 months; doing nothing is 65+, twelve years from the plan).
-const DEFAULT_LEVERS = { lever_shift_band: '1-2', delay_months_band: '12+', stake_years_band: '11+', stake_source: 'plan' };
+// The stake bands for the untouched defaults (53; doing nothing is 65+, twelve years from the plan).
+const DEFAULT_STAKES = { stake_years_band: '11+', stake_source: 'plan' };
 
 // --- API answers used by the failure paths (shapes from WaitlistController) ---
 const SERVER_ERROR = { status: 500, body: { code: 'server_error', message: 'Something went wrong. Please try again.' } };
@@ -93,11 +89,8 @@ const failOnceThenSucceed = (first) => {
 // --- local helpers ----------------------------------------------------------
 const named = (list, name) => list.filter((e) => e.name === name);
 async function eventsNamed(page, name) { return named(await events(page), name); }
-// Lever Viewed fires on its own clock (an IntersectionObserver, when the lever card is half in
-// view), so the ordered sequences below leave it out; tests/post-reveal.spec.js owns it.
-const withoutLever = (list) => list.filter((e) => (typeof e === 'string' ? e : e.name) !== 'Lever Viewed');
-async function sequence(page) { return withoutLever(await eventNames(page)); }
-async function recorded(page) { return withoutLever(await events(page)); }
+async function sequence(page) { return eventNames(page); }
+async function recorded(page) { return events(page); }
 
 async function reveal(page) {
   await page.click('#reveal-btn');
@@ -244,8 +237,8 @@ test.describe('index.html: calculator events', () => {
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
     const submitted = await eventsNamed(page, 'Waitlist Submitted');
     expect(submitted).toHaveLength(1);
-    // No date, so no lever card and no comparison: every band is 'hidden'.
-    expect(submitted[0].props).toEqual({ source_page: 'home', revealed: 'yes', ...NO_UTM, return_scenario: 'moderate', freedom_age_band: 'unreachable', lever_shift_band: 'hidden', delay_months_band: 'hidden', stake_years_band: 'hidden', stake_source: 'hidden' });
+    // No date, so no comparison: both stake bands are 'hidden'.
+    expect(submitted[0].props).toEqual({ source_page: 'home', revealed: 'yes', ...NO_UTM, return_scenario: 'moderate', freedom_age_band: 'unreachable', stake_years_band: 'hidden', stake_source: 'hidden' });
   });
 
   test('a second reveal click fires Recalculated once with edits_after_reveal_band; live edits and a third click add nothing', async ({ page }) => {
@@ -303,8 +296,8 @@ test.describe('index.html: calculator events', () => {
     // The explainer is a sentinel: a repeated Email Focused would sit before it.
     await page.locator('#calc-method summary').click();
     await expect.poll(() => sequence(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Explainer Opened']);
-    // After a reveal the focus carries the lever bands of that reveal (defaults: one year, 12 months).
-    expect((await eventsNamed(page, 'Email Focused'))[0].props).toEqual(DEFAULT_LEVERS);
+    // After a reveal the focus carries the stake bands of that reveal (defaults: 65+ against 53).
+    expect((await eventsNamed(page, 'Email Focused'))[0].props).toEqual(DEFAULT_STAKES);
   });
 
   test('a successful submit fires Waitlist Submitted once with source_page home and the calculator bands', async ({ page }) => {
@@ -325,7 +318,7 @@ test.describe('index.html: calculator events', () => {
       ...NO_UTM,
       return_scenario: 'moderate',
       freedom_age_band: '50-54',
-      ...DEFAULT_LEVERS,
+      ...DEFAULT_STAKES,
     });
     expect(await eventsNamed(page, 'Waitlist Failed')).toEqual([]);
   });
@@ -349,7 +342,7 @@ test.describe('index.html: calculator events', () => {
       utm_campaign: 'launch',
       return_scenario: 'moderate',
       freedom_age_band: '50-54',
-      ...DEFAULT_LEVERS,
+      ...DEFAULT_STAKES,
     });
   });
 });
@@ -599,12 +592,11 @@ test.describe('schema sweep', () => {
     await waitForEditsBand(page, '9-15');
     await page.click('#reveal-btn');
     renderedAges.push(await resultAge.textContent());
-    // The lever card half in view fires Lever Viewed (once per reveal click). The zone is still
-    // opening right after the click (its max-height transition), so wait for it to settle first.
+    // Scroll the whole reveal into view once the zone has settled: nothing on it may fire an event
+    // of its own (the Lever Viewed observer of 2026-10-24 is gone).
     await page.waitForFunction(() => document.getElementById('reveal-zone').style.maxHeight === 'none');
     await page.waitForTimeout(500);
-    await page.locator('#levers-card').scrollIntoViewIfNeeded();
-    await expect.poll(() => eventNames(page)).toContain('Lever Viewed');
+    await page.locator('#result-fineprint').scrollIntoViewIfNeeded();
     await page.locator('#calc-method summary').click();
     await submitWaitlist(page, 'sweep+tag@example.com');
     await expect(page.locator('#waitlist-msg')).toContainText('Something went wrong');
@@ -613,15 +605,17 @@ test.describe('schema sweep', () => {
 
     const all = await events(page);
     expect(new Set(all.map((e) => e.name))).toEqual(new Set(LANDING_EVENTS));
+    expect(all.map((e) => e.name)).not.toContain('Lever Viewed');
 
     const raw = new Set(['47', '48', '3350', '3400', '12250', '12500', '150000', '175000', '12', ...renderedAges.map((a) => String(a).trim())]);
     for (const e of all) {
       const keys = Object.keys(e.props).sort();
       const expected = e.name === 'Waitlist Submitted' && e.props.revealed === 'yes'
-        ? [...SUBMITTED_KEYS, 'return_scenario', 'freedom_age_band', ...LEVER_KEYS]
-        : e.name === 'Email Focused' ? LEVER_KEYS // index.html, after the reveal
+        ? [...SUBMITTED_KEYS, 'return_scenario', 'freedom_age_band', ...STAKE_KEYS]
+        : e.name === 'Email Focused' ? STAKE_KEYS // index.html, after the reveal
           : EVENT_KEYS[e.name];
       expect(keys, `${e.name} prop keys`).toEqual([...expected].sort());
+      for (const k of LEVER_GONE) expect(keys, `${e.name} carries the removed ${k}`).not.toContain(k);
       for (const [k, v] of Object.entries(e.props)) {
         expect(typeof v, `${e.name}.${k} must be a string`).toBe('string');
         expect(raw.has(v), `${e.name}.${k} leaked a raw value: ${v}`).toBe(false);
