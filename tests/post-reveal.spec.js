@@ -2,6 +2,8 @@
 // "do nothing vs this plan" comparison computed from the visitor's inputs. 2026-10-26: the
 // "Freedom Date · Month Year" pill is back under "years old", the "what moves your date" card and
 // its Lever Viewed event are gone, the capture copy changed and the pig sits on the submit button.
+// 2026-10-27: Andrew's wording of the stakes line and the headline ("That gap is N years of your
+// life." / "FRED exists to close the gap.").
 // Nothing of the comparison or the form exists in the DOM before the reveal; after it there is
 // exactly one email input on the page. Copy is frozen (COPY in index.html) and checked verbatim
 // here so a reworded sentence fails before counsel sees it.
@@ -26,7 +28,7 @@ const COPY = {
   COMPARE_LEFT_CAPTION_EXISTING: 'on what you already have',
   COMPARE_RIGHT_LABEL: 'Stick to this plan.',
   COMPARE_RIGHT_CAPTION: 'your Freedom Date',
-  HEADLINE: 'FRED exists to close that gap.',
+  HEADLINE: 'FRED exists to close the gap.',
   SUB: `Save your Freedom Date and we${RSQUO}ll help you turn it from a number into a plan the day we open.`,
   BUTTON: 'Let FRED help me get there',
   HEADLINE_STILL: 'This date can still move.',
@@ -35,7 +37,7 @@ const COPY = {
   EMAIL_LABEL: 'Email',
   DISCLAIMER: 'Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.',
 };
-const stakes = (n) => `The gap between those two numbers is ${n} years of your life.`;
+const stakes = (n) => `That gap is ${n} years of your life.`;
 const NO_DATE_HEADING = 'Put your financial future on autopilot.';
 const PILL = /^Freedom Date · [A-Z][a-z]+ \d{4}$/;
 const EM_DASH = String.fromCharCode(0x2014);
@@ -392,8 +394,10 @@ test.describe('the capture section', () => {
         btnHeight: b.getBoundingClientRect().height,
         btnWidth: b.getBoundingClientRect().width,
         // The pig, the gap and the label inside the button's content box (its padding untouched).
+        // Measured from the row's children: scrollWidth of a centred flex row is its own width when
+        // the content fits and only the right-hand half of the spill when it does not.
         btnContentWidth: b.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
-        textWidth: t.scrollWidth,
+        textWidth: (() => { const k = [...t.children].map((c) => c.getBoundingClientRect()); return Math.max(...k.map((r) => r.right)) - Math.min(...k.map((r) => r.left)); })(),
         formWidth: document.getElementById('waitlist-form').getBoundingClientRect().width,
         visibleButtons: [...card.querySelectorAll('button')].filter((x) => x.offsetParent !== null).length,
         // Order (Andrew's follow-up, 2026-10-25): button, count line, consent sentence, note; the note is the
@@ -522,7 +526,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#result-card #join #pending-block')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#waitlist-form')).toBeHidden();
     await expect(page.locator('#capture-cta-note')).toBeHidden();
-    // The pitch goes with the form: no "FRED exists to close that gap." above "you got mail".
+    // The pitch goes with the form: no "FRED exists to close the gap." above "you got mail".
     await expect(page.locator('#capture-pitch')).toBeHidden();
     await expect(page.locator('#capture-heading')).toBeHidden();
     await expect(page.locator('#compare')).toBeVisible();
@@ -582,7 +586,7 @@ test.describe('copy', () => {
     await page.goto('/index.html');
     await reveal(page);
     const sr = await page.locator('#result-sr').textContent();
-    expect(sr).toMatch(/^You could be free at 53 years old\. Freedom Date: [A-Z][a-z]+ \d{4}\. Do nothing: 65\+\. Stick to this plan: 53\. The gap between those two numbers is 12 years of your life\. Projected portfolio target: \$2,250,000\. Assumes a 10% average annual return \(Moderate scenario\) and 4% withdrawal rate\. Hypothetical illustration/);
+    expect(sr).toMatch(/^You could be free at 53 years old\. Freedom Date: [A-Z][a-z]+ \d{4}\. Do nothing: 65\+\. Stick to this plan: 53\. That gap is 12 years of your life\. Projected portfolio target: \$2,250,000\. Assumes a 10% average annual return \(Moderate scenario\) and 4% withdrawal rate\. Hypothetical illustration/);
     expect(sr).not.toContain('..');
     expect(sr).not.toContain('before the usual 65');
     // 69 on a large balance, nothing to compare: just the age, the date and the fine print.
