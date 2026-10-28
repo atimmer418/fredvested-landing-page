@@ -162,6 +162,33 @@
     return { left: left, right: null, years: null, source: 'hidden' };
   }
 
+  // The chart in the personalised welcome email (2026-10-27): the projected balance and the cumulative
+  // amount put in, year by year, from the same model as project(): one rate on everything, monthly
+  // compounding. balance(m) = existing * (1 + r)^m + invest * ((1 + r)^m - 1) / r is the balance whose
+  // inverse project() solves for the months; contributed(m) = existing + invest * m (the money already
+  // invested counts as put in, so both lines start at the same point). One point per whole year from
+  // `age` to the freedom age, plus the final fractional point, in whole dollars. The page sends this
+  // with the signup; the server renders it and never recomputes it. null when project() has no date.
+  function growthSeries(inputs, projectFn) {
+    const run = projectFn || project;
+    const current = run(inputs);
+    if (!current.feasible) return null;
+    const r = inputs.ratePct / 100 / 12;
+    const existing = inputs.existing || 0;
+    const balance = (m) => existing * Math.pow(1 + r, m) + inputs.invest * (Math.pow(1 + r, m) - 1) / r;
+    const contributed = (m) => existing + inputs.invest * m;
+    const series = [];
+    const contributions = [];
+    const push = (ageAt, m) => {
+      series.push({ age: ageAt, value: Math.round(balance(m)) });
+      contributions.push({ age: ageAt, value: Math.round(contributed(m)) });
+    };
+    const wholeYears = Math.floor(current.years);
+    for (let y = 0; y <= wholeYears; y++) push(inputs.age + y, y * 12);
+    if (current.years > wholeYears) push(current.ageAtFreedom, current.months);
+    return { series: series, contributions: contributions, totalContributed: Math.round(contributed(current.months)) };
+  }
+
   // Everything the page renders after a result, at once: { lever, delay, stakes }, the rows
   // null when hidden, stakes null when there is no date.
   function scenarios(inputs, projectFn) {
@@ -183,5 +210,6 @@
     doNothingScenario: doNothingScenario,
     stakes: stakes,
     scenarios: scenarios,
+    growthSeries: growthSeries,
   };
 });

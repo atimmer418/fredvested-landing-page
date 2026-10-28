@@ -1,0 +1,163 @@
+{
+ "currentAge": 30,
+ "freedomAge": 46.296863037103215,
+ "freedomMonth": 2,
+ "freedomYear": 2043,
+ "monthlyInvest": 10000,
+ "targetIncome": 20000,
+ "existingBalance": 0,
+ "returnRate": 12,
+ "scenario": "OPTIMISTIC",
+ "stakeYears": 19,
+ "stakeSource": "plan",
+ "totalContributed": 1955624,
+ "portfolioTarget": 6000000,
+ "series": [
+  {
+   "age": 30,
+   "value": 0
+  },
+  {
+   "age": 31,
+   "value": 126825
+  },
+  {
+   "age": 32,
+   "value": 269735
+  },
+  {
+   "age": 33,
+   "value": 430769
+  },
+  {
+   "age": 34,
+   "value": 612226
+  },
+  {
+   "age": 35,
+   "value": 816697
+  },
+  {
+   "age": 36,
+   "value": 1047099
+  },
+  {
+   "age": 37,
+   "value": 1306723
+  },
+  {
+   "age": 38,
+   "value": 1599273
+  },
+  {
+   "age": 39,
+   "value": 1928926
+  },
+  {
+   "age": 40,
+   "value": 2300387
+  },
+  {
+   "age": 41,
+   "value": 2718959
+  },
+  {
+   "age": 42,
+   "value": 3190616
+  },
+  {
+   "age": 43,
+   "value": 3722091
+  },
+  {
+   "age": 44,
+   "value": 4320970
+  },
+  {
+   "age": 45,
+   "value": 4995802
+  },
+  {
+   "age": 46,
+   "value": 5756220
+  },
+  {
+   "age": 46.296863037103215,
+   "value": 6000000
+  }
+ ],
+ "contributions": [
+  {
+   "age": 30,
+   "value": 0
+  },
+  {
+   "age": 31,
+   "value": 120000
+  },
+  {
+   "age": 32,
+   "value": 240000
+  },
+  {
+   "age": 33,
+   "value": 360000
+  },
+  {
+   "age": 34,
+   "value": 480000
+  },
+  {
+   "age": 35,
+   "value": 600000
+  },
+  {
+   "age": 36,
+   "value": 720000
+  },
+  {
+   "age": 37,
+   "value": 840000
+  },
+  {
+   "age": 38,
+   "value": 960000
+  },
+  {
+   "age": 39,
+   "value": 1080000
+  },
+  {
+   "age": 40,
+   "value": 1200000
+  },
+  {
+   "age": 41,
+   "value": 1320000
+  },
+  {
+   "age": 42,
+   "value": 1440000
+  },
+  {
+   "age": 43,
+   "value": 1560000
+  },
+  {
+   "age": 44,
+   "value": 1680000
+  },
+  {
+   "age": 45,
+   "value": 1800000
+  },
+  {
+   "age": 46,
+   "value": 1920000
+  },
+  {
+   "age": 46.296863037103215,
+   "value": 1955624
+  }
+ ]
+}

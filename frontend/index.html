@@ -537,7 +537,7 @@
   // The projection (assets/projection.js): compute() below wraps project() and adds the calendar
   // date; the "do nothing" comparison and its lever fallback call the same project() with
   // modified inputs (stakes()).
-  const { project, stakes: computeStakes, roundAge } = window.FredProjection;
+  const { project, stakes: computeStakes, roundAge, growthSeries, USUAL_RETIREMENT_AGE } = window.FredProjection;
   // Every analytics call goes through this module (assets/analytics.js); nothing here calls plausible() directly.
   const Analytics = window.FredAnalytics;
 
@@ -764,6 +764,15 @@
   // when the block is hidden, null when no date exists. Only the whole years and the source
   // word reach analytics, banded there.
   let lastStakes = null;
+  // The projection as rendered, sent with the signup as `projection` so the welcome email can
+  // draw the chart of exactly what the visitor saw (the server renders it and never recomputes
+  // it). Built in render() from the reveal state the page already holds, null when no date
+  // exists or when the server would reject it (see PROJECTION_MAX_AGE / PROJECTION_MAX_POINTS).
+  let lastProjection = null;
+  // The server's validator refuses a freedom age past this or a series longer than this; a
+  // projection outside them is left out so the signup itself is never blocked by it.
+  const PROJECTION_MAX_AGE = 80;
+  const PROJECTION_MAX_POINTS = 70;
 
   // --- Live proof count (restored 2026-10-25; same source, gate and wording as before) ---------
   // The list-size line is shown only when the API returned a real count of at least
@@ -881,6 +890,36 @@
     captureSupport.hidden = false;
   }
 
+  // The `projection` the signup carries (2026-10-27): the feasible result on screen, field for
+  // field what the welcome email prints and charts. No second formula: the series comes from
+  // growthSeries() on the same inputs compute() projected, the date is compute()'s own, the
+  // comparison's number is the one renderPostReveal() just rendered (lastStakes), with the hidden
+  // rung falling to the plain years-to-65 figure the email can still say. null when the server
+  // would refuse it, so a signup never fails over its chart.
+  function buildProjection(res, inputs, roundedAge) {
+    if (!lastStakes) return null;
+    if (res.ageAtFreedom > PROJECTION_MAX_AGE) return null;
+    const g = growthSeries({ age: inputs.age, invest: inputs.invest, retire: inputs.retire, existing: inputs.existing, ratePct: currentScenario().pct });
+    if (!g || g.series.length > PROJECTION_MAX_POINTS) return null;
+    return {
+      currentAge: inputs.age,
+      freedomAge: res.ageAtFreedom,
+      freedomMonth: res.date.getMonth() + 1,
+      freedomYear: res.date.getFullYear(),
+      monthlyInvest: inputs.invest,
+      targetIncome: inputs.retire,
+      existingBalance: inputs.existing,
+      returnRate: currentScenario().pct,
+      scenario: selectedReturn.toUpperCase(),
+      stakeYears: lastStakes.source === "hidden" ? Math.max(0, USUAL_RETIREMENT_AGE - roundedAge) : lastStakes.years,
+      stakeSource: lastStakes.source,
+      totalContributed: g.totalContributed,
+      portfolioTarget: Math.round(res.target),
+      series: g.series,
+      contributions: g.contributions,
+    };
+  }
+
   function render(animate) {
     const inputs = readInputs();
     const { age, invest, retire, existing } = inputs;
@@ -910,6 +949,7 @@
       assumptionsEl.hidden = false;
       targetEl.hidden = false;
       renderPostReveal(res, inputs);
+      lastProjection = buildProjection(res, inputs, roundedAge);
       srEl.textContent =
         "You could be free at " + roundedAge + " " + COPY.YEARS_OLD + ". " +
         FREEDOM_LABEL + ": " + formatMonthYear(res.date) + ". " +
@@ -925,6 +965,7 @@
       lastFreedomMonthYear = null;
       lastFreedomDateIso = null;
       lastPortfolioTarget = Math.round(res.target);
+      lastProjection = null;
       assumptionsEl.hidden = true;
       targetEl.hidden = true;
       renderPostReveal(res, inputs);
@@ -940,6 +981,7 @@
       lastFreedomMonthYear = null;
       lastFreedomDateIso = null;
       lastPortfolioTarget = Math.round(res.target);
+      lastProjection = null;
       assumptionsEl.hidden = true;
       targetEl.hidden = true;
       renderPostReveal(res, inputs);
@@ -1229,6 +1271,7 @@
         if (lastFreedomAge !== null) payload.freedomAge = lastFreedomAge;
         if (lastFreedomDateIso !== null) payload.freedomDate = lastFreedomDateIso;
         if (lastPortfolioTarget !== null) payload.portfolioTarget = lastPortfolioTarget;
+        if (lastProjection) payload.projection = lastProjection;
         payload.revealedBeforeSubmit = revealed;
         Object.assign(payload, Analytics.getAttribution());
         const data = await submitWaitlist(payload);

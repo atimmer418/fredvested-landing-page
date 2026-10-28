@@ -233,3 +233,99 @@ test('scenarios() carries the comparison alongside the rows and projects six tim
   assert.deepEqual(out.stakes, { left: { age: 65, reaches: false }, right: { age: 53, step: null }, years: 12, source: 'plan' });
   assert.deepEqual(P.scenarios(CASES.C).stakes.years, 6);
 });
+
+// --- growthSeries (the welcome email's chart, 2026-10-27) ---------------------------------
+// The balance and the cumulative amount put in, year by year, from the same model project()
+// inverts: balance(m) = existing * (1 + r)^m + invest * ((1 + r)^m - 1) / r, contributed(m) =
+// existing + invest * m. One point per whole year from the current age to the freedom age, plus
+// the final fractional point, so the last balance is the target itself (to the dollar).
+test.describe('growthSeries', () => {
+  const sample = require(path.join(__dirname, '..', 'fixtures', 'projections', 'sample.json'));
+
+  test('null without a date, after one projection call', () => {
+    const s = spy();
+    assert.equal(P.growthSeries({ ...CASES.A, invest: 0 }, s), null);
+    assert.equal(s.calls.length, 1);
+    assert.equal(P.growthSeries({ age: 30, invest: 2000, retire: 1000, existing: 300000, ratePct: 10 }, spy()), null);
+    assert.equal(P.growthSeries({ age: 45, invest: 50, retire: 30000, existing: 0, ratePct: 8 }, spy()), null);
+  });
+
+  test('A: 25 points, from {30, $0} to the target at the fractional freedom age, matching the committed fixture', () => {
+    const g = P.growthSeries(CASES.A);
+    const r = P.project(CASES.A);
+    assert.equal(g.series.length, 25);
+    assert.equal(g.contributions.length, 25);
+    assert.deepEqual(g.series[0], { age: 30, value: 0 });
+    assert.deepEqual(g.contributions[0], { age: 30, value: 0 });
+    const last = g.series[g.series.length - 1];
+    assert.equal(last.value, Math.round(r.target));
+    assert.equal(last.age, r.ageAtFreedom);
+    assert.equal(g.contributions[g.contributions.length - 1].age, r.ageAtFreedom);
+    assert.equal(g.totalContributed, 563792);
+    assert.deepEqual(g.series, sample.series);
+    assert.deepEqual(g.contributions, sample.contributions);
+    assert.equal(g.totalContributed, sample.totalContributed);
+  });
+
+  test('both lines start at the existing balance and the last balance is the target, across inputs', () => {
+    const cases = [
+      CASES.A, CASES.B, CASES.C, CASES2.D,
+      { age: 30, invest: 2000, retire: 7500, existing: 100000, ratePct: 12 },
+      { age: 18, invest: 170, retire: 3000, existing: 0, ratePct: 8 },
+      { age: 30, invest: 9000, retire: 1200, existing: 0, ratePct: 10 },
+      { age: 30, invest: 10000, retire: 20000, existing: 0, ratePct: 12 },
+    ];
+    for (const inputs of cases) {
+      const g = P.growthSeries(inputs);
+      const r = P.project(inputs);
+      const label = JSON.stringify(inputs);
+      assert.deepEqual(g.series[0], { age: inputs.age, value: inputs.existing }, label);
+      assert.deepEqual(g.contributions[0], { age: inputs.age, value: inputs.existing }, label);
+      assert.equal(g.series[g.series.length - 1].value, Math.round(r.target), label);
+      assert.equal(g.series[g.series.length - 1].age, r.ageAtFreedom, label);
+      // One point per whole year plus the fractional one (no horizon here lands on a whole year).
+      assert.equal(g.series.length, Math.floor(r.years) + 1 + (r.years > Math.floor(r.years) ? 1 : 0), label);
+      assert.equal(g.contributions.length, g.series.length, label);
+      // Ages strictly increasing, values never falling, on both lines.
+      for (const line of [g.series, g.contributions]) {
+        for (let i = 1; i < line.length; i++) {
+          assert.ok(line[i].age > line[i - 1].age, label + ' age at ' + i);
+          assert.ok(line[i].value >= line[i - 1].value, label + ' value at ' + i);
+        }
+      }
+      // The amount put in: the starting balance plus every monthly amount, rounded once.
+      const contributed = Math.round(inputs.existing + inputs.invest * r.months);
+      assert.equal(g.totalContributed, contributed, label);
+      assert.equal(g.contributions[g.contributions.length - 1].value, contributed, label);
+    }
+  });
+
+  test('existing $100,000 at 12%: the chart begins at $100k on both lines', () => {
+    const inputs = { age: 30, invest: 2000, retire: 7500, existing: 100000, ratePct: 12 };
+    const g = P.growthSeries(inputs);
+    assert.equal(g.series[0].value, 100000);
+    assert.equal(g.contributions[0].value, 100000);
+    assert.equal(g.series[g.series.length - 1].value, 2250000);
+    // Every balance point after the first is above the amount put in (the money is growing).
+    for (let i = 1; i < g.series.length; i++) assert.ok(g.series[i].value > g.contributions[i].value);
+  });
+
+  test('a horizon of exactly whole years has no fractional point: years + 1 points, the last at the freedom age', () => {
+    // project() never lands on a whole year by itself, so a fake projection stands in: 24 months.
+    const fake = (inputs) => ({ feasible: true, target: 0, months: 24, years: 2, ageAtFreedom: inputs.age + 2 });
+    const g = P.growthSeries(CASES.A, fake);
+    assert.equal(g.series.length, 3);
+    assert.deepEqual(g.series.map((p) => p.age), [30, 31, 32]);
+    assert.deepEqual(g.contributions.map((p) => p.value), [0, 24000, 48000]);
+    assert.equal(g.totalContributed, 48000);
+  });
+
+  test('calls the projectFn it is given once, with the inputs unchanged, and reads its months and age', () => {
+    const s = spy();
+    const g = P.growthSeries(CASES.C, s);
+    assert.equal(s.calls.length, 1);
+    assert.deepEqual(s.calls[0], CASES.C);
+    assert.equal(g.series[0].value, 250000);
+    assert.equal(g.series[g.series.length - 1].age, P.project(CASES.C).ageAtFreedom);
+  });
+});
