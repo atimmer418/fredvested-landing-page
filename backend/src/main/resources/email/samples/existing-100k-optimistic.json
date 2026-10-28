@@ -1,0 +1,171 @@
+{
+ "currentAge": 30,
+ "freedomAge": 47.58786432893612,
+ "freedomMonth": 5,
+ "freedomYear": 2044,
+ "monthlyInvest": 2000,
+ "targetIncome": 7500,
+ "existingBalance": 100000,
+ "returnRate": 12,
+ "scenario": "OPTIMISTIC",
+ "stakeYears": 8,
+ "stakeSource": "plan",
+ "totalContributed": 522109,
+ "portfolioTarget": 2250000,
+ "series": [
+  {
+   "age": 30,
+   "value": 100000
+  },
+  {
+   "age": 31,
+   "value": 138048
+  },
+  {
+   "age": 32,
+   "value": 180920
+  },
+  {
+   "age": 33,
+   "value": 229231
+  },
+  {
+   "age": 34,
+   "value": 283668
+  },
+  {
+   "age": 35,
+   "value": 345009
+  },
+  {
+   "age": 36,
+   "value": 414130
+  },
+  {
+   "age": 37,
+   "value": 492017
+  },
+  {
+   "age": 38,
+   "value": 579782
+  },
+  {
+   "age": 39,
+   "value": 678678
+  },
+  {
+   "age": 40,
+   "value": 790116
+  },
+  {
+   "age": 41,
+   "value": 915688
+  },
+  {
+   "age": 42,
+   "value": 1057185
+  },
+  {
+   "age": 43,
+   "value": 1216627
+  },
+  {
+   "age": 44,
+   "value": 1396291
+  },
+  {
+   "age": 45,
+   "value": 1598741
+  },
+  {
+   "age": 46,
+   "value": 1826866
+  },
+  {
+   "age": 47,
+   "value": 2083923
+  },
+  {
+   "age": 47.58786432893612,
+   "value": 2250000
+  }
+ ],
+ "contributions": [
+  {
+   "age": 30,
+   "value": 100000
+  },
+  {
+   "age": 31,
+   "value": 124000
+  },
+  {
+   "age": 32,
+   "value": 148000
+  },
+  {
+   "age": 33,
+   "value": 172000
+  },
+  {
+   "age": 34,
+   "value": 196000
+  },
+  {
+   "age": 35,
+   "value": 220000
+  },
+  {
+   "age": 36,
+   "value": 244000
+  },
+  {
+   "age": 37,
+   "value": 268000
+  },
+  {
+   "age": 38,
+   "value": 292000
+  },
+  {
+   "age": 39,
+   "value": 316000
+  },
+  {
+   "age": 40,
+   "value": 340000
+  },
+  {
+   "age": 41,
+   "value": 364000
+  },
+  {
+   "age": 42,
+   "value": 388000
+  },
+  {
+   "age": 43,
+   "value": 412000
+  },
+  {
+   "age": 44,
+   "value": 436000
+  },
+  {
+   "age": 45,
+   "value": 460000
+  },
+  {
+   "age": 46,
+   "value": 484000
+  },
+  {
+   "age": 47,
+   "value": 508000
+  },
+  {
+   "age": 47.58786432893612,
+   "value": 522109
+  }
+ ]
+}

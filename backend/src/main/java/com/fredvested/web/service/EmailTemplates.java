@@ -1,5 +1,7 @@
 package com.fredvested.web.service;
 
+import com.fredvested.web.email.EmailTemplateEngine;
+
 /**
  * The two waitlist emails. Pure functions of their links and the postal
  * address; no personalisation beyond the To header (the address is not in the
@@ -62,10 +64,47 @@ FREDvested LLC, %s
      * Counsel, 2026-10-13: every email footer carries this disclaimer verbatim and a
      * link to the privacy policy, in both the HTML and the plain-text part.
      */
-    static final String DEVELOPMENT_DISCLAIMER =
+    public static final String DEVELOPMENT_DISCLAIMER =
             "FRED is still in development. Any investment advisory services will be made available only after applicable registration requirements have been satisfied and subject to eligibility and onboarding requirements. Joining the waitlist does not create an advisory relationship or guarantee account approval or a launch date.";
 
-    static final String PRIVACY_URL = "https://fredvested.com/privacy";
+    public static final String PRIVACY_URL = "https://fredvested.com/privacy";
+
+    /**
+     * The v2 confirmation email (email.templates.v2.enabled): the same consent-only
+     * sentences as {@link #confirmation}, in the frame of the personalised welcome
+     * email (email/confirmation-v2.html, rendered by EmailTemplateEngine). The text
+     * part is the v1 text with the "Privacy policy:" label matching the HTML.
+     */
+    public static Rendered confirmationV2(String confirmUrl, String unsubscribeUrl, int ttlDays, String postalAddress) {
+        String html = EmailTemplateEngine.stripLeadingComment(ConfirmationV2.HTML);
+        html = EmailTemplateEngine.setHref(html, "confirm_url", confirmUrl);
+        html = EmailTemplateEngine.fillText(html, "ttl_days", String.valueOf(ttlDays));
+        html = EmailTemplateEngine.fillText(html, "postal_address", postalAddress == null ? "" : postalAddress);
+        html = EmailTemplateEngine.setHref(html, "unsubscribe_url", unsubscribeUrl);
+        html = EmailTemplateEngine.stripMarkers(html);
+        String text = """
+You're receiving this email because this address was entered on the waitlist form at fredvested.com. To finish signing up, confirm your email:
+
+%s
+
+This link expires in %d days. If you didn't sign up, you can ignore this email and nothing will happen.
+
+The FRED Team
+help@fredvested.com
+
+Unsubscribe: %s
+Privacy policy: %s
+FREDvested LLC, %s
+
+%s
+""".formatted(confirmUrl, ttlDays, unsubscribeUrl, PRIVACY_URL, postalAddress, DEVELOPMENT_DISCLAIMER);
+        return new Rendered(ConfirmationV2.SUBJECT, html, text);
+    }
+
+    private static final class ConfirmationV2 {
+        static final String HTML = EmailTemplateEngine.load("email/confirmation-v2.html");
+        static final String SUBJECT = EmailTemplateEngine.title(HTML);
+    }
 
     /** The welcome email ("You're in"): sent on confirmation, or at signup with double opt-in off. */
     public static Rendered welcome(String unsubscribeUrl, String postalAddress) {

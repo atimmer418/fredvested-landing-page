@@ -1,0 +1,51 @@
+{
+ "currentAge": 30,
+ "freedomAge": 32.88879089827239,
+ "freedomMonth": 9,
+ "freedomYear": 2029,
+ "monthlyInvest": 9000,
+ "targetIncome": 1200,
+ "existingBalance": 0,
+ "returnRate": 10,
+ "scenario": "MODERATE",
+ "stakeYears": 32,
+ "stakeSource": "plan",
+ "totalContributed": 311989,
+ "portfolioTarget": 360000,
+ "series": [
+  {
+   "age": 30,
+   "value": 0
+  },
+  {
+   "age": 31,
+   "value": 113090
+  },
+  {
+   "age": 32,
+   "value": 238022
+  },
+  {
+   "age": 32.88879089827239,
+   "value": 360000
+  }
+ ],
+ "contributions": [
+  {
+   "age": 30,
+   "value": 0
+  },
+  {
+   "age": 31,
+   "value": 108000
+  },
+  {
+   "age": 32,
+   "value": 216000
+  },
+  {
+   "age": 32.88879089827239,
+   "value": 311989
+  }
+ ]
+}

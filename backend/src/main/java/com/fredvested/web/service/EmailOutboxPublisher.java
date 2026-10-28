@@ -1,11 +1,17 @@
 package com.fredvested.web.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fredvested.web.email.ChartRenderer;
+import com.fredvested.web.email.GrowthChartRenderer;
+import com.fredvested.web.email.PersonalizedWelcomeEmail;
+import com.fredvested.web.email.Projection;
 import com.fredvested.web.model.EmailMessage;
 import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.EmailMessageRepository;
 import com.fredvested.web.repository.WaitlistRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,23 +56,50 @@ public class EmailOutboxPublisher {
     private final int maxAttempts;
     private final int ttlDays;
     private final int staleSendingMinutes;
+    // email.templates.v2.enabled: the personalised welcome (projection + chart) and the
+    // confirmation in the same frame. Off = the v1 templates, byte for byte as before.
+    private final boolean templatesV2;
+    private final ObjectMapper objectMapper;
+    private final ChartRenderer chartRenderer;
 
+    @Autowired
     public EmailOutboxPublisher(EmailMessageRepository outbox,
                                 WaitlistRepository waitlist,
                                 EmailService emailService,
+                                ObjectMapper objectMapper,
                                 @Value("${api.public-url:http://localhost:8081}") String apiPublicUrl,
                                 @Value("${email.postal-address:[PO Box pending]}") String postalAddress,
                                 @Value("${email.outbox.max-attempts:12}") int maxAttempts,
                                 @Value("${waitlist.confirmation.ttl-days:7}") int ttlDays,
-                                @Value("${email.outbox.stale-sending-minutes:15}") int staleSendingMinutes) {
+                                @Value("${email.outbox.stale-sending-minutes:15}") int staleSendingMinutes,
+                                @Value("${email.templates.v2.enabled:false}") boolean templatesV2) {
+        this(outbox, waitlist, emailService, objectMapper, apiPublicUrl, postalAddress, maxAttempts, ttlDays, staleSendingMinutes,
+                templatesV2, GrowthChartRenderer::render);
+    }
+
+    /** The seam for tests: a ChartRenderer that returns a fake PNG, so no test depends on Java2D. */
+    public EmailOutboxPublisher(EmailMessageRepository outbox,
+                                WaitlistRepository waitlist,
+                                EmailService emailService,
+                                ObjectMapper objectMapper,
+                                String apiPublicUrl,
+                                String postalAddress,
+                                int maxAttempts,
+                                int ttlDays,
+                                int staleSendingMinutes,
+                                boolean templatesV2,
+                                ChartRenderer chartRenderer) {
         this.outbox = outbox;
         this.waitlist = waitlist;
         this.emailService = emailService;
+        this.objectMapper = objectMapper;
         this.apiPublicUrl = publicBaseUrl(apiPublicUrl);
         this.postalAddress = postalAddress;
         this.maxAttempts = maxAttempts;
         this.ttlDays = ttlDays;
         this.staleSendingMinutes = staleSendingMinutes;
+        this.templatesV2 = templatesV2;
+        this.chartRenderer = chartRenderer;
     }
 
     /**
@@ -147,16 +181,34 @@ public class EmailOutboxPublisher {
         outbox.save(message);
         String unsubscribeUrl = apiPublicUrl + "/api/waitlist/unsubscribe?token=" + unsubscribe.raw();
 
-        EmailTemplates.Rendered rendered;
+        String confirmUrl = null;
         if (confirmation) {
             ConfirmationTokens.Generated confirm = ConfirmationTokens.generate();
             waitlist.setConfirmationToken(entry.getId(), confirm.hash(), now.plusDays(ttlDays));
-            rendered = EmailTemplates.confirmation(apiPublicUrl + "/api/waitlist/confirm?token=" + confirm.raw(), unsubscribeUrl, ttlDays, postalAddress);
-        } else {
-            rendered = EmailTemplates.welcome(unsubscribeUrl, postalAddress);
+            confirmUrl = apiPublicUrl + "/api/waitlist/confirm?token=" + confirm.raw();
         }
 
         try {
+            // Rendering happens inside the try as well, so a template or projection problem
+            // backs off and eventually fails the message like a failed send, instead of
+            // escaping publish() and leaving the row in "sending" to be reclaimed forever.
+            EmailTemplates.Rendered rendered;
+            List<EmailService.InlineAttachment> inline = List.of();
+            if (confirmation) {
+                rendered = templatesV2
+                        ? EmailTemplates.confirmationV2(confirmUrl, unsubscribeUrl, ttlDays, postalAddress)
+                        : EmailTemplates.confirmation(confirmUrl, unsubscribeUrl, ttlDays, postalAddress);
+            } else if (templatesV2) {
+                Projection projection = projection(entry);
+                EmailService.InlineAttachment chart = projection == null ? null : chart(entry.getId(), projection);
+                // A chart that cannot be drawn for this row degrades to the no-chart copy
+                // (the same fallback as a row without a projection) rather than costing
+                // the message its attempts; a broken renderer is caught at boot instead.
+                if (chart == null) projection = null; else inline = List.of(chart);
+                rendered = PersonalizedWelcomeEmail.render(projection, unsubscribeUrl, postalAddress);
+            } else {
+                rendered = EmailTemplates.welcome(unsubscribeUrl, postalAddress);
+            }
             // No List-Unsubscribe headers on any email (Andrew, 2026-09-25): mail clients
             // label any message carrying them as list mail (Apple Mail's "this message is
             // from a mailing list" strip), and the footer unsubscribe link is the opt-out.
@@ -164,7 +216,12 @@ public class EmailOutboxPublisher {
             // messages a day; if volume ever gets there, add it back here per template
             // (POST /api/waitlist/unsubscribe already honours the one-click body).
             Map<String, String> headers = Map.of();
-            String resendId = emailService.send(entry.getEmail(), rendered.subject(), rendered.html(), rendered.text(), headers);
+            String resendId;
+            if (templatesV2) {
+                resendId = emailService.send(entry.getEmail(), rendered.subject(), rendered.html(), rendered.text(), headers, inline);
+            } else {
+                resendId = emailService.send(entry.getEmail(), rendered.subject(), rendered.html(), rendered.text(), headers);
+            }
             LocalDateTime sentAt = now();
             message.setResendEmailId(resendId);
             message.setStatus(EmailMessage.STATUS_SENT);
@@ -196,6 +253,43 @@ public class EmailOutboxPublisher {
             outbox.save(message);
         }
         return true;
+    }
+
+    /**
+     * The row's stored projection (projection_json, V8), or null when there is none or it
+     * cannot be read: the welcome email then falls back to its no-projection copy rather
+     * than failing. Only the waitlist id is logged.
+     */
+    private Projection projection(WaitlistEntry entry) {
+        String json = entry.getProjectionJson();
+        if (json == null || json.isBlank()) return null;
+        try {
+            Projection p = objectMapper.readValue(json, Projection.class);
+            // A document that parses but is incomplete (a hand-edited row, an older shape) is
+            // treated the same as none: the email has nothing it can safely fill.
+            if (p == null || p.scenario() == null
+                    || p.series() == null || p.series().isEmpty()
+                    || p.contributions() == null || p.contributions().isEmpty()) {
+                log.warn("welcome projection unreadable for waitlist id {}", entry.getId());
+                return null;
+            }
+            return p;
+        } catch (Exception e) {
+            log.warn("welcome projection unreadable for waitlist id {}", entry.getId());
+            return null;
+        }
+    }
+
+    /** The inline chart for a projection, or null (logged with the id only) when it cannot be drawn. */
+    private EmailService.InlineAttachment chart(Long waitlistId, Projection projection) {
+        try {
+            GrowthChartRenderer.Png png = chartRenderer.render(projection);
+            return new EmailService.InlineAttachment(GrowthChartRenderer.FILENAME, GrowthChartRenderer.CONTENT_ID,
+                    GrowthChartRenderer.CONTENT_TYPE, png.bytes());
+        } catch (RuntimeException e) {
+            log.warn("growth chart failed for waitlist id {}: {}", waitlistId, e.getClass().getSimpleName());
+            return null;
+        }
     }
 
     private void finish(EmailMessage message, String status, String note, LocalDateTime now) {

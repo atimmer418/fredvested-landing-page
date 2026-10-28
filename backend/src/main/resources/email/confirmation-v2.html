@@ -1,0 +1,81 @@
+<!--
+  FRED waitlist confirmation email, v2: the double opt-in consent email in the same frame as
+  welcome-personalized.html (head, dark-mode rules, card, wordmark and footer band copied from it).
+  Consent only (counsel, 2026-09-24): the sentences are those of EmailTemplates.confirmation,
+  nothing promotional, no dollar sign anywhere (EmailTemplatesTest's deny-list), and the footer
+  carries no calculator sentence. data-field and this comment are stripped from the sent output.
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>Confirm your email</title>
+  <style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .page { background-color: #0b1220 !important; }
+      .card { background-color: #151b2b !important; }
+      .footer { background-color: #1a2131 !important; }
+      .offer { background-color: #1e2637 !important; }
+      .ink { color: #f1f5f9 !important; }
+      .muted { color: #94a3b8 !important; }
+      .wordmark { color: #5b8cff !important; }
+      .rule { border-bottom-color: #2f6bff !important; }
+      .footer-link { color: #cbd5e1 !important; }
+    }
+    [data-ogsc] .page { background-color: #0b1220 !important; }
+    [data-ogsc] .card { background-color: #151b2b !important; }
+    [data-ogsc] .footer { background-color: #1a2131 !important; }
+    [data-ogsc] .offer { background-color: #1e2637 !important; }
+    [data-ogsc] .ink { color: #f1f5f9 !important; }
+    [data-ogsc] .muted { color: #94a3b8 !important; }
+    [data-ogsc] .wordmark { color: #5b8cff !important; }
+    [data-ogsc] .rule { border-bottom-color: #2f6bff !important; }
+    [data-ogsc] .footer-link { color: #cbd5e1 !important; }
+  </style>
+</head>
+<body class="page" style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="page" style="background-color:#f1f5f9;padding:24px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td class="rule" style="padding:36px 40px 28px;text-align:center;border-bottom:3px solid #1d4ed8;">
+              <span class="wordmark" style="font-size:40px;font-weight:800;line-height:1;letter-spacing:-0.5px;color:#1d4ed8;">FRED</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 32px 12px;text-align:center;">
+              <h1 class="ink" style="margin:0;font-size:26px;line-height:1.25;font-weight:800;letter-spacing:-0.3px;color:#0f172a;">Confirm your email</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 0;text-align:center;">
+              <p class="ink" style="margin:0 0 28px;font-size:17px;line-height:1.5;color:#334155;">You&#39;re receiving this email because this address was entered on the waitlist form at fredvested.com. To finish signing up, confirm your email.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
+                <tr>
+                  <td style="background-color:#1d4ed8;border-radius:12px;">
+                    <a data-field="confirm_url" href="https://lpapi.fredvested.com/api/waitlist/confirm?token=sample" style="display:inline-block;border-radius:12px;padding:16px 32px;font-size:17px;font-weight:700;color:#ffffff;text-decoration:none;">Confirm my email</a>
+                  </td>
+                </tr>
+              </table>
+              <p class="muted" style="margin:0 0 36px;font-size:14px;line-height:1.5;color:#64748b;">This link expires in <span data-field="ttl_days">7</span> days. If you didn&#39;t sign up, you can ignore this email and nothing will happen.</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="footer" style="background-color:#e2e8f0;padding:28px 32px 32px;">
+              <p class="ink" style="margin:0 0 2px;font-size:16px;font-weight:700;color:#0f172a;">The FRED Team</p>
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.4;"><a class="footer-link" href="mailto:help@fredvested.com" style="color:#334155;">help@fredvested.com</a></p>
+              <p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#475569;text-wrap:pretty;">FRED is still in development. Any investment advisory services will be made available only after applicable registration requirements have been satisfied and subject to eligibility and onboarding requirements. Joining the waitlist does not create an advisory relationship or guarantee account approval or a launch date.</p>
+              <p class="muted" style="margin:0;font-size:13px;line-height:1.5;color:#475569;">FREDvested LLC, <span data-field="postal_address">PO Box 2406, Rockville, MD 20847</span> &#183; <a class="footer-link" data-field="unsubscribe_url" href="https://lpapi.fredvested.com/api/waitlist/unsubscribe?token=sample" style="color:#334155;">Unsubscribe</a> &#183; <a class="footer-link" href="https://fredvested.com/privacy" style="color:#334155;">Privacy policy</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

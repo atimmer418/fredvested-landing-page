@@ -2,6 +2,8 @@ package com.fredvested.web.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -58,6 +60,14 @@ public class WaitlistEntry {
 
     @Column(name = "revealed_before_submit", nullable = false)
     private Boolean revealedBeforeSubmit = false;
+
+    // The page's own projection as it was submitted (V8): the validated payload
+    // (com.fredvested.web.email.Projection) serialised by Jackson. The personalised
+    // welcome email is rendered from this and nothing else, so it says exactly what
+    // the person saw; null when the signup carried no projection.
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "projection_json")
+    private String projectionJson;
 
     // Attribution, sanitised server-side (AttributionSanitizer). Last touch = the
     // visit they converted on; first_* = the content that originally found them.

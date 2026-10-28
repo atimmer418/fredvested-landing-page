@@ -1,5 +1,6 @@
 package com.fredvested.web.controller;
 
+import com.fredvested.web.email.InvalidProjectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,14 @@ public class ApiErrorHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> invalidRequest(MethodArgumentNotValidException e) {
         return ResponseEntity.badRequest().body(error("invalid_email", "Please enter a valid email address."));
+    }
+
+    // A signup whose projection failed validation. Only the reason code is logged: never a
+    // submitted value and never the address.
+    @ExceptionHandler(InvalidProjectionException.class)
+    public ResponseEntity<Map<String, String>> invalidProjection(InvalidProjectionException e) {
+        log.warn("Invalid projection on a waitlist request: {}", e.reason());
+        return ResponseEntity.badRequest().body(error("invalid_projection", "Something went wrong. Please try again."));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

@@ -1,5 +1,8 @@
 package com.fredvested.web;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fredvested.web.email.Fixtures;
+import com.fredvested.web.email.Projection;
 import com.fredvested.web.model.EmailEvent;
 import com.fredvested.web.model.EmailMessage;
 import com.fredvested.web.model.WaitlistEntry;
@@ -275,5 +278,36 @@ class WaitlistFunnelIntegrationTest {
         webhook("it_svix_u", body);
         assertEquals(1, events.count());
         assertEquals(0, waitlist.count());
+    }
+
+    // V8: the page's projection is stored in the JSON column exactly as validated, and the
+    // welcome publisher reads it back from a real MySQL row (Hibernate validate accepted the
+    // type at startup; this proves the write and the read agree with it).
+    @Test
+    @SuppressWarnings("unchecked")
+    void projectionJson_roundTripsThroughTheJsonColumn() throws Exception {
+        ObjectMapper om = new ObjectMapper();
+        Map<String, Object> payload = new java.util.HashMap<>(Map.of("email", "it-proj@example.com", "turnstileToken", "t",
+                "age", 30, "investMonthly", 2000, "retireMonthly", 7500, "returnAssumptionPct", 12, "existingInvested", 100000));
+        payload.put("projection", Fixtures.read("existing-100k-optimistic", Map.class));
+        signup(om.writeValueAsString(payload), "10.9.9.1");
+
+        WaitlistEntry row = waitlist.findByEmail("it-proj@example.com");
+        assertNotNull(row.getProjectionJson());
+        Projection stored = om.readValue(row.getProjectionJson(), Projection.class);
+        assertEquals(Fixtures.projection("existing-100k-optimistic"), stored);
+        assertEquals(100_000L, stored.existingBalance());
+        assertEquals(12, stored.returnRate());
+
+        // A tampered projection is refused outright: no row, no outbox row.
+        Map<String, Object> bad = new java.util.HashMap<>(payload);
+        bad.put("email", "it-bad@example.com");
+        Map<String, Object> proj = new java.util.HashMap<>((Map<String, Object>) bad.get("projection"));
+        proj.put("portfolioTarget", 9_000_000);
+        bad.put("projection", proj);
+        mvc.perform(post("/api/waitlist").contentType(MediaType.APPLICATION_JSON).header("CF-Connecting-IP", "10.9.9.2").content(om.writeValueAsString(bad)))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("invalid_projection"));
+        assertNull(waitlist.findByEmail("it-bad@example.com"));
+        assertEquals(1, outbox.count());
     }
 }

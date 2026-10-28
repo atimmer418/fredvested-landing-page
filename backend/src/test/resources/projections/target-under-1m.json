@@ -1,0 +1,131 @@
+{
+ "currentAge": 30,
+ "freedomAge": 42.579755944606895,
+ "freedomMonth": 5,
+ "freedomYear": 2039,
+ "monthlyInvest": 2000,
+ "targetIncome": 2000,
+ "existingBalance": 0,
+ "returnRate": 10,
+ "scenario": "MODERATE",
+ "stakeYears": 22,
+ "stakeSource": "plan",
+ "totalContributed": 301914,
+ "portfolioTarget": 600000,
+ "series": [
+  {
+   "age": 30,
+   "value": 0
+  },
+  {
+   "age": 31,
+   "value": 25131
+  },
+  {
+   "age": 32,
+   "value": 52894
+  },
+  {
+   "age": 33,
+   "value": 83564
+  },
+  {
+   "age": 34,
+   "value": 117445
+  },
+  {
+   "age": 35,
+   "value": 154874
+  },
+  {
+   "age": 36,
+   "value": 196223
+  },
+  {
+   "age": 37,
+   "value": 241901
+  },
+  {
+   "age": 38,
+   "value": 292362
+  },
+  {
+   "age": 39,
+   "value": 348107
+  },
+  {
+   "age": 40,
+   "value": 409690
+  },
+  {
+   "age": 41,
+   "value": 477721
+  },
+  {
+   "age": 42,
+   "value": 552876
+  },
+  {
+   "age": 42.579755944606895,
+   "value": 600000
+  }
+ ],
+ "contributions": [
+  {
+   "age": 30,
+   "value": 0
+  },
+  {
+   "age": 31,
+   "value": 24000
+  },
+  {
+   "age": 32,
+   "value": 48000
+  },
+  {
+   "age": 33,
+   "value": 72000
+  },
+  {
+   "age": 34,
+   "value": 96000
+  },
+  {
+   "age": 35,
+   "value": 120000
+  },
+  {
+   "age": 36,
+   "value": 144000
+  },
+  {
+   "age": 37,
+   "value": 168000
+  },
+  {
+   "age": 38,
+   "value": 192000
+  },
+  {
+   "age": 39,
+   "value": 216000
+  },
+  {
+   "age": 40,
+   "value": 240000
+  },
+  {
+   "age": 41,
+   "value": 264000
+  },
+  {
+   "age": 42,
+   "value": 288000
+  },
+  {
+   "age": 42.579755944606895,
+   "value": 301914
+  }
+ ]
+}

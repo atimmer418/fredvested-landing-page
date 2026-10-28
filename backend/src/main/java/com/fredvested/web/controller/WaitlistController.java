@@ -1,5 +1,10 @@
 package com.fredvested.web.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fredvested.web.email.Projection;
+import com.fredvested.web.email.ProjectionRequest;
+import com.fredvested.web.email.ProjectionValidator;
 import com.fredvested.web.model.WaitlistEntry;
 import com.fredvested.web.repository.WaitlistRepository;
 import com.fredvested.web.service.AddressRateLimiter;
@@ -52,6 +57,10 @@ public class WaitlistController {
     // (an unconfirmed address re-submitted gets a fresh link); same limiter as /resend-confirmation.
     @Autowired
     private AddressRateLimiter addressLimiter;
+
+    // Serialises the validated projection for projection_json (V8).
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final Logger log = LoggerFactory.getLogger(WaitlistController.class);
     private static final ZoneId EASTERN = ZoneId.of("America/New_York");
@@ -107,6 +116,11 @@ public class WaitlistController {
         private String referrerHost;
         private String landingPath;
         private String deviceType;
+
+        // The page's own projection as revealed (frontend/assets/projection.js), rendered
+        // into the personalised welcome email. Validated by ProjectionValidator, which can
+        // reject the signup (400 invalid_projection); absent for a pre-reveal submit.
+        private ProjectionRequest projection;
     }
 
     // Under double opt-in the public numbers change on confirmation, not on signup;
@@ -151,6 +165,11 @@ public class WaitlistController {
                 .body(error("rate_limited", "Too many requests. Please try again in a minute."));
         }
 
+        // 0b. The projection, if sent, must be the calculator's own output: an invalid one
+        // rejects the whole request (ApiErrorHandler -> 400 invalid_projection) before the
+        // Turnstile round trip, so nothing is saved or queued for it.
+        Projection projection = request.getProjection() == null ? null : ProjectionValidator.validate(request.getProjection());
+
         // 1. Verify Cloudflare Turnstile
         if (!turnstileService.verifyToken(request.getTurnstileToken())) {
             return ResponseEntity.badRequest().body(error("captcha_failed", "Security check failed."));
@@ -190,6 +209,7 @@ public class WaitlistController {
         entry.setExistingInvested(clampOrNullLong("existingInvested", request.getExistingInvested(), 0, 10_000_000));
         applyProjection(entry, request);
         applyAttribution(entry, request);
+        entry.setProjectionJson(projectionJson(projection));
         entry.setRevealedBeforeSubmit(Boolean.TRUE.equals(request.getRevealedBeforeSubmit()));
         entry.setIpHash(hashedIp);
         // Saves the row and its pending email (confirmation, or the welcome email when
@@ -206,6 +226,16 @@ public class WaitlistController {
         Map<String, Object> response = buildStatsMap(status.name());
         response.put("requiresConfirmation", signupService.isDoubleOptIn());
         return ResponseEntity.ok(response);
+    }
+
+    // The validated projection as the row stores it (projection_json); null when none was sent.
+    private String projectionJson(Projection projection) {
+        if (projection == null) return null;
+        try {
+            return objectMapper.writeValueAsString(projection);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("projection serialisation failed", e);
+        }
     }
 
     // Recompute the projection from the (already bounded) inputs and store the server's

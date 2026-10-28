@@ -1,0 +1,104 @@
+<!--
+  FRED waitlist welcome email, personalised ("You're in", v2). Sent after the confirmation click.
+  Reconstructed on 2026-10-27 from Andrew's light and dark renders: design/email/waitlist-confirmation-email-template.html
+  was not in the repository. Every sentence below is the draft going to counsel and is frozen; only the text
+  inside data-field elements changes per recipient. data-field, data-projection and this comment are stripped
+  from the sent output. The chart is an inline attachment (cid:growth-chart), never a hosted image.
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>You're in</title>
+  <style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .page { background-color: #0b1220 !important; }
+      .card { background-color: #151b2b !important; }
+      .footer { background-color: #1a2131 !important; }
+      .offer { background-color: #1e2637 !important; }
+      .ink { color: #f1f5f9 !important; }
+      .muted { color: #94a3b8 !important; }
+      .wordmark { color: #5b8cff !important; }
+      .rule { border-bottom-color: #2f6bff !important; }
+      .footer-link { color: #cbd5e1 !important; }
+    }
+    [data-ogsc] .page { background-color: #0b1220 !important; }
+    [data-ogsc] .card { background-color: #151b2b !important; }
+    [data-ogsc] .footer { background-color: #1a2131 !important; }
+    [data-ogsc] .offer { background-color: #1e2637 !important; }
+    [data-ogsc] .ink { color: #f1f5f9 !important; }
+    [data-ogsc] .muted { color: #94a3b8 !important; }
+    [data-ogsc] .wordmark { color: #5b8cff !important; }
+    [data-ogsc] .rule { border-bottom-color: #2f6bff !important; }
+    [data-ogsc] .footer-link { color: #cbd5e1 !important; }
+  </style>
+</head>
+<body class="page" style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f1f5f9;"><span data-projection="preheader"><span data-field="stake_years">12</span> fewer working years. </span>Here's the math FRED is built around.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="page" style="background-color:#f1f5f9;padding:24px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td class="rule" style="padding:36px 40px 28px;text-align:center;border-bottom:3px solid #1d4ed8;">
+              <span class="wordmark" style="font-size:40px;font-weight:800;line-height:1;letter-spacing:-0.5px;color:#1d4ed8;">FRED</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 32px 12px;text-align:center;">
+              <h1 class="ink" style="margin:0 0 12px;font-size:26px;line-height:1.25;font-weight:800;letter-spacing:-0.3px;color:#0f172a;">You're on FRED's private beta waitlist.</h1>
+              <p class="ink" style="margin:0;font-size:18px;line-height:1.4;color:#334155;">Here's the math FRED is built around.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1d4ed8;border-radius:20px;">
+                <tr>
+                  <td style="padding:28px 24px 24px;text-align:center;color:#ffffff;">
+                    <p style="margin:0 0 10px;font-size:24px;line-height:1.25;font-weight:800;color:#ffffff;"><span data-projection="headline"><span data-field="stake_years">12</span> fewer working years could look like:</span><span data-projection="headline-fallback">Put your financial future on autopilot.</span></p>
+                    <p data-projection="inputs" style="margin:0 0 20px;font-size:16px;line-height:1.4;color:#dbeafe;"><b style="color:#ffffff;" data-field="monthly_invest">$2,000</b>/mo from age <b style="color:#ffffff;" data-field="current_age">30</b> &rarr; a projected <b style="color:#ffffff;" data-field="target_income">$7,500</b>/mo starting at <b style="color:#ffffff;" data-field="freedom_age">53</b>.</p>
+                    <img data-projection="chart" data-field="chart_cid" src="cid:growth-chart" width="520" height="260" alt="Line chart of a projected portfolio growing to $2.25M between age 30 and age 53, with $560k put in" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto 16px;border:0;">
+                    <p data-projection="summary" style="margin:0 0 14px;font-size:16px;line-height:1.35;font-weight:700;color:#ffffff;"><span data-field="total_contributed">$560k</span> in. A projected <span data-field="portfolio_target">$2.25M</span> out. Compounding does the rest.</p>
+                    <p style="margin:0;font-size:12px;line-height:1.5;color:#bfdbfe;"><span data-projection="assumptions">Assumes a <span data-field="return_rate">10%</span> avg annual return (<span data-field="scenario">Moderate</span> scenario) &amp; 4% withdrawal rate. </span>Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary. Investing involves risk, including possible loss of principal.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="offer" style="background-color:#f1f5f9;border-radius:20px;">
+                <tr>
+                  <td style="padding:26px 24px;text-align:center;">
+                    <p class="ink" style="margin:0 0 10px;font-size:22px;line-height:1.25;font-weight:800;color:#0f172a;">300 spots. 48 hours. One-time offer.</p>
+                    <p class="ink" style="margin:0;font-size:17px;line-height:1.5;color:#334155;">Invites go out in waves. When yours lands, you have <b>48 hours</b> to claim it. After that, it goes to the next person in line.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 32px 40px;text-align:center;">
+              <p class="ink" style="margin:0 0 8px;font-size:19px;line-height:1.35;color:#0f172a;">Nothing to do now. Watch your inbox.</p>
+              <p class="muted" style="margin:0;font-size:15px;line-height:1.4;color:#64748b;">No payment until launch. Private beta is iOS only.</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="footer" style="background-color:#e2e8f0;padding:28px 32px 32px;">
+              <p class="ink" style="margin:0 0 2px;font-size:16px;font-weight:700;color:#0f172a;">The FRED Team</p>
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.4;"><a class="footer-link" href="mailto:help@fredvested.com" style="color:#334155;">help@fredvested.com</a></p>
+              <p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#475569;">This email reflects the numbers you entered on fredvested.com. FRED's calculator is an educational planning tool. It does not provide investment advice or recommend any investment.</p>
+              <p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#475569;text-wrap:pretty;">FRED is still in development. Any investment advisory services will be made available only after applicable registration requirements have been satisfied and subject to eligibility and onboarding requirements. Joining the waitlist does not create an advisory relationship or guarantee account approval or a launch date.</p>
+              <p class="muted" style="margin:0;font-size:13px;line-height:1.5;color:#475569;">FREDvested LLC, <span data-field="postal_address">PO Box 2406, Rockville, MD 20847</span> &#183; <a class="footer-link" data-field="unsubscribe_url" href="https://lpapi.fredvested.com/api/waitlist/unsubscribe?token=sample" style="color:#334155;">Unsubscribe</a> &#183; <a class="footer-link" href="https://fredvested.com/privacy" style="color:#334155;">Privacy policy</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
