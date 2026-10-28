@@ -266,11 +266,11 @@
          the email input and the button have to sit inside 390 x 660 after the reveal's own scroll. -->
     <div id="result-card" class="mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 pt-7 pb-5 sm:py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
       <div id="feasible-block">
-        <!-- "Freedom Date · Month Year" as one plain line at the top of the card (2026-10-27; it replaced the pill
-             that sat under "years old"): the "years old" style, with the month and year bold white. The dot sits on
-             the card's centre line and each half centres its own text (Andrew, 2026-10-27). Hidden with the rest of
-             this block in the no-date and at-target states. The month and year are also in #result-sr. -->
-        <p id="result-date" class="flex items-baseline text-base font-medium text-[#dbe7ff]"><span id="result-date-label" class="flex-1 text-center"></span> <span id="result-date-dot" class="shrink-0">&#183;</span> <span id="result-date-value" class="flex-1 text-center font-bold text-white"></span></p>
+        <!-- The Freedom Date as the card's header row (2026-10-27, Andrew's pick "D" of the sheet; it replaced the pill
+             that sat under "years old"): "Freedom Date" flush left in the eyebrow style, the month and year flush
+             right in bold white, a hairline under the row (the same token as the rule above the fine print). Hidden
+             with the rest of this block in the no-date and at-target states. The month and year are also in #result-sr. -->
+        <p id="result-date" class="flex items-baseline justify-between border-b border-white/20 pb-3"><span id="result-date-label" class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]"></span> <span id="result-date-value" class="font-montserrat font-bold text-base text-white"></span></p>
         <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
         <p id="result-eyebrow" class="mt-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
         <p id="result-age" class="mt-2 font-montserrat font-black text-[clamp(56px,16vw,92px)] leading-[0.95] tracking-[-0.03em] text-white"></p>

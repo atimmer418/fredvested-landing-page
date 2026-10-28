@@ -39,7 +39,7 @@ const COPY = {
 };
 const stakes = (n) => `That gap is ${n} years of your life.`;
 const NO_DATE_HEADING = 'Put your financial future on autopilot.';
-const PILL = /^Freedom Date · [A-Z][a-z]+ \d{4}$/;
+const PILL = /^Freedom Date [A-Z][a-z]+ \d{4}$/;
 const EM_DASH = String.fromCharCode(0x2014);
 // Words the feature may never render (spec rule); "FRED gets you" and any percentage return included
 // (the fine-print block carries the scenario's return and is checked separately).
@@ -136,11 +136,12 @@ async function expectCollapsed(page) {
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
   expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
 }
-/** The "Freedom Date · Month Year" line (2026-10-27): one plain line at the top of the card, no chip. */
+/** The Freedom Date header row (2026-10-27): label flush left, month and year flush right, hairline under, no chip. */
 async function expectPill(page) {
   const line = page.locator('#result-date');
   await expect(line).toBeVisible();
   await expect(line).toHaveText(PILL);
+  await expect(page.locator('#result-date-dot')).toHaveCount(0);
   await expect(page.locator('#result-chip')).toHaveCount(0);
   await expect(page.locator('#result-years-old')).toHaveText(COPY.YEARS_OLD);
   await expect(page.locator('#result-context')).toHaveCount(0);
@@ -152,53 +153,48 @@ async function expectPill(page) {
     const card = document.getElementById('result-card');
     const cs = getComputedStyle(p), vs = getComputedStyle(v), ys = getComputedStyle(y);
     const pr = p.getBoundingClientRect(), er = e.getBoundingClientRect(), cr = card.getBoundingClientRect();
-    const d = document.getElementById('result-date-dot');
     const l = document.getElementById('result-date-label');
-    const dr = d.getBoundingClientRect(), lr = l.getBoundingClientRect(), vr = v.getBoundingClientRect();
-    const mid = (r) => (r.left + r.right) / 2;
-    const range = document.createRange();
-    range.selectNodeContents(l); const lt = range.getBoundingClientRect(); // the glyphs, not the half-width cell
-    range.selectNodeContents(v); const vt = range.getBoundingClientRect();
+    const lr = l.getBoundingClientRect(), vr = v.getBoundingClientRect();
+    const ls = getComputedStyle(l);
     return {
-      value: v.textContent, label: l.textContent, dot: d.textContent,
-      // The dot on the card's centre line; "Freedom Date" centred in the half to its left, the date in the half to its right.
-      dotOffCentre: Math.abs(mid(dr) - mid(cr)),
-      halvesEqual: Math.abs(lr.width - vr.width),
-      labelOffCentre: Math.abs(mid(lt) - (pr.left + dr.left) / 2),
-      valueOffCentre: Math.abs(mid(vt) - (dr.right + pr.right) / 2),
-      sameBaseline: Math.abs(lt.bottom - vt.bottom),
+      value: v.textContent, label: l.textContent,
+      // Label flush left and date flush right on the row, which spans the card's content box.
+      labelFlushLeft: Math.abs(lr.left - pr.left), valueFlushRight: Math.abs(vr.right - pr.right),
+      rowSpansCard: Math.abs(pr.width - (cr.width - parseFloat(getComputedStyle(card).paddingLeft) - parseFloat(getComputedStyle(card).paddingRight))),
+      baseline: cs.alignItems, // 11px and 16px boxes have different bottoms even on one baseline
+      labelStyle: [ls.fontSize, ls.fontWeight, ls.textTransform, ls.color, ls.letterSpacing],
+      eyebrowStyle: (() => { const es = getComputedStyle(e); return [es.fontSize, es.fontWeight, es.textTransform, es.color, es.letterSpacing]; })(),
+      valueFont: vs.fontSize, valueFamily: vs.fontFamily,
+      hairline: [cs.borderBottomWidth, cs.borderBottomStyle, cs.borderTopWidth, cs.borderLeftWidth, cs.borderRightWidth],
+      finePrintRule: getComputedStyle(document.querySelector('#result-card .border-t')).borderTopColor, hairlineColor: cs.borderBottomColor,
       aboveEyebrow: pr.bottom <= er.top, gapToEyebrow: er.top - pr.bottom,
       firstInCard: p === document.getElementById('feasible-block').firstElementChild,
-      borderWidth: cs.borderWidth, background: cs.backgroundColor, radius: cs.borderRadius,
-      sameAsYearsOld: cs.fontSize === ys.fontSize && cs.color === ys.color && cs.fontWeight === ys.fontWeight && cs.fontFamily === ys.fontFamily,
-      lineFont: cs.fontSize, valueWeight: vs.fontWeight, valueColor: vs.color,
-      centred: Math.abs((pr.left + pr.right) / 2 - (cr.left + cr.right) / 2), textAlign: cs.textAlign,
+      background: cs.backgroundColor, radius: cs.borderRadius,
+      valueWeight: vs.fontWeight, valueColor: vs.color,
       yearsOldToCompare: document.getElementById('compare').getBoundingClientRect().top - y.getBoundingClientRect().bottom,
     };
   });
   expect(m.label).toBe('Freedom Date');
-  expect(m.dot).toBe('\u00b7');
   expect(m.value).toMatch(/^[A-Z][a-z]+ \d{4}$/);
-  expect(m.dotOffCentre).toBeLessThanOrEqual(1);
-  expect(m.halvesEqual).toBeLessThanOrEqual(1);
-  expect(m.labelOffCentre).toBeLessThanOrEqual(1);
-  expect(m.valueOffCentre).toBeLessThanOrEqual(1);
-  expect(m.sameBaseline).toBeLessThanOrEqual(1);
+  expect(m.labelFlushLeft).toBeLessThanOrEqual(1);
+  expect(m.valueFlushRight).toBeLessThanOrEqual(1);
+  expect(m.rowSpansCard).toBeLessThanOrEqual(1);
+  expect(m.baseline).toBe('baseline');
+  expect(m.labelStyle).toEqual(m.eyebrowStyle); // the kicker's style, as approved
+  expect(m.valueFont).toBe('16px');
+  expect(m.valueFamily).toMatch(/Montserrat/);
+  expect(m.hairline).toEqual(['1px', 'solid', '0px', '0px', '0px']);
+  expect(m.hairlineColor).toBe(m.finePrintRule); // the same rule as above the fine print
   expect(m.aboveEyebrow).toBe(true);
   expect(m.firstInCard).toBe(true);
   expect(Math.round(m.gapToEyebrow)).toBe(12); // mt-3, the same token as "years old" to the comparison
-  expect(m.borderWidth).toBe('0px'); // (preflight leaves border-style solid on everything; the width is what draws)
   expect(m.background).toBe('rgba(0, 0, 0, 0)');
   expect(m.radius).toBe('0px');
-  expect(m.sameAsYearsOld).toBe(true);
-  expect(m.lineFont).toBe('16px');
   expect(m.valueWeight).toBe('700');
   expect(m.valueColor).toBe('rgb(255, 255, 255)');
-  expect(m.textAlign).toBe('center');
-  expect(m.centred).toBeLessThanOrEqual(1);
   // Same month and year as the screen-reader summary.
   const sr = await page.locator('#result-sr').textContent();
-  expect(sr).toContain((await line.textContent()).replace(' · ', ': ') + '.');
+  expect(sr).toContain((await line.textContent()).replace('Freedom Date ', 'Freedom Date: ') + '.');
 }
 
 for (const vp of VIEWPORTS) {
