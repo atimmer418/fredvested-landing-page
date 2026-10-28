@@ -266,13 +266,11 @@
          the email input and the button have to sit inside 390 x 660 after the reveal's own scroll. -->
     <div id="result-card" class="mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 pt-7 pb-5 sm:py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
       <div id="feasible-block">
-        <!-- The Freedom Date as the card's header row (2026-10-27, Andrew's pick "D" of the sheet; it replaced the pill
-             that sat under "years old"): "Freedom Date" flush left in the eyebrow style, the month and year flush
-             right in bold white, a hairline under the row (the same token as the rule above the fine print). Hidden
-             with the rest of this block in the no-date and at-target states. The month and year are also in #result-sr. -->
-        <p id="result-date" class="flex items-baseline justify-between border-b border-white/20 pb-3"><span id="result-date-label" class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]"></span> <span id="result-date-value" class="font-montserrat font-bold text-base text-white"></span></p>
+        <!-- The month and year of the Freedom Date live in the comparison's right cell (#compare-right-date, Andrew's
+             pick "F" of the 2026-10-27 sheet, after the pill, a plain line and a header row); the card opens with the
+             approved kicker. They are also in #result-sr, which is where they stay when the comparison is hidden. -->
         <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
-        <p id="result-eyebrow" class="mt-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
+        <p id="result-eyebrow" class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
         <p id="result-age" class="mt-2 font-montserrat font-black text-[clamp(56px,16vw,92px)] leading-[0.95] tracking-[-0.03em] text-white"></p>
         <!-- "years old" (COPY.YEARS_OLD); the one-line "N years before the usual 65" of 2026-10-25 is gone. -->
         <p id="result-years-old" class="mt-1 text-base font-medium text-[#dbe7ff]"></p>
@@ -331,7 +329,9 @@
         <div class="grid grid-rows-subgrid row-span-3 items-end rounded-[14px] bg-white px-3 py-3">
           <p id="compare-right-label" class="text-[13px] font-semibold text-navy"></p>
           <p id="compare-right-age" class="mt-1 font-montserrat font-black text-[28px] leading-none tracking-[-0.02em] text-primary"></p>
-          <p id="compare-right-caption" class="mt-1 self-start text-[11.5px] leading-snug text-slate-text"></p>
+          <!-- The month and year of the age above it: the plan's Freedom Date, or the lever scenario's own date
+               when the cell is "This plan + $step/mo" (2026-10-27; "your Freedom Date" caption gone). -->
+          <p id="compare-right-date" class="mt-1 self-start text-[11.5px] leading-snug font-bold text-primary"></p>
         </div>
       </div>
 
@@ -494,7 +494,6 @@
     COMPARE_LEFT_CAPTION_EXISTING: "on what you already have",
     COMPARE_RIGHT_LABEL: "Stick to this plan.",
     COMPARE_RIGHT_LABEL_LEVER: "This plan + ${step}/mo",
-    COMPARE_RIGHT_CAPTION: "your Freedom Date",
     // The capture section (2026-10-26 wording). {N} = the comparison's difference in whole years,
     // never under 2 (STAKES_MIN_YEARS in assets/projection.js), so the plural is always right.
     STAKES: "That gap is {N} years of your life.",
@@ -548,8 +547,6 @@
   const atTargetBlock = document.getElementById("at-target-block");
   const ageEl = document.getElementById("result-age");
   const resultCard = document.getElementById("result-card");
-  const dateValueEl = document.getElementById("result-date-value");
-  document.getElementById("result-date-label").textContent = FREEDOM_LABEL;
   document.getElementById("result-years-old").textContent = COPY.YEARS_OLD;
   const assumptionsEl = document.getElementById("result-assumptions");
   const targetEl = document.getElementById("result-target");
@@ -804,7 +801,7 @@
   // a result is on screen. mountPostReveal() binds the whole signup flow once; the element
   // handles below are null until then and every caller runs after it.
   let mounted = false;
-  let compareBlock, compareLeftAge, compareLeftCaption, compareRightLabel, compareRightAge;
+  let compareBlock, compareLeftAge, compareLeftCaption, compareRightLabel, compareRightAge, compareRightDate;
   let stakesLine, captureHeading, captureSupport;
   let form, emailInput, joinBtn, btnText, btnLoading, successBlock, successNote, msg, pendingBlock, ctaNote, capturePitch;
   let ts = { getToken: () => null, reset: () => {} };
@@ -818,7 +815,7 @@
     document.getElementById("capture-host").appendChild(tpl.getElementById("capture"));
     const $ = (id) => document.getElementById(id);
     compareBlock = $("compare"); compareLeftAge = $("compare-left-age"); compareLeftCaption = $("compare-left-caption");
-    compareRightLabel = $("compare-right-label"); compareRightAge = $("compare-right-age");
+    compareRightLabel = $("compare-right-label"); compareRightAge = $("compare-right-age"); compareRightDate = $("compare-right-date");
     stakesLine = $("stakes-line");
     captureHeading = $("capture-heading"); captureSupport = $("capture-support");
     form = $("waitlist-form"); emailInput = $("capture-email"); joinBtn = $("join-waitlist-btn");
@@ -829,7 +826,6 @@
     if (liveCount !== null) renderCountLine(liveCount);
     // The fixed sentences, from COPY. Variable ones are written by renderPostReveal().
     $("compare-left-label").textContent = COPY.COMPARE_LEFT_LABEL;
-    $("compare-right-caption").textContent = COPY.COMPARE_RIGHT_CAPTION;
     $("capture-email-label").textContent = COPY.EMAIL_LABEL;
     renderConsent("consent-note");
     bindCapture();
@@ -867,6 +863,10 @@
         ? fill(COPY.COMPARE_RIGHT_LABEL_LEVER, { step: formatNum(st.right.step) })
         : COPY.COMPARE_RIGHT_LABEL;
       compareRightAge.textContent = String(st.right.age);
+      // The month and year under that age: the plan's own date, or the lever scenario's (the same
+      // compute(), with the step added to the monthly amount, so there is no second formula).
+      const cellRes = st.source === "lever" ? compute(inputs.age, inputs.invest + st.right.step, inputs.retire, inputs.existing) : res;
+      compareRightDate.textContent = cellRes.feasible ? formatMonthYear(cellRes.date) : "";
       stakesLine.textContent = fill(COPY.STAKES, { N: st.years });
       captureHeading.textContent = fill(COPY.HEADLINE, { N: st.years });
       captureSupport.textContent = COPY.SUB;
@@ -909,7 +909,6 @@
       targetEl.textContent = fill(COPY.TARGET, { target: formatUSD(res.target) });
       assumptionsEl.hidden = false;
       targetEl.hidden = false;
-      dateValueEl.textContent = formatMonthYear(res.date);
       renderPostReveal(res, inputs);
       srEl.textContent =
         "You could be free at " + roundedAge + " " + COPY.YEARS_OLD + ". " +
@@ -1023,7 +1022,7 @@
   // own frozen strings, nothing new.
   function compareSummary() {
     const cell = (label, age) => label.replace(/\.$/, "") + ": " + age + ". ";
-    return cell(COPY.COMPARE_LEFT_LABEL, compareLeftAge.textContent) + cell(compareRightLabel.textContent, compareRightAge.textContent);
+    return cell(COPY.COMPARE_LEFT_LABEL, compareLeftAge.textContent) + cell(compareRightLabel.textContent, compareRightAge.textContent + ", " + compareRightDate.textContent);
   }
 
   function scrollToResult() {

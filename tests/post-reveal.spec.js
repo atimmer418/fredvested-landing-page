@@ -27,7 +27,6 @@ const COPY = {
   COMPARE_LEFT_CAPTION_NEVER: 'the usual retirement',
   COMPARE_LEFT_CAPTION_EXISTING: 'on what you already have',
   COMPARE_RIGHT_LABEL: 'Stick to this plan.',
-  COMPARE_RIGHT_CAPTION: 'your Freedom Date',
   HEADLINE: 'FRED exists to close the gap.',
   SUB: `Save your Freedom Date and we${RSQUO}ll help you turn it from a number into a plan the day we open.`,
   BUTTON: 'Let FRED help me get there',
@@ -39,7 +38,7 @@ const COPY = {
 };
 const stakes = (n) => `That gap is ${n} years of your life.`;
 const NO_DATE_HEADING = 'Put your financial future on autopilot.';
-const PILL = /^Freedom Date [A-Z][a-z]+ \d{4}$/;
+const DATE = /^[A-Z][a-z]+ \d{4}$/;
 const EM_DASH = String.fromCharCode(0x2014);
 // Words the feature may never render (spec rule); "FRED gets you" and any percentage return included
 // (the fine-print block carries the scenario's return and is checked separately).
@@ -121,7 +120,6 @@ async function expectComparison(page, { left, leftCaption, rightLabel, right, n 
   await expect(page.locator('#compare-left-caption')).toHaveText(leftCaption);
   await expect(page.locator('#compare-right-label')).toHaveText(rightLabel);
   await expect(page.locator('#compare-right-age')).toHaveText(right);
-  await expect(page.locator('#compare-right-caption')).toHaveText(COPY.COMPARE_RIGHT_CAPTION);
   await expect(page.locator('#stakes-line')).toHaveText(stakes(n));
   await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
   await expect(page.locator('#capture-support')).toHaveText(COPY.SUB);
@@ -136,65 +134,42 @@ async function expectCollapsed(page) {
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
   expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
 }
-/** The Freedom Date header row (2026-10-27): label flush left, month and year flush right, hairline under, no chip. */
-async function expectPill(page) {
-  const line = page.locator('#result-date');
-  await expect(line).toBeVisible();
-  await expect(line).toHaveText(PILL);
-  await expect(page.locator('#result-date-dot')).toHaveCount(0);
-  await expect(page.locator('#result-chip')).toHaveCount(0);
+/** The month and year: in the comparison's right cell under the age (plan: the Freedom Date; lever: that
+ *  scenario's own date), bold primary; nowhere else on the card, always in #result-sr. No chip, no header row. */
+async function expectDate(page) {
+  await expect(page.locator('#result-date, #result-chip, #result-context, #compare-right-caption')).toHaveCount(0);
   await expect(page.locator('#result-years-old')).toHaveText(COPY.YEARS_OLD);
-  await expect(page.locator('#result-context')).toHaveCount(0);
+  const sr = await page.locator('#result-sr').textContent();
+  const srDate = sr.match(/Freedom Date: ([A-Z][a-z]+ \d{4})\./);
+  expect(srDate, 'month and year in the screen-reader summary').not.toBeNull();
+  const cell = page.locator('#compare-right-date');
+  if (await page.locator('#compare').isHidden()) {
+    await expect(cell).toBeHidden();
+    return;
+  }
+  await expect(cell).toBeVisible();
+  await expect(cell).toHaveText(DATE);
   const m = await page.evaluate(() => {
-    const p = document.getElementById('result-date');
-    const v = document.getElementById('result-date-value');
-    const y = document.getElementById('result-years-old');
-    const e = document.getElementById('result-eyebrow');
-    const card = document.getElementById('result-card');
-    const cs = getComputedStyle(p), vs = getComputedStyle(v), ys = getComputedStyle(y);
-    const pr = p.getBoundingClientRect(), er = e.getBoundingClientRect(), cr = card.getBoundingClientRect();
-    const l = document.getElementById('result-date-label');
-    const lr = l.getBoundingClientRect(), vr = v.getBoundingClientRect();
-    const ls = getComputedStyle(l);
+    const d = document.getElementById('compare-right-date');
+    const a = document.getElementById('compare-right-age');
+    const l = document.getElementById('compare-right-label');
+    const box = a.parentElement;
+    const ds = getComputedStyle(d), dr = d.getBoundingClientRect(), ar = a.getBoundingClientRect(), br = box.getBoundingClientRect();
     return {
-      value: v.textContent, label: l.textContent,
-      // Label flush left and date flush right on the row, which spans the card's content box.
-      labelFlushLeft: Math.abs(lr.left - pr.left), valueFlushRight: Math.abs(vr.right - pr.right),
-      rowSpansCard: Math.abs(pr.width - (cr.width - parseFloat(getComputedStyle(card).paddingLeft) - parseFloat(getComputedStyle(card).paddingRight))),
-      baseline: cs.alignItems, // 11px and 16px boxes have different bottoms even on one baseline
-      labelStyle: [ls.fontSize, ls.fontWeight, ls.textTransform, ls.color, ls.letterSpacing],
-      eyebrowStyle: (() => { const es = getComputedStyle(e); return [es.fontSize, es.fontWeight, es.textTransform, es.color, es.letterSpacing]; })(),
-      valueFont: vs.fontSize, valueFamily: vs.fontFamily,
-      hairline: [cs.borderBottomWidth, cs.borderBottomStyle, cs.borderTopWidth, cs.borderLeftWidth, cs.borderRightWidth],
-      finePrintRule: getComputedStyle(document.querySelector('#result-card .border-t')).borderTopColor, hairlineColor: cs.borderBottomColor,
-      aboveEyebrow: pr.bottom <= er.top, gapToEyebrow: er.top - pr.bottom,
-      firstInCard: p === document.getElementById('feasible-block').firstElementChild,
-      background: cs.backgroundColor, radius: cs.borderRadius,
-      valueWeight: vs.fontWeight, valueColor: vs.color,
-      yearsOldToCompare: document.getElementById('compare').getBoundingClientRect().top - y.getBoundingClientRect().bottom,
+      label: l.textContent, text: d.textContent,
+      underAge: dr.top >= ar.bottom, insideCell: dr.left >= br.left && dr.right <= br.right && dr.bottom <= br.bottom,
+      centred: Math.abs((dr.left + dr.right) / 2 - (br.left + br.right) / 2),
+      style: [ds.fontSize, ds.fontWeight, ds.color], lastInCell: box.lastElementChild === d,
     };
   });
-  expect(m.label).toBe('Freedom Date');
-  expect(m.value).toMatch(/^[A-Z][a-z]+ \d{4}$/);
-  expect(m.labelFlushLeft).toBeLessThanOrEqual(1);
-  expect(m.valueFlushRight).toBeLessThanOrEqual(1);
-  expect(m.rowSpansCard).toBeLessThanOrEqual(1);
-  expect(m.baseline).toBe('baseline');
-  expect(m.labelStyle).toEqual(m.eyebrowStyle); // the kicker's style, as approved
-  expect(m.valueFont).toBe('16px');
-  expect(m.valueFamily).toMatch(/Montserrat/);
-  expect(m.hairline).toEqual(['1px', 'solid', '0px', '0px', '0px']);
-  expect(m.hairlineColor).toBe(m.finePrintRule); // the same rule as above the fine print
-  expect(m.aboveEyebrow).toBe(true);
-  expect(m.firstInCard).toBe(true);
-  expect(Math.round(m.gapToEyebrow)).toBe(12); // mt-3, the same token as "years old" to the comparison
-  expect(m.background).toBe('rgba(0, 0, 0, 0)');
-  expect(m.radius).toBe('0px');
-  expect(m.valueWeight).toBe('700');
-  expect(m.valueColor).toBe('rgb(255, 255, 255)');
-  // Same month and year as the screen-reader summary.
-  const sr = await page.locator('#result-sr').textContent();
-  expect(sr).toContain((await line.textContent()).replace('Freedom Date ', 'Freedom Date: ') + '.');
+  expect(m.underAge).toBe(true);
+  expect(m.insideCell).toBe(true);
+  expect(m.centred).toBeLessThanOrEqual(1);
+  expect(m.lastInCell).toBe(true);
+  expect(m.style).toEqual(['11.5px', '700', 'rgb(19, 91, 236)']);
+  if (m.label === COPY.COMPARE_RIGHT_LABEL) expect(m.text).toBe(srDate[1]); // the plan's own date
+  else expect(m.text).not.toBe(srDate[1]); // the lever scenario's date, earlier than the plan's
+  expect(sr).toContain(m.label.replace(/\.$/, '') + ': ' + (await page.locator('#compare-right-age').textContent()) + ', ' + m.text + '.');
 }
 
 for (const vp of VIEWPORTS) {
@@ -216,17 +191,16 @@ for (const vp of VIEWPORTS) {
       await expect(page.locator('#post-reveal')).toHaveCount(0);
       // The template holds the markup but is not part of the rendered document.
       await expect(page.locator('#post-reveal-template')).toHaveCount(1);
-      // The date line is part of the result card's own markup, inside the closed zone.
-      await expect(page.locator('#result-date')).toHaveCount(1);
-      await expect(page.locator('#result-date')).toBeHidden();
+      // The month and year live in the comparison, which does not exist yet; no other date element does either.
+      await expect(page.locator('#compare-right-date, #result-date, #result-chip')).toHaveCount(0);
     });
 
-    test('defaults (53): "years old", the date line, 65+ against 53, twelve years, the form inside the reveal card, one email input, no lever card', async ({ page }) => {
+    test('defaults (53): "years old", 65+ against 53 with its month and year, twelve years, the form inside the reveal card, one email input, no lever card', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('53');
-      await expectPill(page);
+      await expectDate(page);
       await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '53', n: 12 });
       await expect(page.locator('input[type="email"]')).toHaveCount(1);
       await expect(page.locator('#result-card #capture-email')).toHaveCount(1);
@@ -236,12 +210,12 @@ for (const vp of VIEWPORTS) {
       await expect(page.locator('#levers-heading, #lever-row, #delay-row, #lever-text, #delay-text')).toHaveCount(0);
 
       // Order top to bottom inside the card, then the accordion.
-      const tops = await page.evaluate(() => ['result-date', 'result-eyebrow', 'result-age', 'result-years-old', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email', 'join-waitlist-btn', 'capture-count', 'consent-note', 'capture-cta-note', 'result-fineprint', 'calc-method']
+      const tops = await page.evaluate(() => ['result-eyebrow', 'result-age', 'result-years-old', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email', 'join-waitlist-btn', 'capture-count', 'consent-note', 'capture-cta-note', 'result-fineprint', 'calc-method']
         .map((id) => document.getElementById(id).getBoundingClientRect().top));
       for (let i = 1; i < tops.length; i++) expect(tops[i], `order at ${i}`).toBeGreaterThan(tops[i - 1]);
       const cardBottom = await page.evaluate(() => document.getElementById('result-card').getBoundingClientRect().bottom);
-      expect(tops[13]).toBeLessThan(cardBottom); // fine print inside the card
-      expect(tops[14]).toBeGreaterThanOrEqual(cardBottom); // the accordion directly below it
+      expect(tops[12]).toBeLessThan(cardBottom); // fine print inside the card
+      expect(tops[13]).toBeGreaterThanOrEqual(cardBottom); // the accordion directly below it
     });
 
     test('a large balance that reaches the target alone before 65 shows that age on the left, "on what you already have"', async ({ page }) => {
@@ -250,7 +224,7 @@ for (const vp of VIEWPORTS) {
       await page.fill('#existing-range', '46'); // $250,000
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('46');
-      await expectPill(page);
+      await expectDate(page);
       await expectComparison(page, { left: '52', leftCaption: COPY.COMPARE_LEFT_CAPTION_EXISTING, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '46', n: 6 });
     });
 
@@ -262,13 +236,13 @@ for (const vp of VIEWPORTS) {
       await page.fill('#retire-range', '5000');
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('64');
-      await expectPill(page);
+      await expectDate(page);
       await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: 'This plan + $250/mo', right: '62', n: 3 });
       // The two ages stay level even when the right label wraps (subgrid rows).
       const tops = await page.evaluate(() => ['compare-left-age', 'compare-right-age'].map((id) => Math.round(document.getElementById(id).getBoundingClientRect().top)));
       expect(tops[0]).toBe(tops[1]);
       // The live region hears the number with what it is measured against.
-      expect(await page.locator('#result-sr').textContent()).toContain('Do nothing: 65+. This plan + $250/mo: 62. ' + stakes(3));
+      expect(await page.locator('#result-sr').textContent()).toMatch(new RegExp('Do nothing: 65\\+\\. This plan \\+ \\$250/mo: 62, [A-Z][a-z]+ \\d{4}\\. ' + stakes(3).replace('.', '\\.')));
     });
 
     test('when both paths collapse (73, lever 71) the comparison and the stakes line are hidden and the still-moves copy shows', async ({ page }) => {
@@ -279,7 +253,7 @@ for (const vp of VIEWPORTS) {
       await page.fill('#retire-range', '4000');
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('73');
-      await expectPill(page);
+      await expectDate(page);
       await expectCollapsed(page);
       expect(await argumentText(page)).not.toMatch(/gap|of your life/i);
     });
@@ -290,15 +264,15 @@ for (const vp of VIEWPORTS) {
       await reveal(page);
       await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
       await expect.poll(async () => Math.round((await rects(page)).card.top)).toBe(8);
-      const firstPill = await page.locator('#result-date').textContent();
+      const firstDate = (await page.locator('#result-sr').textContent()).match(/Freedom Date: ([^.]+)\./)[1];
 
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.fill('#invest-range', '500');
       await page.fill('#retire-range', '7000'); // 30 / $500 / $7,000: 66, target $2.1M, +$100 -> 64, nothing to compare
       await page.click('#reveal-btn'); // Recalculate
       await expect(page.locator('#result-age')).toHaveText('66');
-      await expectPill(page);
-      expect(await page.locator('#result-date').textContent()).not.toBe(firstPill);
+      await expectDate(page);
+      expect((await page.locator('#result-sr').textContent()).match(/Freedom Date: ([^.]+)\./)[1]).not.toBe(firstDate);
       await expectCollapsed(page);
       await expect(page.locator('#result-fineprint')).toContainText('Projected portfolio target: $2,100,000.');
       await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
@@ -324,7 +298,7 @@ for (const vp of VIEWPORTS) {
       await page.goto('/index.html');
       await reveal(page);
       const r = await page.evaluate(() => {
-        const ids = ['result-card', 'result-date', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'join', 'capture-email', 'join-waitlist-btn', 'btn-text', 'consent-note', 'capture-cta-note', 'result-fineprint'];
+        const ids = ['result-card', 'compare-right-date', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'join', 'capture-email', 'join-waitlist-btn', 'btn-text', 'consent-note', 'capture-cta-note', 'result-fineprint'];
         const boxes = ids.map((id) => document.getElementById(id).getBoundingClientRect());
         return {
           scrollWidth: document.documentElement.scrollWidth,
@@ -360,7 +334,7 @@ test.describe('the fit at 390 x 660 (iPhone with the Instagram in-app browser ba
       expect(box.height).toBeGreaterThanOrEqual(48);
     }
     expect(r.input.bottom).toBeLessThan(r.button.top);
-    await expectPill(page);
+    await expectDate(page);
   });
 
   test('the same holds for the longest copy case (65+ against a two-digit age, lever label) and the collapsed case', async ({ page }) => {
@@ -537,7 +511,7 @@ test.describe('the capture section', () => {
     await page.fill('#invest-range', '0');
     await reveal(page);
     await expect(page.locator('#infeasible-block')).toBeVisible();
-    await expect(page.locator('#result-date')).toBeHidden();
+    await expect(page.locator('#compare-right-date')).toBeHidden();
     await expect(page.locator('#compare')).toBeHidden();
     await expect(page.locator('#stakes-line')).toBeHidden();
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
@@ -551,7 +525,7 @@ test.describe('the capture section', () => {
     await page.fill('#invest-range', '2000');
     await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
     await expect(page.locator('#compare')).toBeVisible();
-    await expectPill(page);
+    await expectDate(page);
     await expect(page.locator('#result-fineprint')).toContainText('Assumes a 10%');
   });
 
@@ -563,7 +537,7 @@ test.describe('the capture section', () => {
     await reveal(page);
     await expect(page.locator('#at-target-block')).toBeVisible();
     await expect(page.locator('#compare')).toBeHidden();
-    await expect(page.locator('#result-date')).toBeHidden();
+    await expect(page.locator('#compare-right-date')).toBeHidden();
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
     await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
     await expect(page.locator('#capture-email')).toBeVisible();
@@ -580,7 +554,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-pitch')).toBeHidden();
     await expect(page.locator('#capture-heading')).toBeHidden();
     await expect(page.locator('#compare')).toBeVisible();
-    await expect(page.locator('#result-date')).toBeVisible();
+    await expect(page.locator('#compare-right-date')).toBeVisible();
     await expect(page.locator('#capture-count')).toBeVisible();
     expect(calls.signup[0]).toMatchObject({ email: 'moved@example.com', freedomAge: 53, revealedBeforeSubmit: true });
     // "Use a different one" brings the form, the pitch, the pig and the note back.
@@ -603,7 +577,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-pitch')).toBeHidden();
     await expect(page.locator('#compare')).toBeVisible();
     await expect(page.locator('#compare-right-age')).toHaveText('53');
-    await expectPill(page);
+    await expectDate(page);
     await expect(page.locator('#levers-card')).toHaveCount(0);
     await expect(page.locator('input[type="email"]')).toHaveCount(1);
   });
@@ -636,7 +610,7 @@ test.describe('copy', () => {
     await page.goto('/index.html');
     await reveal(page);
     const sr = await page.locator('#result-sr').textContent();
-    expect(sr).toMatch(/^You could be free at 53 years old\. Freedom Date: [A-Z][a-z]+ \d{4}\. Do nothing: 65\+\. Stick to this plan: 53\. That gap is 12 years of your life\. Projected portfolio target: \$2,250,000\. Assumes a 10% average annual return \(Moderate scenario\) and 4% withdrawal rate\. Hypothetical illustration/);
+    expect(sr).toMatch(/^You could be free at 53 years old\. Freedom Date: [A-Z][a-z]+ \d{4}\. Do nothing: 65\+\. Stick to this plan: 53, [A-Z][a-z]+ \d{4}\. That gap is 12 years of your life\. Projected portfolio target: \$2,250,000\. Assumes a 10% average annual return \(Moderate scenario\) and 4% withdrawal rate\. Hypothetical illustration/);
     expect(sr).not.toContain('..');
     expect(sr).not.toContain('before the usual 65');
     // 69 on a large balance, nothing to compare: just the age, the date and the fine print.
@@ -644,7 +618,7 @@ test.describe('copy', () => {
     await page.fill('#invest-range', '50');
     await page.fill('#existing-range', '72'); // $900,000
     await expect(page.locator('#result-age')).toHaveText('69');
-    await expectPill(page);
+    await expectDate(page);
     await expect(page.locator('#compare')).toBeHidden();
     const sr2 = await page.locator('#result-sr').textContent();
     expect(sr2).toMatch(/^You could be free at 69 years old\. Freedom Date: /);
@@ -658,7 +632,7 @@ test.describe('copy', () => {
     await page.fill('#age-range', '41');
     await reveal(page);
     await expect(page.locator('#result-age')).toHaveText('64');
-    await expectPill(page);
+    await expectDate(page);
     expect(await revealText(page)).not.toMatch(/1 year\b/);
   });
 });
