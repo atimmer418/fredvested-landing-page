@@ -136,15 +136,50 @@ async function expectCollapsed(page) {
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
   expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
 }
+/** The "Freedom Date · Month Year" line (2026-10-27): one plain line at the top of the card, no chip. */
 async function expectPill(page) {
-  const chip = page.locator('#result-chip');
-  await expect(chip).toBeVisible();
-  await expect(chip).toHaveText(PILL);
+  const line = page.locator('#result-date');
+  await expect(line).toBeVisible();
+  await expect(line).toHaveText(PILL);
+  await expect(page.locator('#result-chip')).toHaveCount(0);
   await expect(page.locator('#result-years-old')).toHaveText(COPY.YEARS_OLD);
   await expect(page.locator('#result-context')).toHaveCount(0);
+  const m = await page.evaluate(() => {
+    const p = document.getElementById('result-date');
+    const v = document.getElementById('result-date-value');
+    const y = document.getElementById('result-years-old');
+    const e = document.getElementById('result-eyebrow');
+    const card = document.getElementById('result-card');
+    const cs = getComputedStyle(p), vs = getComputedStyle(v), ys = getComputedStyle(y);
+    const pr = p.getBoundingClientRect(), er = e.getBoundingClientRect(), cr = card.getBoundingClientRect();
+    return {
+      value: v.textContent, label: p.firstElementChild.textContent,
+      aboveEyebrow: pr.bottom <= er.top, gapToEyebrow: er.top - pr.bottom,
+      firstInCard: p === document.getElementById('feasible-block').firstElementChild,
+      borderWidth: cs.borderWidth, background: cs.backgroundColor, radius: cs.borderRadius,
+      sameAsYearsOld: cs.fontSize === ys.fontSize && cs.color === ys.color && cs.fontWeight === ys.fontWeight && cs.fontFamily === ys.fontFamily,
+      lineFont: cs.fontSize, valueWeight: vs.fontWeight, valueColor: vs.color,
+      centred: Math.abs((pr.left + pr.right) / 2 - (cr.left + cr.right) / 2), textAlign: cs.textAlign,
+      yearsOldToCompare: document.getElementById('compare').getBoundingClientRect().top - y.getBoundingClientRect().bottom,
+    };
+  });
+  expect(m.label).toBe('Freedom Date ·');
+  expect(m.value).toMatch(/^[A-Z][a-z]+ \d{4}$/);
+  expect(m.aboveEyebrow).toBe(true);
+  expect(m.firstInCard).toBe(true);
+  expect(Math.round(m.gapToEyebrow)).toBe(12); // mt-3, the same token as "years old" to the comparison
+  expect(m.borderWidth).toBe('0px'); // (preflight leaves border-style solid on everything; the width is what draws)
+  expect(m.background).toBe('rgba(0, 0, 0, 0)');
+  expect(m.radius).toBe('0px');
+  expect(m.sameAsYearsOld).toBe(true);
+  expect(m.lineFont).toBe('16px');
+  expect(m.valueWeight).toBe('700');
+  expect(m.valueColor).toBe('rgb(255, 255, 255)');
+  expect(m.textAlign).toBe('center');
+  expect(m.centred).toBeLessThanOrEqual(1);
   // Same month and year as the screen-reader summary.
   const sr = await page.locator('#result-sr').textContent();
-  expect(sr).toContain((await chip.textContent()).replace(' · ', ': ') + '.');
+  expect(sr).toContain((await line.textContent()).replace(' · ', ': ') + '.');
 }
 
 for (const vp of VIEWPORTS) {
@@ -166,12 +201,12 @@ for (const vp of VIEWPORTS) {
       await expect(page.locator('#post-reveal')).toHaveCount(0);
       // The template holds the markup but is not part of the rendered document.
       await expect(page.locator('#post-reveal-template')).toHaveCount(1);
-      // The pill is part of the result card's own markup, inside the closed zone.
-      await expect(page.locator('#result-chip')).toHaveCount(1);
-      await expect(page.locator('#result-chip')).toBeHidden();
+      // The date line is part of the result card's own markup, inside the closed zone.
+      await expect(page.locator('#result-date')).toHaveCount(1);
+      await expect(page.locator('#result-date')).toBeHidden();
     });
 
-    test('defaults (53): "years old", the pill, 65+ against 53, twelve years, the form inside the reveal card, one email input, no lever card', async ({ page }) => {
+    test('defaults (53): "years old", the date line, 65+ against 53, twelve years, the form inside the reveal card, one email input, no lever card', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await reveal(page);
@@ -186,12 +221,12 @@ for (const vp of VIEWPORTS) {
       await expect(page.locator('#levers-heading, #lever-row, #delay-row, #lever-text, #delay-text')).toHaveCount(0);
 
       // Order top to bottom inside the card, then the accordion.
-      const tops = await page.evaluate(() => ['result-age', 'result-years-old', 'result-chip', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email', 'join-waitlist-btn', 'capture-count', 'consent-note', 'capture-cta-note', 'result-fineprint', 'calc-method']
+      const tops = await page.evaluate(() => ['result-date', 'result-eyebrow', 'result-age', 'result-years-old', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email', 'join-waitlist-btn', 'capture-count', 'consent-note', 'capture-cta-note', 'result-fineprint', 'calc-method']
         .map((id) => document.getElementById(id).getBoundingClientRect().top));
       for (let i = 1; i < tops.length; i++) expect(tops[i], `order at ${i}`).toBeGreaterThan(tops[i - 1]);
       const cardBottom = await page.evaluate(() => document.getElementById('result-card').getBoundingClientRect().bottom);
-      expect(tops[12]).toBeLessThan(cardBottom); // fine print inside the card
-      expect(tops[13]).toBeGreaterThanOrEqual(cardBottom); // the accordion directly below it
+      expect(tops[13]).toBeLessThan(cardBottom); // fine print inside the card
+      expect(tops[14]).toBeGreaterThanOrEqual(cardBottom); // the accordion directly below it
     });
 
     test('a large balance that reaches the target alone before 65 shows that age on the left, "on what you already have"', async ({ page }) => {
@@ -240,7 +275,7 @@ for (const vp of VIEWPORTS) {
       await reveal(page);
       await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
       await expect.poll(async () => Math.round((await rects(page)).card.top)).toBe(8);
-      const firstPill = await page.locator('#result-chip').textContent();
+      const firstPill = await page.locator('#result-date').textContent();
 
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.fill('#invest-range', '500');
@@ -248,7 +283,7 @@ for (const vp of VIEWPORTS) {
       await page.click('#reveal-btn'); // Recalculate
       await expect(page.locator('#result-age')).toHaveText('66');
       await expectPill(page);
-      expect(await page.locator('#result-chip').textContent()).not.toBe(firstPill);
+      expect(await page.locator('#result-date').textContent()).not.toBe(firstPill);
       await expectCollapsed(page);
       await expect(page.locator('#result-fineprint')).toContainText('Projected portfolio target: $2,100,000.');
       await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
@@ -274,7 +309,7 @@ for (const vp of VIEWPORTS) {
       await page.goto('/index.html');
       await reveal(page);
       const r = await page.evaluate(() => {
-        const ids = ['result-card', 'result-chip', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'join', 'capture-email', 'join-waitlist-btn', 'btn-text', 'consent-note', 'capture-cta-note', 'result-fineprint'];
+        const ids = ['result-card', 'result-date', 'compare', 'stakes-line', 'capture-heading', 'capture-support', 'join', 'capture-email', 'join-waitlist-btn', 'btn-text', 'consent-note', 'capture-cta-note', 'result-fineprint'];
         const boxes = ids.map((id) => document.getElementById(id).getBoundingClientRect());
         return {
           scrollWidth: document.documentElement.scrollWidth,
@@ -487,7 +522,7 @@ test.describe('the capture section', () => {
     await page.fill('#invest-range', '0');
     await reveal(page);
     await expect(page.locator('#infeasible-block')).toBeVisible();
-    await expect(page.locator('#result-chip')).toBeHidden();
+    await expect(page.locator('#result-date')).toBeHidden();
     await expect(page.locator('#compare')).toBeHidden();
     await expect(page.locator('#stakes-line')).toBeHidden();
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
@@ -513,7 +548,7 @@ test.describe('the capture section', () => {
     await reveal(page);
     await expect(page.locator('#at-target-block')).toBeVisible();
     await expect(page.locator('#compare')).toBeHidden();
-    await expect(page.locator('#result-chip')).toBeHidden();
+    await expect(page.locator('#result-date')).toBeHidden();
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
     await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
     await expect(page.locator('#capture-email')).toBeVisible();
@@ -530,7 +565,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-pitch')).toBeHidden();
     await expect(page.locator('#capture-heading')).toBeHidden();
     await expect(page.locator('#compare')).toBeVisible();
-    await expect(page.locator('#result-chip')).toBeVisible();
+    await expect(page.locator('#result-date')).toBeVisible();
     await expect(page.locator('#capture-count')).toBeVisible();
     expect(calls.signup[0]).toMatchObject({ email: 'moved@example.com', freedomAge: 53, revealedBeforeSubmit: true });
     // "Use a different one" brings the form, the pitch, the pig and the note back.

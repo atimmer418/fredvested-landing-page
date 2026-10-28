@@ -262,18 +262,19 @@
   <div id="reveal-zone" class="reveal-zone text-left" inert>
 
     <!-- Result card -->
-    <!-- Phone top padding pt-7 and the mt-3 steps below the pill (2026-10-26 fit trims, spacing tokens only): with
-         the pill back, the email input and the button have to sit inside 390 x 660 after the reveal's own scroll. -->
+    <!-- Phone top padding pt-7 and the mt-3 steps under "years old" (2026-10-26 fit trims, spacing tokens only):
+         the email input and the button have to sit inside 390 x 660 after the reveal's own scroll. -->
     <div id="result-card" class="mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 pt-7 pb-5 sm:py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
       <div id="feasible-block">
+        <!-- "Freedom Date · Month Year" as one plain line at the top of the card (2026-10-27; it replaced the pill
+             that sat under "years old"): the "years old" style, with the month and year bold white. Hidden with the
+             rest of this block in the no-date and at-target states. The month and year are also in #result-sr. -->
+        <p id="result-date" class="text-base font-medium text-[#dbe7ff]"><span id="result-date-label"></span> <span id="result-date-value" class="font-bold text-white"></span></p>
         <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
-        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
+        <p id="result-eyebrow" class="mt-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
         <p id="result-age" class="mt-2 font-montserrat font-black text-[clamp(56px,16vw,92px)] leading-[0.95] tracking-[-0.03em] text-white"></p>
-        <!-- "years old" (COPY.YEARS_OLD), then the "Freedom Date · Month Year" pill: the markup and classes both
-             had before 2026-10-25 (the one-line "N years before the usual 65" of that day is gone, 2026-10-26).
-             The month and year are also in the screen-reader summary (#result-sr). -->
+        <!-- "years old" (COPY.YEARS_OLD); the one-line "N years before the usual 65" of 2026-10-25 is gone. -->
         <p id="result-years-old" class="mt-1 text-base font-medium text-[#dbe7ff]"></p>
-        <p id="result-chip" class="mt-[18px] inline-block rounded-full border border-white/35 bg-white/15 px-[18px] py-[9px] font-montserrat font-bold text-base text-white"></p>
         <!-- "Do nothing vs this plan": stamped out of #post-reveal-template on the first reveal, never before. -->
         <div id="compare-host"></div>
       </div>
@@ -546,7 +547,8 @@
   const atTargetBlock = document.getElementById("at-target-block");
   const ageEl = document.getElementById("result-age");
   const resultCard = document.getElementById("result-card");
-  const chipEl = document.getElementById("result-chip");
+  const dateValueEl = document.getElementById("result-date-value");
+  document.getElementById("result-date-label").textContent = FREEDOM_LABEL + " \u00b7";
   document.getElementById("result-years-old").textContent = COPY.YEARS_OLD;
   const assumptionsEl = document.getElementById("result-assumptions");
   const targetEl = document.getElementById("result-target");
@@ -906,7 +908,7 @@
       targetEl.textContent = fill(COPY.TARGET, { target: formatUSD(res.target) });
       assumptionsEl.hidden = false;
       targetEl.hidden = false;
-      chipEl.textContent = FREEDOM_LABEL + " · " + formatMonthYear(res.date);
+      dateValueEl.textContent = formatMonthYear(res.date);
       renderPostReveal(res, inputs);
       srEl.textContent =
         "You could be free at " + roundedAge + " " + COPY.YEARS_OLD + ". " +
