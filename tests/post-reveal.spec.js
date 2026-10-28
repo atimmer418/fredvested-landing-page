@@ -152,8 +152,21 @@ async function expectPill(page) {
     const card = document.getElementById('result-card');
     const cs = getComputedStyle(p), vs = getComputedStyle(v), ys = getComputedStyle(y);
     const pr = p.getBoundingClientRect(), er = e.getBoundingClientRect(), cr = card.getBoundingClientRect();
+    const d = document.getElementById('result-date-dot');
+    const l = document.getElementById('result-date-label');
+    const dr = d.getBoundingClientRect(), lr = l.getBoundingClientRect(), vr = v.getBoundingClientRect();
+    const mid = (r) => (r.left + r.right) / 2;
+    const range = document.createRange();
+    range.selectNodeContents(l); const lt = range.getBoundingClientRect(); // the glyphs, not the half-width cell
+    range.selectNodeContents(v); const vt = range.getBoundingClientRect();
     return {
-      value: v.textContent, label: p.firstElementChild.textContent,
+      value: v.textContent, label: l.textContent, dot: d.textContent,
+      // The dot on the card's centre line; "Freedom Date" centred in the half to its left, the date in the half to its right.
+      dotOffCentre: Math.abs(mid(dr) - mid(cr)),
+      halvesEqual: Math.abs(lr.width - vr.width),
+      labelOffCentre: Math.abs(mid(lt) - (pr.left + dr.left) / 2),
+      valueOffCentre: Math.abs(mid(vt) - (dr.right + pr.right) / 2),
+      sameBaseline: Math.abs(lt.bottom - vt.bottom),
       aboveEyebrow: pr.bottom <= er.top, gapToEyebrow: er.top - pr.bottom,
       firstInCard: p === document.getElementById('feasible-block').firstElementChild,
       borderWidth: cs.borderWidth, background: cs.backgroundColor, radius: cs.borderRadius,
@@ -163,8 +176,14 @@ async function expectPill(page) {
       yearsOldToCompare: document.getElementById('compare').getBoundingClientRect().top - y.getBoundingClientRect().bottom,
     };
   });
-  expect(m.label).toBe('Freedom Date ·');
+  expect(m.label).toBe('Freedom Date');
+  expect(m.dot).toBe('\u00b7');
   expect(m.value).toMatch(/^[A-Z][a-z]+ \d{4}$/);
+  expect(m.dotOffCentre).toBeLessThanOrEqual(1);
+  expect(m.halvesEqual).toBeLessThanOrEqual(1);
+  expect(m.labelOffCentre).toBeLessThanOrEqual(1);
+  expect(m.valueOffCentre).toBeLessThanOrEqual(1);
+  expect(m.sameBaseline).toBeLessThanOrEqual(1);
   expect(m.aboveEyebrow).toBe(true);
   expect(m.firstInCard).toBe(true);
   expect(Math.round(m.gapToEyebrow)).toBe(12); // mt-3, the same token as "years old" to the comparison
