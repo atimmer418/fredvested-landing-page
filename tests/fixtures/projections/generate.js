@@ -59,6 +59,11 @@ const CASES = {
   'stake-lever': { age: 38, invest: 1000, retire: 5000, existing: 0, ratePct: 10 },
   // The hidden rung (41 / $500 / $7,500 -> 71; nothing the ladder can show): stakeYears from the formula.
   'stake-hidden': { age: 42, invest: 500, retire: 4000, existing: 0, ratePct: 10 },
+  // The boundary of the email's 65-or-later variant (2026-10-28): a hidden rung whose date rounds to 64
+  // (do nothing 65, nothing the ladder can show) keeps the no-date heading ...
+  'hidden-under-65': { age: 45, invest: 2100, retire: 5000, existing: 0, ratePct: 10 },
+  // ... and a lever rung whose own date rounds to 65 (40 / $700 / $3,000: 64.71; +$250 -> 63) gets it.
+  'late-date-lever': { age: 40, invest: 700, retire: 3000, existing: 0, ratePct: 10 },
 };
 
 const here = __dirname;

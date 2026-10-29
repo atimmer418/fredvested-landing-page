@@ -30,7 +30,7 @@ public class EmailPreviewController {
 
     public static final Set<String> SAMPLES = Set.of(
             "sample", "existing-100k-optimistic", "short-horizon", "long-horizon",
-            "target-under-1m", "target-over-5m", "stake-lever", "stake-hidden");
+            "target-under-1m", "target-over-5m", "stake-lever", "stake-hidden", "hidden-under-65", "late-date-lever");
     static final String UNSUBSCRIBE_URL = "https://lpapi-dev.fredvested.com/api/waitlist/unsubscribe?token=preview";
     static final String CONFIRM_URL = "https://lpapi-dev.fredvested.com/api/waitlist/confirm?token=preview";
     static final String POSTAL_ADDRESS = "PO Box 2406, Rockville, MD 20847";

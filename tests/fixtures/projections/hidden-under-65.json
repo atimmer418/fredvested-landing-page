@@ -1,0 +1,187 @@
+{
+ "currentAge": 45,
+ "freedomAge": 64.47152526377349,
+ "freedomMonth": 4,
+ "freedomYear": 2046,
+ "monthlyInvest": 2100,
+ "targetIncome": 5000,
+ "existingBalance": 0,
+ "returnRate": 10,
+ "scenario": "MODERATE",
+ "stakeYears": 1,
+ "stakeSource": "hidden",
+ "totalContributed": 490682,
+ "portfolioTarget": 1500000,
+ "series": [
+  {
+   "age": 45,
+   "value": 0
+  },
+  {
+   "age": 46,
+   "value": 26388
+  },
+  {
+   "age": 47,
+   "value": 55539
+  },
+  {
+   "age": 48,
+   "value": 87742
+  },
+  {
+   "age": 49,
+   "value": 123317
+  },
+  {
+   "age": 50,
+   "value": 162618
+  },
+  {
+   "age": 51,
+   "value": 206034
+  },
+  {
+   "age": 52,
+   "value": 253996
+  },
+  {
+   "age": 53,
+   "value": 306980
+  },
+  {
+   "age": 54,
+   "value": 365513
+  },
+  {
+   "age": 55,
+   "value": 430174
+  },
+  {
+   "age": 56,
+   "value": 501607
+  },
+  {
+   "age": 57,
+   "value": 580520
+  },
+  {
+   "age": 58,
+   "value": 667695
+  },
+  {
+   "age": 59,
+   "value": 763999
+  },
+  {
+   "age": 60,
+   "value": 870388
+  },
+  {
+   "age": 61,
+   "value": 987916
+  },
+  {
+   "age": 62,
+   "value": 1117752
+  },
+  {
+   "age": 63,
+   "value": 1261183
+  },
+  {
+   "age": 64,
+   "value": 1419633
+  },
+  {
+   "age": 64.47152526377349,
+   "value": 1500000
+  }
+ ],
+ "contributions": [
+  {
+   "age": 45,
+   "value": 0
+  },
+  {
+   "age": 46,
+   "value": 25200
+  },
+  {
+   "age": 47,
+   "value": 50400
+  },
+  {
+   "age": 48,
+   "value": 75600
+  },
+  {
+   "age": 49,
+   "value": 100800
+  },
+  {
+   "age": 50,
+   "value": 126000
+  },
+  {
+   "age": 51,
+   "value": 151200
+  },
+  {
+   "age": 52,
+   "value": 176400
+  },
+  {
+   "age": 53,
+   "value": 201600
+  },
+  {
+   "age": 54,
+   "value": 226800
+  },
+  {
+   "age": 55,
+   "value": 252000
+  },
+  {
+   "age": 56,
+   "value": 277200
+  },
+  {
+   "age": 57,
+   "value": 302400
+  },
+  {
+   "age": 58,
+   "value": 327600
+  },
+  {
+   "age": 59,
+   "value": 352800
+  },
+  {
+   "age": 60,
+   "value": 378000
+  },
+  {
+   "age": 61,
+   "value": 403200
+  },
+  {
+   "age": 62,
+   "value": 428400
+  },
+  {
+   "age": 63,
+   "value": 453600
+  },
+  {
+   "age": 64,
+   "value": 478800
+  },
+  {
+   "age": 64.47152526377349,
+   "value": 490682
+  }
+ ]
+}

@@ -21,14 +21,28 @@ public final class PersonalizedWelcomeEmail {
     public static final String CID_REFERENCE = "cid:" + GrowthChartRenderer.CONTENT_ID;
 
     /** The data-projection parts that exist only with a projection. */
-    static final List<String> PROJECTION_PARTS = List.of("preheader", "headline", "inputs", "chart", "summary", "assumptions");
+    static final List<String> PROJECTION_PARTS = List.of("preheader", "headline", "headline-late", "body-late", "inputs", "chart", "summary", "assumptions");
     static final String FALLBACK_PART = "headline-fallback";
     /** The parts that carry the stake number: shown only for the plan rung of the stakes ladder. */
     static final List<String> STAKE_PARTS = List.of("preheader", "headline");
+    /** The 65-or-later variant's parts (Andrew's copy, 2026-10-28): the heading and the paragraph under it. */
+    static final List<String> LATE_PARTS = List.of("headline-late", "body-late");
+    /** A rounded Freedom Date at this age or later gets the "Dates move." heading and paragraph. */
+    static final int LATE_DATE_AGE = 65;
 
     /** Only the plan rung's number is printed; lever and hidden get the frozen no-date heading. */
     static boolean hasStakeHeadline(Projection p) {
-        return p != null && p.stakeSource() == Projection.StakeSource.PLAN;
+        return p != null && !hasLateDate(p) && p.stakeSource() == Projection.StakeSource.PLAN;
+    }
+
+    /**
+     * A Freedom Date at 65 or later: "N fewer working years" has no number to print (the plan
+     * rung cannot exist there) and the lever rung's number belongs to another monthly amount,
+     * so the card leads with "Your date is on the board. Dates move." and the paragraph that
+     * names the date, above the same inputs line, chart, summary and assumptions.
+     */
+    static boolean hasLateDate(Projection p) {
+        return p != null && p.roundedFreedomAge() >= LATE_DATE_AGE;
     }
 
     private static final class Holder {
@@ -52,9 +66,14 @@ public final class PersonalizedWelcomeEmail {
             // no-date heading while the inputs line, the chart, the summary and the assumptions stay.
             if (hasStakeHeadline(p)) {
                 html = EmailTemplateEngine.removeProjection(html, FALLBACK_PART);
+                for (String part : LATE_PARTS) html = EmailTemplateEngine.removeProjection(html, part);
                 html = EmailTemplateEngine.fillText(html, "stake_years", String.valueOf(p.stakeYears()));
+            } else if (hasLateDate(p)) {
+                html = EmailTemplateEngine.removeProjection(html, FALLBACK_PART);
+                for (String part : STAKE_PARTS) html = EmailTemplateEngine.removeProjection(html, part);
             } else {
                 for (String part : STAKE_PARTS) html = EmailTemplateEngine.removeProjection(html, part);
+                for (String part : LATE_PARTS) html = EmailTemplateEngine.removeProjection(html, part);
             }
             html = EmailTemplateEngine.fillText(html, "monthly_invest", EmailFormats.money(p.monthlyInvest()));
             html = EmailTemplateEngine.fillText(html, "current_age", String.valueOf(p.currentAge()));
@@ -96,7 +115,7 @@ public final class PersonalizedWelcomeEmail {
         String personal;
         String finePrint;
         if (p != null) {
-            personal = (hasStakeHeadline(p) ? p.stakeYears() + " fewer working years could look like:\n" : "Put your financial future on autopilot.\n")
+            personal = heading(p)
                     + EmailFormats.money(p.monthlyInvest()) + "/mo from age " + p.currentAge() + " -> a projected "
                     + EmailFormats.money(p.targetIncome()) + "/mo starting at " + p.roundedFreedomAge() + ".\n"
                     + EmailFormats.compact(p.totalContributed()) + " in. A projected " + EmailFormats.compact(p.portfolioTarget())
@@ -130,6 +149,16 @@ public final class PersonalizedWelcomeEmail {
                 + "Unsubscribe: " + unsubscribeUrl + "\n"
                 + "Privacy policy: " + EmailTemplates.PRIVACY_URL + "\n";
     }
+
+    /** The text part's heading line(s), mirroring the HTML card's headline (and the late date's paragraph). */
+    static String heading(Projection p) {
+        if (hasStakeHeadline(p)) return p.stakeYears() + " fewer working years could look like:\n";
+        if (hasLateDate(p)) return LATE_HEADLINE + "\n" + LATE_BODY.formatted(p.roundedFreedomAge()) + "\n";
+        return "Put your financial future on autopilot.\n";
+    }
+
+    static final String LATE_HEADLINE = "Your date is on the board. Dates move.";
+    static final String LATE_BODY = "Based on what you entered, your projected Freedom Date landed at %d. A first projection is a starting point, not a verdict. Two things move a date like this in the math: how much goes in each month, and how long compounding gets to run. The calculator stays open, and the sliders are the point: test different monthly amounts and watch what the projection does. When FRED opens, the automation handles the showing-up part, which is the part most people lose years to.";
 
     static final String DISCLOSURE = "Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary. Investing involves risk, including possible loss of principal.";
 }

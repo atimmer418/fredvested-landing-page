@@ -97,14 +97,23 @@ public final class EmailTemplateEngine {
     /**
      * Removes every element marked data-projection="name" with everything inside it
      * (a balanced walk, since the marked spans contain spans). A void element (img)
-     * is removed on its own.
+     * is removed on its own. An element that stood alone on its line takes the line
+     * with it, so no blank indented line is left in the sent output.
      */
     public static String removeProjection(String html, String name) {
         while (true) {
             Tag tag = openingTag(html, "data-projection", name, 0);
             if (tag == null) return html;
+            int start = tag.start;
             int end = tag.name.equals("img") ? tag.end : closingEnd(html, tag);
-            html = html.substring(0, tag.start) + html.substring(end);
+            int lineStart = start;
+            while (lineStart > 0 && (html.charAt(lineStart - 1) == ' ' || html.charAt(lineStart - 1) == '\t')) lineStart--;
+            boolean aloneOnItsLine = (lineStart == 0 || html.charAt(lineStart - 1) == '\n') && end < html.length() && html.charAt(end) == '\n';
+            if (aloneOnItsLine) {
+                start = lineStart;
+                end++;
+            }
+            html = html.substring(0, start) + html.substring(end);
         }
     }
 

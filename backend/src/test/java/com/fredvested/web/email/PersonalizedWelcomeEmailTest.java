@@ -108,24 +108,57 @@ class PersonalizedWelcomeEmailTest {
     // monthly amount the template cannot name, and the hidden rung has nothing to show (the page hides
     // its comparison too), so both keep the frozen no-date heading with the chart and the numbers.
     @Test
-    void leverAndHiddenRungs_keepTheNoDateHeading_withTheChartAndTheNumbers() {
+    void leverAndHiddenRungs_underSixtyFive_keepTheNoDateHeading_withTheChartAndTheNumbers() {
         EmailTemplates.Rendered lever = PersonalizedWelcomeEmail.render(Fixtures.projection("stake-lever"), UNSUB, ADDR);
-        EmailTemplates.Rendered hidden = PersonalizedWelcomeEmail.render(Fixtures.projection("stake-hidden"), UNSUB, ADDR);
+        EmailTemplates.Rendered hidden = PersonalizedWelcomeEmail.render(Fixtures.projection("hidden-under-65"), UNSUB, ADDR);
         for (EmailTemplates.Rendered r : List.of(lever, hidden)) {
             assertTrue(r.html().contains("Put your financial future on autopilot."));
             assertFalse(r.html().contains("fewer working years"), r.html());
+            assertFalse(r.html().contains("Dates move.") || r.html().contains("Based on what you entered"), r.html());
             assertTrue(r.html().contains("cid:growth-chart"));
             assertTrue(r.html().contains("/mo from age"));
             assertTrue(r.html().contains("Compounding does the rest."));
             assertTrue(r.html().contains("Assumes a 10% avg annual return (Moderate scenario)"));
             assertTrue(r.text().contains("Put your financial future on autopilot.\n$"));
-            assertFalse(r.text().contains("fewer working years"));
+            assertFalse(r.text().contains("fewer working years") || r.text().contains("Dates move."));
             assertTrue(r.text().contains("Compounding does the rest."));
         }
         assertTrue(lever.html().contains(">$314k in. A projected $1.5M out."));
         assertFalse(lever.html().contains("3 fewer"));
-        assertFalse(hidden.html().contains("0 fewer"));
+        assertFalse(hidden.html().contains("1 fewer"));
+        assertTrue(hidden.html().contains("starting at <b style=\"color:#ffffff;\">64</b>."), "the boundary: 64 is not late");
+    }
+
+    static final String LATE_BODY_73 = "Based on what you entered, your projected Freedom Date landed at <b style=\"color:#ffffff;\">73</b>. A first projection is a starting point, not a verdict. Two things move a date like this in the math: how much goes in each month, and how long compounding gets to run. The calculator stays open, and the sliders are the point: test different monthly amounts and watch what the projection does. When FRED opens, the automation handles the showing-up part, which is the part most people lose years to.";
+
+    // Andrew's copy of 2026-10-28 for a Freedom Date at 65 or later, whatever the stakes rung.
+    @Test
+    void aDateAtSixtyFiveOrLater_leadsWithDatesMove_andTheParagraphNamingTheDate() {
+        EmailTemplates.Rendered hidden = PersonalizedWelcomeEmail.render(Fixtures.projection("stake-hidden"), UNSUB, ADDR);
+        EmailTemplates.Rendered lever = PersonalizedWelcomeEmail.render(Fixtures.projection("late-date-lever"), UNSUB, ADDR);
+        for (EmailTemplates.Rendered r : List.of(hidden, lever)) {
+            assertTrue(r.html().contains(">Your date is on the board. Dates move.</p>"), r.html());
+            assertFalse(r.html().contains("autopilot") || r.html().contains("fewer working years"), r.html());
+            assertTrue(r.html().contains("cid:growth-chart") && r.html().contains("/mo from age") && r.html().contains("Compounding does the rest."));
+            assertTrue(r.html().contains("Assumes a 10% avg annual return (Moderate scenario)"));
+            assertTrue(r.html().contains("color:#f1f5f9;\">Here's the math FRED is built around.</div>"), "preheader keeps only the frozen sentence");
+            assertFalse(r.html().contains("data-projection") || r.html().contains("<span>"));
+            assertFalse(r.text().contains("autopilot") || r.text().contains("fewer working years"));
+            for (String s : SENTENCES) assertTrue(r.html().replace("<b>", "").replace("</b>", "").contains(s), s);
+            for (String d : DISCLOSURES) assertTrue(r.html().contains(d) && r.text().contains(d), d);
+        }
+        assertTrue(hidden.html().contains("<p style=\"margin:0 0 20px;font-size:16px;line-height:1.5;color:#dbeafe;text-align:left;\">" + LATE_BODY_73 + "</p>"), hidden.html());
         assertTrue(hidden.html().contains("starting at <b style=\"color:#ffffff;\">73</b>."));
+        assertTrue(lever.html().contains("Freedom Date landed at <b style=\"color:#ffffff;\">65</b>."), "the lever rung's own date, not the lever's");
+        assertFalse(lever.html().contains("2 fewer"));
+
+        String[] lines = hidden.text().split("\n", -1);
+        assertEquals("Here's the math FRED is built around.", lines[1]);
+        assertEquals("", lines[2]);
+        assertEquals("Your date is on the board. Dates move.", lines[3]);
+        assertEquals(LATE_BODY_73.replace("<b style=\"color:#ffffff;\">", "").replace("</b>", ""), lines[4]);
+        assertEquals("$500/mo from age 42 -> a projected $4,000/mo starting at 73.", lines[5]);
+        assertTrue(lines[6].startsWith("$183k in. A projected $1.2M out."));
     }
 
     @Test
