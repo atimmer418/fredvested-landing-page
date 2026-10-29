@@ -94,8 +94,8 @@ Plausible stores every property it receives, but the dashboard only breaks down 
 |---|---|---|
 | `first_field` | Calc Engaged | `age`, `monthly_invest`, `existing_invested`, `target_income`, `return_scenario` |
 | `return_scenario` | Freedom Date Revealed, Waitlist Submitted (when revealed) | `conservative`, `moderate`, `optimistic` |
-| `stake_years_band` | Freedom Date Revealed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `hidden`, `2-5`, `6-10`, `11+` (whole years between the reveal card's "do nothing" cell and its right cell; `hidden` when the comparison was not shown; since 2026-10-25) |
-| `stake_source` | Freedom Date Revealed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `plan`, `lever`, `hidden` (which right cell was shown: the result's own age, the age with the next step of monthly investment, or none; since 2026-10-25) |
+| `stake_years_band` | Freedom Date Revealed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `hidden`, `1-5` (`2-5` before 2026-10-29), `6-10`, `11+` (whole years between the reveal card's "do nothing" cell and its right cell; `hidden` when the comparison was not shown; since 2026-10-25) |
+| `stake_source` | Freedom Date Revealed, Email Focused (index, after a reveal), Waitlist Submitted (when revealed) | `plan`, `hidden` (`lever` until 2026-10-29) (which right cell was shown: the result's own age, the age with the next step of monthly investment, or none; since 2026-10-25) |
 | `age_band` | Freedom Date Revealed | `18-24`, `25-29`, `30-34`, `35-39`, `40-44`, `45-49`, `50-54`, `55+` |
 | `invest_band` | Freedom Date Revealed | `0-99`, `100-249`, `250-499`, `500-999`, `1000-1999`, `2000-4999`, `5000+` (monthly investment, USD) |
 | `target_income_band` | Freedom Date Revealed | `<2500`, `2500-4999`, `5000-7499`, `7500-9999`, `10000+` (monthly retirement income, USD) |

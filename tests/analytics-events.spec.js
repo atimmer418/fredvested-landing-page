@@ -34,8 +34,8 @@ const VOCAB = {
   edits_after_reveal_band: EDITS,
   source_page: ['home', 'about'],
   revealed: ['yes', 'no'],
-  stake_years_band: ['hidden', '2-5', '6-10', '11+'],
-  stake_source: ['plan', 'lever', 'hidden'],
+  stake_years_band: ['hidden', '1-5', '6-10', '11+'],
+  stake_source: ['plan', 'hidden'],
   reason: ['invalid_email', 'empty_email', 'duplicate', 'rate_limited', 'server_error', 'network_error', 'timeout', 'geo_blocked', 'captcha_failed'],
 };
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign'];
@@ -212,7 +212,7 @@ test.describe('index.html: calculator events', () => {
       freedom_age_band: '65+',
       sec_to_reveal_band: '0-10',
       input_edits_band: '1-3',
-      // 73 against 65+ (and 71 from the lever): nothing to compare.
+      // 73 is past 65: nothing to compare.
       stake_years_band: 'hidden',
       stake_source: 'hidden',
     });

@@ -36,7 +36,8 @@ public final class ProjectionValidator {
     static final long MAX_EXISTING = 100_000_000L;
     /** Ceiling on every balance, target and total: nothing the page can produce comes near it. */
     static final long MAX_VALUE = 100_000_000L;
-    static final int STAKES_MIN_YEARS = 2;
+    /** projection.js STAKES_MIN_YEARS: the page shows its comparison from a one-year gap (2026-10-29; 2 before). */
+    static final int STAKES_MIN_YEARS = 1;
     private static final ZoneId EASTERN = ZoneId.of("America/New_York");
     static final double AGE_EPSILON = 1e-6;
     static final double MONEY_TOLERANCE = 0.01;
@@ -114,9 +115,11 @@ public final class ProjectionValidator {
         int roundedFreedomAge = (int) Math.round(freedomAge);
         if (Math.abs(calc.freedomAge() - roundedFreedomAge) > 1) throw new InvalidProjectionException("freedom_age_mismatch");
 
-        // The stakes ladder's own bounds (projection.js stakes()): the plan rung is the do-nothing age
-        // (65 at most) minus the plan's age, the lever rung that age minus the lever age (never under
-        // currentAge), both shown only from STAKES_MIN_YEARS; hidden or absent is the plain years-to-65 figure.
+        // The stakes ladder's own bounds (projection.js stakes()): the plan rung is 65 minus the plan's
+        // age (since 2026-10-29 "do nothing" is always 65+, so that is the only ceiling), shown from
+        // STAKES_MIN_YEARS; hidden or absent is the plain years-to-65 figure. The lever rung (that age
+        // minus the lever age, never under currentAge) left the page on 2026-10-29 but is still accepted
+        // from a page loaded before then.
         Projection.StakeSource stakeSource = stakeSource(r.getStakeSource());
         if (stakeSource == null || stakeSource == Projection.StakeSource.HIDDEN) {
             if (stakeYears != Math.max(0, USUAL_RETIREMENT_AGE - roundedFreedomAge)) throw new InvalidProjectionException("stake_years_mismatch");

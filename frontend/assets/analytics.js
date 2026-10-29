@@ -50,13 +50,13 @@
   const secondsBand = (v) => band(v, [11, 31, 61, 121], ['0-10', '11-30', '31-60', '61-120', '120+']);
   const editsBand = (v) => band(v, [1, 4, 9, 16], ['0', '1-3', '4-8', '9-15', '16+']);
   // The "do nothing vs this plan" comparison in the reveal card (2026-10-25). The page passes
-  // the whole years between the two cells (null when the comparison is hidden; it never shows
-  // under 2) and which right cell was shown: 'plan' (the result's own age), 'lever' (the age
-  // with the next step of monthly investment, when the plan alone was under 2 years) or 'hidden'.
-  // (The "what moves your date" card of 2026-10-24 and its Lever Viewed event, lever_shift_band
-  // and delay_months_band went on 2026-10-26.)
-  const stakeYearsBand = (v) => (v === null || v === undefined || Number(v) < 2 ? 'hidden' : band(v, [6, 11], ['2-5', '6-10', '11+']));
-  const STAKE_SOURCES = new Set(['plan', 'lever', 'hidden']);
+  // the whole years between 65 and the plan's age (null when the comparison is hidden; since
+  // 2026-10-29 it shows from 1 year) and whether it was shown: 'plan' or 'hidden'. ('lever', the
+  // right cell with the next step of monthly investment, went on 2026-10-29 with that rung; the
+  // "what moves your date" card of 2026-10-24 and its Lever Viewed event, lever_shift_band and
+  // delay_months_band went on 2026-10-26.)
+  const stakeYearsBand = (v) => (v === null || v === undefined || Number(v) < 1 ? 'hidden' : band(v, [6, 11], ['1-5', '6-10', '11+']));
+  const STAKE_SOURCES = new Set(['plan', 'hidden']);
   const stakeSource = (v) => (STAKE_SOURCES.has(v) ? v : 'hidden');
 
   // --- session state (in memory only; a new page load starts over) --------

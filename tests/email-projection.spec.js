@@ -7,8 +7,8 @@
 // Reference numbers (frontend/assets/projection.js, checked in Node first):
 //   defaults 30 / $2,000 / $7,500 / $0 at 10%: 53.49 -> 53, April 2050 from 2026-10, target $2,250,000,
 //     $563,792 put in, 25 points, 65+ against 53 = 12 from the plan (tests/fixtures/projections/sample.json)
-//   $150,000 at 12%: 46.3 -> 46, 7 from the plan, the chart starts at $150,000
-//   38 / $1,000 / $5,000: 64, +$250 -> 62: 3 from the lever
+//   $150,000 at 12%: 46.3 -> 46, 65 - 46 = 19 from the plan (2026-10-29: "do nothing" is always 65+), the chart starts at $150,000
+//   38 / $1,000 / $5,000: 64, 65 - 64 = 1 from the plan (the lever rung is gone, 2026-10-29)
 //   42 / $500 / $4,000: 73, nothing to compare: hidden, 0 years (65 - 73 clamps to 0)
 //   defaults with $3,000/mo: 49.89 -> 50, 15 from the plan, 21 points
 const { test, expect } = require('@playwright/test');
@@ -109,7 +109,7 @@ test('$150,000 already invested at the Optimistic scenario: the chart starts at 
   await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
 
   const p = calls.signup[0].projection;
-  expect(p).toMatchObject({ existingBalance: 150000, returnRate: 12, scenario: 'OPTIMISTIC', currentAge: 30, monthlyInvest: 2000, targetIncome: 7500, stakeSource: 'plan', stakeYears: 7 });
+  expect(p).toMatchObject({ existingBalance: 150000, returnRate: 12, scenario: 'OPTIMISTIC', currentAge: 30, monthlyInvest: 2000, targetIncome: 7500, stakeSource: 'plan', stakeYears: 19 });
   expect(Math.round(p.freedomAge)).toBe(46);
   expect(p.series[0]).toEqual({ age: 30, value: 150000 });
   expect(p.contributions[0]).toEqual({ age: 30, value: 150000 });
@@ -118,7 +118,7 @@ test('$150,000 already invested at the Optimistic scenario: the chart starts at 
   await expect(page.locator('#result-age')).toHaveText(String(Math.round(p.freedomAge)));
 });
 
-test('the lever rung: 38 / $1,000 / $5,000 sends stakeSource lever and the three years from it', async ({ page }) => {
+test('a one-year gap: 38 / $1,000 / $5,000 sends stakeSource plan and 1 year (never lever)', async ({ page }) => {
   const calls = await installMocks(page);
   await page.goto('/index.html');
   await setSliders(page, { age: 38, invest: 1000, retire: 5000 });
@@ -127,7 +127,7 @@ test('the lever rung: 38 / $1,000 / $5,000 sends stakeSource lever and the three
   await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
 
   const p = calls.signup[0].projection;
-  expect(p).toMatchObject({ stakeSource: 'lever', stakeYears: 3, currentAge: 38, monthlyInvest: 1000, targetIncome: 5000, portfolioTarget: 1500000 });
+  expect(p).toMatchObject({ stakeSource: 'plan', stakeYears: 1, currentAge: 38, monthlyInvest: 1000, targetIncome: 5000, portfolioTarget: 1500000 });
   expect(Math.round(p.freedomAge)).toBe(64);
   expect(p.series[0]).toEqual({ age: 38, value: 0 });
 });

@@ -1,0 +1,243 @@
+{
+ "currentAge": 38,
+ "freedomAge": 64.13519226367289,
+ "freedomMonth": 12,
+ "freedomYear": 2052,
+ "monthlyInvest": 1000,
+ "targetIncome": 5000,
+ "existingBalance": 0,
+ "returnRate": 10,
+ "scenario": "MODERATE",
+ "stakeYears": 1,
+ "stakeSource": "plan",
+ "totalContributed": 313622,
+ "portfolioTarget": 1500000,
+ "series": [
+  {
+   "age": 38,
+   "value": 0
+  },
+  {
+   "age": 39,
+   "value": 12566
+  },
+  {
+   "age": 40,
+   "value": 26447
+  },
+  {
+   "age": 41,
+   "value": 41782
+  },
+  {
+   "age": 42,
+   "value": 58722
+  },
+  {
+   "age": 43,
+   "value": 77437
+  },
+  {
+   "age": 44,
+   "value": 98111
+  },
+  {
+   "age": 45,
+   "value": 120950
+  },
+  {
+   "age": 46,
+   "value": 146181
+  },
+  {
+   "age": 47,
+   "value": 174054
+  },
+  {
+   "age": 48,
+   "value": 204845
+  },
+  {
+   "age": 49,
+   "value": 238860
+  },
+  {
+   "age": 50,
+   "value": 276438
+  },
+  {
+   "age": 51,
+   "value": 317950
+  },
+  {
+   "age": 52,
+   "value": 363809
+  },
+  {
+   "age": 53,
+   "value": 414470
+  },
+  {
+   "age": 54,
+   "value": 470436
+  },
+  {
+   "age": 55,
+   "value": 532263
+  },
+  {
+   "age": 56,
+   "value": 600563
+  },
+  {
+   "age": 57,
+   "value": 676016
+  },
+  {
+   "age": 58,
+   "value": 759369
+  },
+  {
+   "age": 59,
+   "value": 851450
+  },
+  {
+   "age": 60,
+   "value": 953174
+  },
+  {
+   "age": 61,
+   "value": 1065549
+  },
+  {
+   "age": 62,
+   "value": 1189692
+  },
+  {
+   "age": 63,
+   "value": 1326833
+  },
+  {
+   "age": 64,
+   "value": 1478336
+  },
+  {
+   "age": 64.13519226367289,
+   "value": 1500000
+  }
+ ],
+ "contributions": [
+  {
+   "age": 38,
+   "value": 0
+  },
+  {
+   "age": 39,
+   "value": 12000
+  },
+  {
+   "age": 40,
+   "value": 24000
+  },
+  {
+   "age": 41,
+   "value": 36000
+  },
+  {
+   "age": 42,
+   "value": 48000
+  },
+  {
+   "age": 43,
+   "value": 60000
+  },
+  {
+   "age": 44,
+   "value": 72000
+  },
+  {
+   "age": 45,
+   "value": 84000
+  },
+  {
+   "age": 46,
+   "value": 96000
+  },
+  {
+   "age": 47,
+   "value": 108000
+  },
+  {
+   "age": 48,
+   "value": 120000
+  },
+  {
+   "age": 49,
+   "value": 132000
+  },
+  {
+   "age": 50,
+   "value": 144000
+  },
+  {
+   "age": 51,
+   "value": 156000
+  },
+  {
+   "age": 52,
+   "value": 168000
+  },
+  {
+   "age": 53,
+   "value": 180000
+  },
+  {
+   "age": 54,
+   "value": 192000
+  },
+  {
+   "age": 55,
+   "value": 204000
+  },
+  {
+   "age": 56,
+   "value": 216000
+  },
+  {
+   "age": 57,
+   "value": 228000
+  },
+  {
+   "age": 58,
+   "value": 240000
+  },
+  {
+   "age": 59,
+   "value": 252000
+  },
+  {
+   "age": 60,
+   "value": 264000
+  },
+  {
+   "age": 61,
+   "value": 276000
+  },
+  {
+   "age": 62,
+   "value": 288000
+  },
+  {
+   "age": 63,
+   "value": 300000
+  },
+  {
+   "age": 64,
+   "value": 312000
+  },
+  {
+   "age": 64.13519226367289,
+   "value": 313622
+  }
+ ]
+}

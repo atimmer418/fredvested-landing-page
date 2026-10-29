@@ -28,7 +28,7 @@
   const USUAL_RETIREMENT_AGE = 65;
   // A difference under this many whole years is not shown: the ladder moves to the lever
   // age, then hides the comparison.
-  const STAKES_MIN_YEARS = 2;
+  const STAKES_MIN_YEARS = 1;
 
   // `existing` is the money already invested: the projection's starting balance,
   // growing at the same selected rate as the contributions.
@@ -117,32 +117,25 @@
     return { age: delayAge, months: months };
   }
 
-  // The comparison's left cell, "do nothing": the same projection with the monthly amount set
-  // to $0 and every other input unchanged, including the money already invested (which is
-  // what grows). Returns { age, reaches }: `reaches` true with the rounded age when that
-  // balance alone meets the target before USUAL_RETIREMENT_AGE (rounded age under 65), else
-  // false with age 65, which the page shows as "65+". Never null: a $0 balance simply never
-  // reaches the target.
-  function doNothingScenario(inputs, projectFn) {
-    const run = projectFn || project;
-    const alone = run(Object.assign({}, inputs, { invest: 0, growthOnly: true }));
-    if (alone.feasible) {
-      const age = roundAge(alone.ageAtFreedom);
-      if (age < USUAL_RETIREMENT_AGE) return { age: age, reaches: true };
-    }
+  // The comparison's left cell, "do nothing": the usual retirement, always (Andrew, 2026-10-29:
+  // "doing nothing" means not investing at all, whatever is already in the accounts, so the
+  // cell no longer projects the balance alone). Returns { age: 65, reaches: false }, which the
+  // page shows as "65+" / "the usual retirement". The shape is kept, and the arguments are
+  // accepted and ignored, so stakes() and its callers did not change. (2026-10-25 to 2026-10-28
+  // this projected the balance with invest 0 and growthOnly, and showed that age when it was
+  // under 65; project()'s growthOnly option stays for that.)
+  function doNothingScenario(inputs, projectFn) { // eslint-disable-line no-unused-vars
     return { age: USUAL_RETIREMENT_AGE, reaches: false };
   }
 
-  // The comparison and the number it argues with, as the page's ladder:
-  //   N = left-cell age (65+ counting as 65) minus the right-cell age, whole year for whole year.
-  //   1. N >= STAKES_MIN_YEARS with the plan's own age on the right: source 'plan'.
-  //   2. Else, with a visible lever row, the right cell becomes the lever age and N is recomputed
-  //      from it: source 'lever'.
-  //   3. Else the comparison is hidden: source 'hidden', years null.
-  // Returns { left, right, years, source } for a feasible result, null otherwise. `lever` is the
-  // lever row already computed for the card (so it is not projected twice); it is computed here
-  // when not passed.
-  function stakes(inputs, projectFn, lever) {
+  // The comparison and the number it argues with:
+  //   N = left-cell age (65, shown as 65+) minus the plan's own rounded age, whole year for whole year.
+  //   N >= STAKES_MIN_YEARS (1): the comparison shows with the plan's age on the right, source 'plan'.
+  //   Else (the plan's age is 65 or later) the comparison is hidden: source 'hidden', years null.
+  // Returns { left, right, years, source } for a feasible result, null otherwise. The lever rung
+  // of 2026-10-25 (the right cell became "This plan + $step/mo" when the plan alone was under
+  // two years) went on 2026-10-29: the cell is always the visitor's own plan.
+  function stakes(inputs, projectFn) {
     const run = projectFn || project;
     const current = run(inputs);
     if (!current.feasible) return null;
@@ -151,13 +144,6 @@
     const planYears = left.age - planAge;
     if (planYears >= STAKES_MIN_YEARS) {
       return { left: left, right: { age: planAge, step: null }, years: planYears, source: 'plan' };
-    }
-    const row = lever === undefined ? leverScenario(inputs, run) : lever;
-    if (row) {
-      const leverYears = left.age - row.age;
-      if (leverYears >= STAKES_MIN_YEARS) {
-        return { left: left, right: { age: row.age, step: row.step }, years: leverYears, source: 'lever' };
-      }
     }
     return { left: left, right: null, years: null, source: 'hidden' };
   }
@@ -193,7 +179,7 @@
   // null when hidden, stakes null when there is no date.
   function scenarios(inputs, projectFn) {
     const lever = leverScenario(inputs, projectFn);
-    return { lever: lever, delay: delayScenario(inputs, projectFn), stakes: stakes(inputs, projectFn, lever) };
+    return { lever: lever, delay: delayScenario(inputs, projectFn), stakes: stakes(inputs, projectFn) };
   }
 
   return {

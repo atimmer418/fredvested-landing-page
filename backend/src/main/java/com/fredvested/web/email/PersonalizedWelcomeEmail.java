@@ -30,9 +30,15 @@ public final class PersonalizedWelcomeEmail {
     /** A rounded Freedom Date at this age or later gets the "Dates move." heading and paragraph. */
     static final int LATE_DATE_AGE = 65;
 
-    /** Only the plan rung's number is printed; lever and hidden get the frozen no-date heading. */
+    /** The stake headline needs a plural: the page shows a one-year gap since 2026-10-29, the template says "years". */
+    static final int STAKE_HEADLINE_MIN_YEARS = 2;
+
+    /**
+     * Only the plan rung's number is printed, and only from two years ("N fewer working years" is
+     * frozen in the plural; a one-year gap gets the no-date heading like lever and hidden do).
+     */
     static boolean hasStakeHeadline(Projection p) {
-        return p != null && !hasLateDate(p) && p.stakeSource() == Projection.StakeSource.PLAN;
+        return p != null && !hasLateDate(p) && p.stakeSource() == Projection.StakeSource.PLAN && p.stakeYears() >= STAKE_HEADLINE_MIN_YEARS;
     }
 
     /**

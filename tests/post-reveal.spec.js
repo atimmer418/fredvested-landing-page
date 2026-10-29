@@ -1,7 +1,8 @@
 // Post-reveal conversion. 2026-10-25: the waitlist form moved into the reveal card itself, under a
 // "do nothing vs this plan" comparison computed from the visitor's inputs. 2026-10-26: the
 // "Freedom Date · Month Year" pill is back under "years old", the "what moves your date" card and
-// its Lever Viewed event are gone, the capture copy changed and the pig sits on the submit button.
+// its Lever Viewed event are gone, the capture copy changed, the pig sits on the submit button and (2026-10-28)
+// FRED the presenter stands beside the age.
 // 2026-10-27: Andrew's wording of the stakes line and the headline ("That gap is N years of your
 // life." / "FRED exists to close the gap.").
 // Nothing of the comparison or the form exists in the DOM before the reveal; after it there is
@@ -12,9 +13,10 @@
 //   defaults 30 / $2,000 / $7,500 / $0:          53; do nothing: 65+; N 12
 //   42 / $500 / $4,000 / $0:                      73; do nothing 65+ (N -8); +$100 -> 71 (N -6): comparison hidden
 //   30 / $2,000 / $7,500 / $250,000 (tick 46):    46; do nothing on the balance alone: 52; N 6
-//   30 / $2,000 / $7,500 / $1,000,000 (tick 76):  37; do nothing: 38 (N 1), no lever step: comparison hidden
-//   38 / $1,000 / $5,000 / $0:                    64; do nothing 65+ (N 1); +$250 -> 62: right cell is the lever, N 3
-//   41 / $2,000 / $7,500 / $0:                    64; +$250 -> 63: lever, N 2
+//   30 / $2,000 / $7,500 / $1,000,000 (tick 76):  37; N 28 (2026-10-29: "do nothing" is always 65+)
+//   38 / $1,000 / $5,000 / $0:                    64; N 1, "1 year" (the lever rung of 2026-10-25 is gone)
+//   41 / $2,000 / $7,500 / $0:                    64; N 1
+//   35 / $1,000 / $7,500 / $0:                    65; N 0: comparison hidden, "This age isn't set in stone." 
 //   30 / $500 / $7,500 / $0 (recalculate):        67; do nothing 65+ (N -2); +$100 -> 65 (N 0): comparison hidden
 const { test, expect } = require('@playwright/test');
 const { installMocks, forceAnalytics, events, eventNames, collectHosts, assertOnlyAllowedHosts, submitWaitlist, seedStorage } = require('./helpers');
@@ -25,18 +27,17 @@ const COPY = {
   COMPARE_LEFT_LABEL: 'Do nothing.',
   COMPARE_LEFT_NEVER: '65+',
   COMPARE_LEFT_CAPTION_NEVER: 'the usual retirement',
-  COMPARE_LEFT_CAPTION_EXISTING: 'on what you already have',
-  COMPARE_RIGHT_LABEL: 'Stick to this plan.',
+  COMPARE_RIGHT_LABEL: `On FRED${RSQUO}s route.`,
   HEADLINE: 'FRED exists to close the gap.',
   SUB: `Save your Freedom Date and we${RSQUO}ll help you turn it from a number into a plan the day we open.`,
   BUTTON: 'Let FRED help me get there',
-  HEADLINE_STILL: 'This date can still move.',
+  HEADLINE_STILL: `This age isn${RSQUO}t set in stone.`,
   SUB_STILL: `Save it and we${RSQUO}ll show you what moves it the day FRED opens.`,
   BUTTON_SAVE: 'Save my Freedom Date',
   EMAIL_LABEL: 'Email',
   DISCLAIMER: 'Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.',
 };
-const stakes = (n) => `That gap is ${n} years of your life.`;
+const stakes = (n) => (n === 1 ? 'That gap is 1 year of your life.' : `That gap is ${n} years of your life.`);
 const NO_DATE_HEADING = 'Put your financial future on autopilot.';
 const DATE = /^[A-Z][a-z]+ \d{4}$/;
 const EM_DASH = String.fromCharCode(0x2014);
@@ -44,7 +45,7 @@ const EM_DASH = String.fromCharCode(0x2014);
 // (the fine-print block carries the scenario's return and is checked separately).
 const FORBIDDEN = [/guarantee/i, /will retire/i, /FRED gets you/i, /\d+\s*%/];
 // Sentences of the 2026-10-24 / 2026-10-25 rounds that must not come back.
-const GONE = ['This date is not fixed', 'Invest $', 'Start one year later', 'Freedom Date moves to', 'Freedom Date slips to', 'before the usual 65', 'on the table', 'Keep my', 'That is '];
+const GONE = ['This date is not fixed', 'Invest $', 'Start one year later', 'Freedom Date moves to', 'Freedom Date slips to', 'before the usual 65', 'on the table', 'Keep my', 'That is ', 'This plan + $', 'on what you already have', 'This date can still move', 'your Freedom Date\n'];
 const LEVER_KEYS = ['lever_shift_band', 'delay_months_band'];
 
 const VIEWPORTS = [
@@ -134,8 +135,8 @@ async function expectCollapsed(page) {
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
   expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
 }
-/** The month and year: in the comparison's right cell under the age (plan: the Freedom Date; lever: that
- *  scenario's own date), bold primary; nowhere else on the card, always in #result-sr. No chip, no header row. */
+/** The month and year: in the comparison's right cell under the age (the plan's Freedom Date), bold primary;
+ *  nowhere else on the card, always in #result-sr. No chip, no header row. */
 async function expectDate(page) {
   await expect(page.locator('#result-date, #result-chip, #result-context, #compare-right-caption')).toHaveCount(0);
   await expect(page.locator('#result-years-old')).toHaveText(COPY.YEARS_OLD);
@@ -167,8 +168,8 @@ async function expectDate(page) {
   expect(m.centred).toBeLessThanOrEqual(1);
   expect(m.lastInCell).toBe(true);
   expect(m.style).toEqual(['11.5px', '700', 'rgb(19, 91, 236)']);
-  if (m.label === COPY.COMPARE_RIGHT_LABEL) expect(m.text).toBe(srDate[1]); // the plan's own date
-  else expect(m.text).not.toBe(srDate[1]); // the lever scenario's date, earlier than the plan's
+  expect(m.label).toBe(COPY.COMPARE_RIGHT_LABEL);
+  expect(m.text).toBe(srDate[1]); // the plan's own date
   expect(sr).toContain(m.label.replace(/\.$/, '') + ': ' + (await page.locator('#compare-right-age').textContent()) + ', ' + m.text + '.');
 }
 
@@ -218,17 +219,20 @@ for (const vp of VIEWPORTS) {
       expect(tops[13]).toBeGreaterThanOrEqual(cardBottom); // the accordion directly below it
     });
 
-    test('a large balance that reaches the target alone before 65 shows that age on the left, "on what you already have"', async ({ page }) => {
+    test('a large balance never changes the left cell: $250,000 is 65+ against 46, nineteen years (2026-10-29)', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await page.fill('#existing-range', '46'); // $250,000
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('46');
       await expectDate(page);
-      await expectComparison(page, { left: '52', leftCaption: COPY.COMPARE_LEFT_CAPTION_EXISTING, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '46', n: 6 });
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '46', n: 19 });
+      await page.fill('#existing-range', '76'); // $1,000,000: 37, still 65+ on the left
+      await expect(page.locator('#result-age')).toHaveText('37');
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '37', n: 28 });
     });
 
-    test('at 64 with a lever step available the right cell becomes "This plan + $250/mo" and N comes from the lever age', async ({ page }) => {
+    test('at 64 the comparison shows the plan itself with a one-year gap, singular; no "This plan + $250/mo"', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await page.fill('#age-range', '38');
@@ -237,15 +241,33 @@ for (const vp of VIEWPORTS) {
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('64');
       await expectDate(page);
-      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: 'This plan + $250/mo', right: '62', n: 3 });
-      // The two ages stay level even when the right label wraps (subgrid rows).
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '64', n: 1 });
+      await expect(page.locator('#stakes-line')).toHaveText('That gap is 1 year of your life.');
+      expect(await revealText(page)).not.toMatch(/1 years\b/);
+      // The two ages stay level (subgrid rows).
       const tops = await page.evaluate(() => ['compare-left-age', 'compare-right-age'].map((id) => Math.round(document.getElementById(id).getBoundingClientRect().top)));
       expect(tops[0]).toBe(tops[1]);
       // The live region hears the number with what it is measured against.
-      expect(await page.locator('#result-sr').textContent()).toMatch(new RegExp('Do nothing: 65\\+\\. This plan \\+ \\$250/mo: 62, [A-Z][a-z]+ \\d{4}\\. ' + stakes(3).replace('.', '\\.')));
+      expect(await page.locator('#result-sr').textContent()).toMatch(new RegExp('Do nothing: 65\\+\\. ' + COPY.COMPARE_RIGHT_LABEL.replace(/\.$/, '') + ': 64, [A-Z][a-z]+ \\d{4}\\. ' + stakes(1).replace('.', '\\.')));
     });
 
-    test('when both paths collapse (73, lever 71) the comparison and the stakes line are hidden and the still-moves copy shows', async ({ page }) => {
+    test('at exactly 65 (35 / $1,000 / $7,500) the comparison is hidden and the still-moves copy shows; at 73 too', async ({ page }) => {
+      await installMocks(page);
+      await page.goto('/index.html');
+      await page.fill('#age-range', '35');
+      await page.fill('#invest-range', '1000');
+      await reveal(page);
+      await expect(page.locator('#result-age')).toHaveText('65');
+      await expectDate(page);
+      await expectCollapsed(page);
+      await page.fill('#age-range', '42');
+      await page.fill('#invest-range', '500');
+      await page.fill('#retire-range', '4000');
+      await expect(page.locator('#result-age')).toHaveText('73');
+      await expectCollapsed(page);
+    });
+
+    test('when the plan is past 65 (73) the comparison and the stakes line are hidden and the still-moves copy shows', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await page.fill('#age-range', '42');
@@ -268,7 +290,7 @@ for (const vp of VIEWPORTS) {
 
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.fill('#invest-range', '500');
-      await page.fill('#retire-range', '7000'); // 30 / $500 / $7,000: 66, target $2.1M, +$100 -> 64, nothing to compare
+      await page.fill('#retire-range', '7000'); // 30 / $500 / $7,000: 66, target $2.1M, nothing to compare
       await page.click('#reveal-btn'); // Recalculate
       await expect(page.locator('#result-age')).toHaveText('66');
       await expectDate(page);
@@ -277,19 +299,19 @@ for (const vp of VIEWPORTS) {
       await expect(page.locator('#result-fineprint')).toContainText('Projected portfolio target: $2,100,000.');
       await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
 
-      // Back to a comparison: the lever path this time (41: 64, +$250 -> 63, two years).
+      // Back to a comparison: a one-year gap (41: 64).
       await page.fill('#invest-range', '2000');
       await page.fill('#retire-range', '7500');
       await page.fill('#age-range', '41');
       await page.click('#reveal-btn');
       await expect(page.locator('#result-age')).toHaveText('64');
-      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: 'This plan + $250/mo', right: '63', n: 2 });
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '64', n: 1 });
 
-      // Live slider edits keep everything current too (same path as a drag): $1,000,000, 37 vs 38, hidden.
+      // Live slider edits keep everything current too (same path as a drag): $1,000,000, 65+ against 37.
       await page.fill('#age-range', '30');
       await page.locator('#existing-range').evaluate((el) => { el.value = '76'; el.dispatchEvent(new Event('input', { bubbles: true })); });
       await expect(page.locator('#result-age')).toHaveText('37');
-      await expectCollapsed(page);
+      await expectComparison(page, { left: '65+', leftCaption: COPY.COMPARE_LEFT_CAPTION_NEVER, rightLabel: COPY.COMPARE_RIGHT_LABEL, right: '37', n: 28 });
       await expect(page.locator('input[type="email"]')).toHaveCount(1);
     });
 
@@ -337,14 +359,14 @@ test.describe('the fit at 390 x 660 (iPhone with the Instagram in-app browser ba
     await expectDate(page);
   });
 
-  test('the same holds for the longest copy case (65+ against a two-digit age, lever label) and the collapsed case', async ({ page }) => {
+  test('the same holds for the one-year case (65+ against 64, singular stakes line) and the collapsed case', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#age-range', '38');
     await page.fill('#invest-range', '1000');
     await page.fill('#retire-range', '5000');
     await reveal(page);
-    await expect(page.locator('#compare-right-label')).toHaveText('This plan + $250/mo');
+    await expect(page.locator('#stakes-line')).toHaveText(stakes(1));
     await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
     let r = await rects(page);
     expect(r.button.bottom).toBeLessThanOrEqual(r.vh);
@@ -464,7 +486,7 @@ test.describe('the capture section', () => {
     expect(focusBorder).toBe('rgb(19, 91, 236)');
   });
 
-  test('the pig is on the button in every state: plan, lever, still-moves, no date, at target', async ({ page }) => {
+  test('the pig is on the button in every state: plan, one-year plan, still-moves, no date, at target', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await reveal(page);
@@ -472,8 +494,8 @@ test.describe('the capture section', () => {
     await page.fill('#age-range', '38');
     await page.fill('#invest-range', '1000');
     await page.fill('#retire-range', '5000');
-    await expect(page.locator('#compare-right-label')).toHaveText('This plan + $250/mo');
-    expect(await expectPig(page)).toBe(COPY.BUTTON); // lever
+    await expect(page.locator('#stakes-line')).toHaveText(stakes(1));
+    expect(await expectPig(page)).toBe(COPY.BUTTON); // one year
     await page.fill('#age-range', '42');
     await page.fill('#invest-range', '500');
     await page.fill('#retire-range', '4000');
@@ -488,6 +510,71 @@ test.describe('the capture section', () => {
     await expect(page.locator('#at-target-block')).toBeVisible();
     expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE); // at target
     await expect(page.locator('input[type="email"]')).toHaveCount(1);
+  });
+
+  test('FRED stands beside the age at phone and desktop widths: one inline SVG right of the digits, feet on the bottom of the "years old" line, as tall as the column, decorative, still during the count-up, and gone with the age', async ({ page }) => {
+    await installMocks(page);
+    await page.goto('/index.html');
+    await page.click('#reveal-btn');
+    // The pig must not move while the digits count up (the age keeps its final width for the animation):
+    // sample its left edge every frame for the whole animation, from the click.
+    const motion = await page.evaluate(() => new Promise((resolve) => {
+      const lefts = []; const t0 = performance.now();
+      (function sample() {
+        const r = document.getElementById('result-pig').getBoundingClientRect();
+        if (r.width > 0) lefts.push(r.left);
+        if (performance.now() - t0 < 1300) requestAnimationFrame(sample); else resolve({ min: Math.min(...lefts), max: Math.max(...lefts), frames: lefts.length });
+      })();
+    }));
+    expect(motion.frames).toBeGreaterThan(30);
+    expect(motion.max - motion.min, 'pig held still during the count-up').toBeLessThanOrEqual(0.5);
+    await expect(page.locator('#capture-email')).toBeVisible();
+    // Measure only once the count-up has landed: countUp() removes aria-hidden in finish().
+    await expect(page.locator('#result-age')).toHaveText('53');
+    await expect(page.locator('#result-age')).not.toHaveAttribute('aria-hidden', 'true');
+    const pig = page.locator('#feasible-block #result-age-row > #result-pig');
+    await expect(pig).toHaveCount(1);
+    await expect(pig).toHaveAttribute('aria-hidden', 'true');
+    await expect(pig).toHaveAttribute('focusable', 'false');
+    await expect(page.locator('#result-card img')).toHaveCount(0);
+    await expect(page.locator('#result-card svg')).toHaveCount(2); // this one and the button's
+    for (const viewport of [PHONE, { width: 1280, height: 900 }]) {
+      await page.setViewportSize(viewport);
+      const m = await page.evaluate(() => {
+        const g = (id) => document.getElementById(id).getBoundingClientRect();
+        const a = g('result-age'), y = g('result-years-old'), p = g('result-pig'), e = g('result-eyebrow'), c = g('result-card');
+        const col = document.getElementById('result-age').parentElement.getBoundingClientRect(); // the age + caption column
+        const range = document.createRange(); range.selectNodeContents(document.getElementById('result-age'));
+        const digits = range.getBoundingClientRect();
+        return {
+          gap: p.left - digits.right, feet: p.bottom - y.bottom, heightDiff: p.height - (y.bottom - a.top), belowEyebrow: p.top - e.bottom,
+          insideCard: p.left >= c.left && p.right <= c.right, offCentre: (col.left - c.left) - (c.right - p.right),
+          captionUnderDigits: (a.left + a.right) / 2 - (y.left + y.right) / 2, pigHeight: p.height,
+        };
+      });
+      const w = viewport.width;
+      expect(m.gap, `gap at ${w}`).toBeGreaterThanOrEqual(8);
+      expect(m.gap, `gap at ${w}`).toBeLessThanOrEqual(20);
+      expect(Math.abs(m.feet), `feet at ${w}`).toBeLessThanOrEqual(1); // on the bottom of the caption's line box
+      expect(Math.abs(m.heightDiff), `height at ${w}`).toBeLessThanOrEqual(1); // exactly the column: adds no height
+      expect(m.belowEyebrow, `eyebrow clearance at ${w}`).toBeGreaterThanOrEqual(4);
+      expect(m.insideCard, `inside the card at ${w}`).toBe(true);
+      expect(Math.abs(m.offCentre), `group centred at ${w}`).toBeLessThanOrEqual(2);
+      expect(Math.abs(m.captionUnderDigits), `caption under the digits at ${w}`).toBeLessThanOrEqual(2);
+      expect(m.pigHeight, `legible at ${w}`).toBeGreaterThanOrEqual(80);
+    }
+    await page.setViewportSize(PHONE);
+    // The height is in rem: with a larger browser default font size the column grows and the pig grows with it.
+    await page.addStyleTag({ content: 'html{font-size:20px}' });
+    const big = await page.evaluate(() => { const g = (id) => document.getElementById(id).getBoundingClientRect(); const a = g('result-age'), y = g('result-years-old'), p = g('result-pig'); return { heightDiff: p.height - (y.bottom - a.top), feet: p.bottom - y.bottom }; });
+    expect(Math.abs(big.heightDiff), 'as tall as the column at a 20px root font size').toBeLessThanOrEqual(1);
+    expect(Math.abs(big.feet)).toBeLessThanOrEqual(1);
+    await page.evaluate(() => document.querySelector('style:last-of-type').remove());
+    // No date, no age, no pig beside it; the button keeps its own.
+    await page.fill('#invest-range', '0');
+    await expect(page.locator('#infeasible-block')).toBeVisible();
+    await expect(pig).toBeHidden();
+    expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
   });
 
   test('anchor links to #join land on the form', async ({ page }) => {
@@ -610,7 +697,8 @@ test.describe('copy', () => {
     await page.goto('/index.html');
     await reveal(page);
     const sr = await page.locator('#result-sr').textContent();
-    expect(sr).toMatch(/^You could be free at 53 years old\. Freedom Date: [A-Z][a-z]+ \d{4}\. Do nothing: 65\+\. Stick to this plan: 53, [A-Z][a-z]+ \d{4}\. That gap is 12 years of your life\. Projected portfolio target: \$2,250,000\. Assumes a 10% average annual return \(Moderate scenario\) and 4% withdrawal rate\. Hypothetical illustration/);
+    // The label's apostrophe is the page's typographic one (COPY.COMPARE_RIGHT_LABEL), so the pattern is built from RSQUO.
+    expect(sr).toMatch(new RegExp(`^You could be free at 53 years old\\. Freedom Date: [A-Z][a-z]+ \\d{4}\\. Do nothing: 65\\+\\. On FRED${RSQUO}s route: 53, [A-Z][a-z]+ \\d{4}\\. That gap is 12 years of your life\\. Projected portfolio target: \\$2,250,000\\. Assumes a 10% average annual return \\(Moderate scenario\\) and 4% withdrawal rate\\. Hypothetical illustration`));
     expect(sr).not.toContain('..');
     expect(sr).not.toContain('before the usual 65');
     // 69 on a large balance, nothing to compare: just the age, the date and the fine print.
@@ -633,13 +721,14 @@ test.describe('copy', () => {
     await reveal(page);
     await expect(page.locator('#result-age')).toHaveText('64');
     await expectDate(page);
-    expect(await revealText(page)).not.toMatch(/1 year\b/);
+    expect(await revealText(page)).toContain('That gap is 1 year of your life.');
+    expect(await revealText(page)).not.toMatch(/1 years\b/);
   });
 });
 
 test.describe('analytics', () => {
-  const STAKE_BANDS = ['hidden', '2-5', '6-10', '11+'];
-  const STAKE_SOURCES = ['plan', 'lever', 'hidden'];
+  const STAKE_BANDS = ['hidden', '1-5', '6-10', '11+'];
+  const STAKE_SOURCES = ['plan', 'hidden'];
   const DEFAULT_STAKE = { stake_years_band: '11+', stake_source: 'plan' };
   const HIDDEN_STAKE = { stake_years_band: 'hidden', stake_source: 'hidden' };
   const expectNoLeverTraces = (all) => {
@@ -677,37 +766,39 @@ test.describe('analytics', () => {
     expect(Object.keys(ctx).sort()).toEqual(['freedom_age_band', 'input_edits_band', 'return_scenario', 'revealed', 'stake_source', 'stake_years_band']);
   });
 
-  test('the lever path is reported as stake_source lever, the hidden comparison as hidden, the balance case as plan 6-10', async ({ page }) => {
+  test('a one-year gap bands as 1-5 plan, the hidden comparison as hidden, the balance case as plan 11+ (never lever)', async ({ page }) => {
     await forceAnalytics(page);
     await installMocks(page);
     await page.goto('/index.html');
-    // 38 / $1,000 / $5,000: 64, lever 62, three years from the lever.
+    // 38 / $1,000 / $5,000: 64, one year.
     await page.fill('#age-range', '38');
     await page.fill('#invest-range', '1000');
     await page.fill('#retire-range', '5000');
     await reveal(page);
-    expect(named(await events(page), 'Freedom Date Revealed')[0].props).toMatchObject({ freedom_age_band: '60-64', stake_years_band: '2-5', stake_source: 'lever' });
+    expect(named(await events(page), 'Freedom Date Revealed')[0].props).toMatchObject({ freedom_age_band: '60-64', stake_years_band: '1-5', stake_source: 'plan' });
     // 42 / $500 / $4,000: 73, nothing to compare.
     await page.fill('#age-range', '42');
     await page.fill('#invest-range', '500');
     await page.fill('#retire-range', '4000');
     await page.click('#reveal-btn');
     await expectCollapsed(page);
-    // $250,000 at the defaults: 52 against 46 from the plan itself.
+    // $250,000 at the defaults: 65+ against 46, nineteen years.
     await page.fill('#age-range', '30');
     await page.fill('#invest-range', '2000');
     await page.fill('#retire-range', '7500');
     await page.fill('#existing-range', '46');
     await page.click('#reveal-btn'); // third click: no Recalculated, context still recorded
-    await expect(page.locator('#compare-left-age')).toHaveText('52');
+    await expect(page.locator('#compare-left-age')).toHaveText('65+');
+    await expect(page.locator('#compare-right-age')).toHaveText('46');
     await submitWaitlist(page, 'plan@example.com');
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
     const all = await events(page);
     expect(named(all, 'Recalculated')).toHaveLength(1);
-    expect(named(all, 'Email Focused')[0].props).toEqual({ stake_years_band: '6-10', stake_source: 'plan' });
-    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ return_scenario: 'moderate', freedom_age_band: '45-49', stake_years_band: '6-10', stake_source: 'plan' });
+    expect(named(all, 'Email Focused')[0].props).toEqual({ stake_years_band: '11+', stake_source: 'plan' });
+    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ return_scenario: 'moderate', freedom_age_band: '45-49', stake_years_band: '11+', stake_source: 'plan' });
     expectNoLeverTraces(all);
-    const raw = ['250000', '46', '47', '52', '6', '3', '62', '64'];
+    for (const e of all) for (const v of Object.values(e.props)) expect(v).not.toBe('lever');
+    const raw = ['250000', '46', '47', '52', '19', '1', '62', '64'];
     for (const e of all) for (const v of Object.values(e.props)) expect(raw).not.toContain(v);
   });
 
@@ -715,7 +806,8 @@ test.describe('analytics', () => {
     await forceAnalytics(page);
     await installMocks(page);
     await page.goto('/index.html');
-    await page.fill('#existing-range', '76'); // $1,000,000: 37 against 38, no lever step
+    await page.fill('#age-range', '35');
+    await page.fill('#invest-range', '1000'); // 35 / $1,000 / $7,500: exactly 65, nothing to compare
     await reveal(page);
     await expectCollapsed(page);
     await submitWaitlist(page, 'hidden@example.com');
@@ -723,9 +815,8 @@ test.describe('analytics', () => {
     const all = await events(page);
     expect(named(all, 'Freedom Date Revealed')[0].props).toMatchObject(HIDDEN_STAKE);
     expect(named(all, 'Email Focused')[0].props).toEqual(HIDDEN_STAKE);
-    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ revealed: 'yes', freedom_age_band: '<45', ...HIDDEN_STAKE });
+    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ revealed: 'yes', freedom_age_band: '65+', ...HIDDEN_STAKE });
     expectNoLeverTraces(all);
-    expect(JSON.stringify(all)).not.toContain('1000000');
   });
 
   test('scrolling the whole page after a reveal, a recalculate and live edits fires no Lever Viewed and no lever band', async ({ page }) => {

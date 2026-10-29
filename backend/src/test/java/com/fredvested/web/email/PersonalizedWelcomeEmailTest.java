@@ -125,6 +125,14 @@ class PersonalizedWelcomeEmailTest {
         }
         assertTrue(lever.html().contains(">$314k in. A projected $1.5M out."));
         assertFalse(lever.html().contains("3 fewer"));
+        // A one-year plan rung (the page shows it since 2026-10-29): the headline is frozen in the plural,
+        // so it keeps the no-date heading too, with the chart and the numbers.
+        EmailTemplates.Rendered oneYear = PersonalizedWelcomeEmail.render(Fixtures.projection("stake-one-year"), UNSUB, ADDR);
+        assertTrue(oneYear.html().contains("Put your financial future on autopilot."));
+        assertFalse(oneYear.html().contains("fewer working"), oneYear.html());
+        assertFalse(oneYear.text().contains("fewer working"));
+        assertTrue(oneYear.html().contains("cid:growth-chart"));
+        assertTrue(oneYear.html().contains(">$314k in. A projected $1.5M out."));
         assertFalse(hidden.html().contains("1 fewer"));
         assertTrue(hidden.html().contains("starting at <b style=\"color:#ffffff;\">64</b>."), "the boundary: 64 is not late");
     }

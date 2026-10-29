@@ -236,12 +236,15 @@ class ProjectionValidatorTest {
 
     @Test
     void stakeYears_followsTheSource() {
-        // plan: the page's own number, at least 2 and at most the years to 65 from the rounded freedom age (12 for the sample)
+        // plan: the page's own number, at least 1 (2 before 2026-10-29) and at most the years to 65 from the rounded freedom age (12 for the sample)
         assertEquals(12, ProjectionValidator.validate(sample()).stakeYears());
         assertEquals(2, accepts(r -> r.setStakeYears(2)).stakeYears());
+        assertEquals(1, accepts(r -> r.setStakeYears(1)).stakeYears());
         assertEquals("stake_years_out_of_range", rejects(r -> r.setStakeYears(13)));
-        assertEquals("stake_years_out_of_range", rejects(r -> r.setStakeYears(1)));
+        assertEquals("stake_years_out_of_range", rejects(r -> r.setStakeYears(0)));
         assertEquals("stake_years_out_of_range", rejects(r -> r.setStakeYears(100)));
+        // a one-year plan rung as the page sends it since 2026-10-29 (38 / $1,000 / $5,000: 64)
+        assertEquals(1, ProjectionValidator.validate(Fixtures.request("stake-one-year")).stakeYears());
         // lever: at most the years to 65 from the current age (38 -> 27)
         assertEquals(3, ProjectionValidator.validate(Fixtures.request("stake-lever")).stakeYears());
         ProjectionRequest lever = Fixtures.request("stake-lever");
@@ -250,6 +253,8 @@ class ProjectionValidatorTest {
         lever.setStakeYears(28);
         assertEquals("stake_years_out_of_range", rejects(lever));
         lever.setStakeYears(1);
+        assertEquals(1, ProjectionValidator.validate(lever).stakeYears());
+        lever.setStakeYears(0);
         assertEquals("stake_years_out_of_range", rejects(lever));
         // hidden (or absent): must equal max(0, 65 - round(freedomAge))
         assertEquals(0, ProjectionValidator.validate(Fixtures.request("stake-hidden")).stakeYears());
