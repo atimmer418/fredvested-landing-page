@@ -248,26 +248,35 @@ test.describe('at-target state', () => {
 
     const block = page.locator('#at-target-block');
     await expect(block).toBeVisible();
-    // Since 2026-10-29 the state mirrors the dated reveal: the approved kicker, the visitor's current age
-    // (the default 30 here) counted up in the age's type, "years old. Today.", and the body sentence.
+    // Since 2026-10-29 the state is the dated reveal's layout: the approved kicker, the visitor's current age
+    // (the default 30 here) counted up in the age's type, "years old", the comparison with "Today" and the
+    // current month and year on FRED's side, and the at-target sentence where the stakes line and the
+    // headline would be.
     await expect(page.locator('#at-target-eyebrow')).toHaveText('You could be free at');
     await expect(page.locator('#at-target-age')).toHaveText('30');
     await expect(page.locator('#at-target-age')).not.toHaveAttribute('aria-hidden', 'true'); // the count-up has landed
-    const caption = (await page.locator('#at-target-caption').textContent()).trim();
-    const body = (await page.locator('#at-target-body').textContent()).trim();
-    expect(caption).toMatch(/^years old\./);
+    await expect(page.locator('#at-target-caption')).toHaveText('years old');
+    const thisMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    await expect(page.locator('#compare')).toBeVisible();
+    await expect(page.locator('#compare-left-age')).toHaveText('65+');
+    await expect(page.locator('#compare-right-age')).toHaveText('Today');
+    await expect(page.locator('#compare-right-date')).toHaveText(thisMonth);
+    await expect(page.locator('#stakes-line')).toBeHidden();
+    await expect(page.locator('#capture-heading')).toBeHidden();
+    const body = (await page.locator('#capture-support').textContent()).trim();
     for (const anchor of AT_TARGET_ANCHORS) expect(body).toMatch(anchor);
-    expect(caption + body).not.toContain('—');
-    await expect(page.locator('#at-target-headline')).toHaveCount(0); // "You're already there." is gone
+    expect(body).not.toContain('—');
+    await expect(page.locator('#at-target-headline, #at-target-body')).toHaveCount(0); // "You're already there." is gone
     await expect(page.locator('#feasible-block')).toBeHidden();
     await expect(page.locator('#infeasible-block')).toBeHidden();
     await expect(page.locator('#result-card')).toContainText('Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.');
     await expect(page.locator('#capture-email')).toBeVisible();
-    await expect(page.locator('#result-sr')).toHaveText('You could be free at 30 ' + caption + ' ' + body);
+    const sr = (age) => `You could be free at ${age} years old. Do nothing: 65+. On FRED\u2019s route: Today, ${thisMonth}. ${body}`;
+    await expect(page.locator('#result-sr')).toHaveText(sr(30));
     // The age is the slider's, live.
     await page.fill('#age-range', '41');
     await expect(page.locator('#at-target-age')).toHaveText('41');
-    await expect(page.locator('#result-sr')).toHaveText('You could be free at 41 ' + caption + ' ' + body);
+    await expect(page.locator('#result-sr')).toHaveText(sr(41));
     await page.fill('#age-range', '30');
 
     // Raising the income out of reach of the balance restores the dated result live.

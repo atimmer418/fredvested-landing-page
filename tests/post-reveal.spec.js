@@ -1,7 +1,7 @@
 // Post-reveal conversion. 2026-10-25: the waitlist form moved into the reveal card itself, under a
 // "do nothing vs this plan" comparison computed from the visitor's inputs. 2026-10-26: the
 // "Freedom Date · Month Year" pill is back under "years old", the "what moves your date" card and
-// its Lever Viewed event are gone, the capture copy changed, the pig sits on the submit button and (2026-10-28)
+// its Lever Viewed event are gone, the capture copy changed, the submit button is label + arrow (pig 2026-10-26..29) and (2026-10-28)
 // FRED the presenter stands beside the age.
 // 2026-10-27: Andrew's wording of the stakes line and the headline ("That gap is N years of your
 // life." / "FRED exists to close the gap.").
@@ -30,7 +30,7 @@ const COPY = {
   COMPARE_RIGHT_LABEL: `On FRED${RSQUO}s route.`,
   HEADLINE: 'FRED exists to close the gap.',
   SUB: `Save your Freedom Date and we${RSQUO}ll help you turn it from a number into a plan the day we open.`,
-  BUTTON: 'Let FRED help me get there',
+  BUTTON: 'I want FRED\u2019s help.',
   HEADLINE_STILL: `This age isn${RSQUO}t set in stone.`,
   SUB_STILL: `Save it and we${RSQUO}ll show you what moves it the day FRED opens.`,
   BUTTON_SAVE: 'Save my Freedom Date',
@@ -77,42 +77,46 @@ async function rects(page) {
     return { card: r('result-card'), input: r('capture-email'), button: r('join-waitlist-btn'), vh: window.innerHeight, vw: window.innerWidth };
   });
 }
-/** The pig: one inline SVG inside the button, left of the label, 22px tall, hidden from assistive tech. */
-async function expectPig(page) {
+/** The button (2026-10-29): the label and a decorative arrow after it, no pig, no image. Returns the label text. */
+async function expectArrow(page) {
   const btn = page.locator('#join-waitlist-btn');
-  await expect(btn.locator('svg')).toHaveCount(1);
+  await expect(btn.locator('svg')).toHaveCount(0);
   await expect(btn.locator('img')).toHaveCount(0);
-  const svg = btn.locator('#btn-text > svg');
-  await expect(svg).toHaveCount(1);
-  await expect(svg).toHaveAttribute('aria-hidden', 'true');
-  await expect(svg).toHaveAttribute('focusable', 'false');
+  const arrow = btn.locator('#btn-text > span[aria-hidden="true"]');
+  await expect(arrow).toHaveCount(1);
+  await expect(arrow).toHaveText('\u2192');
+  // The arrow slides 4px on hover, and after the reveal click the mouse can be resting on the button
+  // (it is at 1280, where the scroll lands the form under it): park the pointer and let the slide settle.
+  // Tailwind v4's translate-x-1 is the CSS `translate` property (transform stays "none" throughout), so that is
+  // the one to watch until the 150ms slide back has ended.
+  await page.mouse.move(0, 0);
+  await expect.poll(() => page.evaluate(() => { const s = getComputedStyle(document.querySelector('#btn-text > span[aria-hidden="true"]')); return s.translate + ' ' + s.transform; })).toBe('none none');
   const m = await page.evaluate(() => {
-    const s = document.querySelector('#btn-text > svg');
+    const a = document.querySelector('#btn-text > span[aria-hidden="true"]');
     const l = document.getElementById('btn-label');
     const b = document.getElementById('join-waitlist-btn');
-    const sr = s.getBoundingClientRect(); const lr = l.getBoundingClientRect(); const br = b.getBoundingClientRect();
+    const ar = a.getBoundingClientRect(); const lr = l.getBoundingClientRect(); const br = b.getBoundingClientRect();
+    const cs = getComputedStyle(b);
+    // Client rects, exact to the subpixel (offsetLeft / offsetWidth round and read 9 for an 8px gap next to a
+    // fractional label width); the hover slide is settled above, so the rects are the layout positions.
+    const gap = ar.left - lr.right;
     return {
-      height: sr.height, width: sr.width, gap: lr.left - sr.right,
-      leftOfText: sr.right <= lr.left,
-      centred: Math.abs((sr.top + sr.bottom) / 2 - (br.top + br.bottom) / 2),
-      ids: s.querySelectorAll('[id]').length, styles: s.querySelectorAll('style').length,
-      currentColor: s.outerHTML.includes('currentColor'), scripts: s.querySelectorAll('script, foreignObject').length,
+      gap,
+      rightOfText: gap >= 0,
+      centred: Math.abs((ar.top + ar.bottom) / 2 - (br.top + br.bottom) / 2),
       labelLines: Math.round(lr.height / parseFloat(getComputedStyle(l).lineHeight)),
-      text: b.innerText.trim(),
+      // Label, gap and arrow inside the button's content box: nothing clipped by overflow-hidden.
+      fits: ar.right - lr.left <= b.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + 0.5,
+      label: l.textContent.trim(),
+      name: b.getAttribute('aria-label') || b.innerText.trim(),
     };
   });
-  expect(Math.round(m.height)).toBe(22);
-  expect(Math.round(m.width)).toBe(22);
   expect(Math.round(m.gap)).toBe(8);
-  expect(m.leftOfText).toBe(true);
-  expect(m.centred).toBeLessThanOrEqual(1);
-  expect(m.ids).toBe(0);
-  expect(m.styles).toBe(0);
-  expect(m.scripts).toBe(0);
-  expect(m.currentColor).toBe(false);
+  expect(m.rightOfText).toBe(true);
+  expect(m.centred).toBeLessThanOrEqual(2);
   expect(m.labelLines).toBe(1);
-  expect(m.text).not.toContain('→');
-  return m.text;
+  expect(m.fits).toBe(true);
+  return m.label;
 }
 async function expectComparison(page, { left, leftCaption, rightLabel, right, n }) {
   await expect(page.locator('#compare')).toBeVisible();
@@ -125,7 +129,7 @@ async function expectComparison(page, { left, leftCaption, rightLabel, right, n 
   await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
   await expect(page.locator('#capture-support')).toHaveText(COPY.SUB);
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
-  expect(await expectPig(page)).toBe(COPY.BUTTON);
+  expect(await expectArrow(page)).toBe(COPY.BUTTON);
 }
 async function expectCollapsed(page) {
   await expect(page.locator('#compare')).toBeHidden();
@@ -133,7 +137,7 @@ async function expectCollapsed(page) {
   await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_STILL);
   await expect(page.locator('#capture-support')).toHaveText(COPY.SUB_STILL);
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
-  expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
+  expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE);
 }
 /** The month and year: in the comparison's right cell under the age (the plan's Freedom Date), bold primary;
  *  nowhere else on the card, always in #result-sr. No chip, no header row. */
@@ -439,7 +443,7 @@ test.describe('the capture section', () => {
         inputFont: parseFloat(getComputedStyle(i).fontSize),
         btnHeight: b.getBoundingClientRect().height,
         btnWidth: b.getBoundingClientRect().width,
-        // The pig, the gap and the label inside the button's content box (its padding untouched).
+        // The label, the gap and the arrow inside the button's content box (its padding untouched).
         // Measured from the row's children: scrollWidth of a centred flex row is its own width when
         // the content fits and only the right-hand half of the spill when it does not.
         btnContentWidth: b.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
@@ -471,7 +475,7 @@ test.describe('the capture section', () => {
     expect(m.noteStyle).toEqual(m.consentStyle);
     expect(m.consentFont).toBe(11); // never below its size
     expect(m.consentAlign).toBe('left');
-    expect(await expectPig(page)).toBe(COPY.BUTTON);
+    expect(await expectArrow(page)).toBe(COPY.BUTTON);
     // The mocked stats answer 40, at or above STAT_TILE_MIN_N (25): the live count line shows.
     await expect(page.locator('#capture-count')).toBeVisible();
     await expect(page.locator('#capture-count')).toHaveText('40 people are already on the list.');
@@ -486,30 +490,55 @@ test.describe('the capture section', () => {
     expect(focusBorder).toBe('rgb(19, 91, 236)');
   });
 
-  test('the pig is on the button in every state: plan, one-year plan, still-moves, no date, at target', async ({ page }) => {
+  test('the button is label + arrow, no pig, in every state: plan, one-year plan, still-moves, no date, at target', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await reveal(page);
-    expect(await expectPig(page)).toBe(COPY.BUTTON); // plan
+    expect(await expectArrow(page)).toBe(COPY.BUTTON); // plan
     await page.fill('#age-range', '38');
     await page.fill('#invest-range', '1000');
     await page.fill('#retire-range', '5000');
     await expect(page.locator('#stakes-line')).toHaveText(stakes(1));
-    expect(await expectPig(page)).toBe(COPY.BUTTON); // one year
+    expect(await expectArrow(page)).toBe(COPY.BUTTON); // one year
     await page.fill('#age-range', '42');
     await page.fill('#invest-range', '500');
     await page.fill('#retire-range', '4000');
     await expectCollapsed(page); // still-moves, Save my Freedom Date
     await page.fill('#invest-range', '0');
     await expect(page.locator('#infeasible-block')).toBeVisible();
-    expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE); // no date
+    expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE); // no date
     await page.fill('#age-range', '30');
     await page.fill('#invest-range', '2000');
     await page.fill('#retire-range', '1000');
     await page.fill('#existing-range', '48'); // $300,000, the target
     await expect(page.locator('#at-target-block')).toBeVisible();
-    expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE); // at target
+    expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE); // at target
     await expect(page.locator('input[type="email"]')).toHaveCount(1);
+  });
+
+  test('the label and the arrow fit inside the button at 320, 354, 355, 360, 375, 379, 380 and 390, in the plan state and with the longer "Save my Freedom Date"', async ({ page }) => {
+    // The text is centred and the button clips (overflow-hidden), so a spill shows as a cut arrow and a cut first
+    // letter. "Save my Freedom Date" + arrow is 221px at 16px against a 200px box at 320 with the old px-6 (and
+    // the 2026-10-26..29 pig row, 266px, was clipped at 375 and 360). Now: 16px from 380px, 15px with px-4 from
+    // 355px, 14px with px-2 under 355px (Tailwind's max-[355px] is width < 355px); the arrow is there at every width.
+    await installMocks(page);
+    for (const w of [320, 354, 355, 360, 375, 379, 380, 390]) {
+      await page.setViewportSize({ width: w, height: 660 });
+      await page.goto('/index.html');
+      await reveal(page);
+      await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
+      expect(await expectArrow(page), `plan label fits at ${w}`).toBe(COPY.BUTTON);
+      await page.fill('#invest-range', '0'); // no date: the longer save label
+      await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
+      expect(await expectArrow(page), `save label fits at ${w}`).toBe(COPY.BUTTON_SAVE);
+      const m = await page.evaluate(() => {
+        const b = document.getElementById('join-waitlist-btn'); const cs = getComputedStyle(b);
+        return { font: parseFloat(cs.fontSize), pad: parseFloat(cs.paddingLeft), height: b.getBoundingClientRect().height };
+      });
+      expect(m.font, `font at ${w}`).toBe(w >= 380 ? 16 : w >= 355 ? 15 : 14);
+      expect(m.pad, `padding at ${w}`).toBe(w >= 355 ? 16 : 8);
+      expect(m.height, `tap target at ${w}`).toBeGreaterThanOrEqual(48);
+    }
   });
 
   test('FRED stands beside the age at phone and desktop widths: one inline SVG right of the digits, feet on the bottom of the "years old" line, as tall as the column, decorative, still during the count-up, and gone with the age', async ({ page }) => {
@@ -537,8 +566,8 @@ test.describe('the capture section', () => {
     await expect(pig).toHaveAttribute('aria-hidden', 'true');
     await expect(pig).toHaveAttribute('focusable', 'false');
     await expect(page.locator('#result-card img')).toHaveCount(0);
-    await expect(page.locator('#result-card svg')).toHaveCount(3); // this one, the button's and the hidden at-target state's
-    await expect(page.locator('#result-card svg:visible')).toHaveCount(2);
+    await expect(page.locator('#result-card svg')).toHaveCount(2); // this one and the hidden at-target state's (none on the button since 2026-10-29)
+    await expect(page.locator('#result-card svg:visible')).toHaveCount(1);
     for (const viewport of [PHONE, { width: 1280, height: 900 }]) {
       await page.setViewportSize(viewport);
       const m = await page.evaluate(() => {
@@ -571,11 +600,11 @@ test.describe('the capture section', () => {
     expect(Math.abs(big.heightDiff), 'as tall as the column at a 20px root font size').toBeLessThanOrEqual(1);
     expect(Math.abs(big.feet)).toBeLessThanOrEqual(1);
     await page.evaluate(() => document.querySelector('style:last-of-type').remove());
-    // No date, no age, no pig beside it; the button keeps its own.
+    // No date, no age, no pig beside it; the button is label + arrow.
     await page.fill('#invest-range', '0');
     await expect(page.locator('#infeasible-block')).toBeVisible();
     await expect(pig).toBeHidden();
-    expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
+    expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE);
   });
 
   test('anchor links to #join land on the form', async ({ page }) => {
@@ -605,7 +634,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
     await expect(page.locator('#capture-support')).toBeHidden();
     await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
-    expect(await expectPig(page)).toBe(COPY.BUTTON_SAVE);
+    expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE);
     await expect(page.locator('#result-assumptions')).toBeHidden();
     await expect(page.locator('#result-fineprint')).toHaveText(COPY.DISCLAIMER);
     await expect(page.locator('input[type="email"]')).toHaveCount(1);
@@ -617,7 +646,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#result-fineprint')).toContainText('Assumes a 10%');
   });
 
-  test('the at-target state keeps the form with the approved heading, no comparison and no pill', async ({ page }) => {
+  test('the at-target state is the dated layout: the comparison with "Today" and this month on FRED\'s side, the at-target sentence in place of the stakes line and the headline, the save button, no pill', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#retire-range', '1000');
@@ -625,14 +654,51 @@ test.describe('the capture section', () => {
     await reveal(page);
     await expect(page.locator('#at-target-block')).toBeVisible();
     await expect(page.locator('#at-target-age')).toHaveText('30');
-    await expect(page.locator('#compare')).toBeHidden();
-    await expect(page.locator('#compare-right-date')).toBeHidden();
-    await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
+    await expect(page.locator('#at-target-caption')).toHaveText(COPY.YEARS_OLD);
+    const thisMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    await expect(page.locator('#compare')).toBeVisible();
+    await expect(page.locator('#compare-left-label')).toHaveText(COPY.COMPARE_LEFT_LABEL);
+    await expect(page.locator('#compare-left-age')).toHaveText(COPY.COMPARE_LEFT_NEVER);
+    await expect(page.locator('#compare-left-caption')).toHaveText(COPY.COMPARE_LEFT_CAPTION_NEVER);
+    await expect(page.locator('#compare-right-label')).toHaveText(COPY.COMPARE_RIGHT_LABEL);
+    await expect(page.locator('#compare-right-age')).toHaveText('Today');
+    await expect(page.locator('#compare-right-date')).toBeVisible();
+    await expect(page.locator('#compare-right-date')).toHaveText(thisMonth);
+    // "Today" in the age slot and the month in the date slot keep those cells' own styles, and fit.
+    const cell = await page.evaluate(() => {
+      const a = document.getElementById('compare-right-age'), d = document.getElementById('compare-right-date');
+      const box = a.parentElement.getBoundingClientRect(); const cs = getComputedStyle(a.parentElement);
+      const inner = box.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const range = document.createRange(); range.selectNodeContents(a); const w = range.getBoundingClientRect().width;
+      return { ageStyle: [getComputedStyle(a).fontSize, getComputedStyle(a).fontWeight, getComputedStyle(a).color], dateStyle: [getComputedStyle(d).fontSize, getComputedStyle(d).fontWeight, getComputedStyle(d).color], fits: w <= inner, lines: Math.round(a.getBoundingClientRect().height / parseFloat(getComputedStyle(a).fontSize)) };
+    });
+    expect(cell.ageStyle).toEqual(['28px', '900', 'rgb(19, 91, 236)']);
+    expect(cell.dateStyle).toEqual(['11.5px', '700', 'rgb(19, 91, 236)']);
+    expect(cell.fits).toBe(true);
+    expect(cell.lines).toBe(1);
+    await expect(page.locator('#stakes-line')).toBeHidden();
+    await expect(page.locator('#capture-heading')).toBeHidden();
+    await expect(page.locator('#capture-support')).toBeVisible();
+    await expect(page.locator('#capture-support')).toContainText('Based on your inputs');
     await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
     await expect(page.locator('#capture-email')).toBeVisible();
+    // The at-target sentence sits where the stakes line and the headline would: between the comparison and the form.
+    const order = await page.evaluate(() => ['compare', 'capture-support', 'capture-email'].map((id) => document.getElementById(id).getBoundingClientRect().top));
+    expect(order[0]).toBeLessThan(order[1]);
+    expect(order[1]).toBeLessThan(order[2]);
+    // Out of the state and back: the headline returns, then goes again.
+    await page.fill('#retire-range', '1250');
+    await expect(page.locator('#feasible-block')).toBeVisible();
+    await expect(page.locator('#capture-heading')).toBeVisible();
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
+    await expect(page.locator('#compare-right-age')).toHaveText('31');
+    await page.fill('#retire-range', '1000');
+    await expect(page.locator('#at-target-block')).toBeVisible();
+    await expect(page.locator('#capture-heading')).toBeHidden();
+    await expect(page.locator('#compare-right-age')).toHaveText('Today');
   });
 
-  test('at the target the $1m+ FRED stands right of the current age: 1.35x the column, centred on it, inside the card at every width, still during the count-up, and gone with the state', async ({ page }) => {
+  test('at the target the $1m+ FRED stands right of the current age exactly as the presenter does: as tall as the column, feet on the caption line, inside the card at every width, still during the count-up, the row the same height as the dated one, and gone with the state', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#retire-range', '1000');
@@ -658,7 +724,7 @@ test.describe('the capture section', () => {
     await expect(pig).toHaveAttribute('focusable', 'false');
     await expect(page.locator('#result-pig')).toBeHidden(); // the presenter goes with the feasible block
     await expect(page.locator('#result-card img')).toHaveCount(0);
-    await expect(page.locator('#result-card svg:visible')).toHaveCount(2); // this one and the button's
+    await expect(page.locator('#result-card svg:visible')).toHaveCount(1); // this one
     for (const viewport of [{ width: 320, height: 660 }, PHONE, { width: 1280, height: 900 }]) {
       await page.setViewportSize(viewport);
       const m = await page.evaluate(() => {
@@ -667,22 +733,42 @@ test.describe('the capture section', () => {
         const cs = getComputedStyle(document.getElementById('result-card'));
         const col = document.getElementById('at-target-age').parentElement.getBoundingClientRect(); // the age + caption column
         return {
-          ratio: p.height / col.height, gap: p.left - col.right, centred: (col.top + col.bottom) / 2 - (p.top + p.bottom) / 2,
+          heightDiff: p.height - (y.bottom - a.top), feet: p.bottom - y.bottom, gap: p.left - col.right,
           belowEyebrow: Math.min(p.top, a.top) - e.bottom,
           insideContent: p.right <= c.right - parseFloat(cs.paddingRight) + 0.5 && col.left >= c.left + parseFloat(cs.paddingLeft) - 0.5,
           offCentre: (col.left - c.left) - (c.right - p.right), captionUnderDigits: (a.left + a.right) / 2 - (y.left + y.right) / 2, pigHeight: p.height,
+          rowHeight: document.getElementById('at-target-age-row').getBoundingClientRect().height, compareTop: document.getElementById('compare').getBoundingClientRect().top - c.top,
+          colLeft: col.left - c.left, pigWidth: p.width,
+          today: (() => { const ra = document.getElementById('compare-right-age'); const box = ra.parentElement.getBoundingClientRect(); const pcs = getComputedStyle(ra.parentElement); const range = document.createRange(); range.selectNodeContents(ra); return { fits: range.getBoundingClientRect().width <= box.width - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight), lines: range.getClientRects().length }; })(),
         };
       });
       const w = viewport.width;
-      expect(Math.abs(m.ratio - 1.35), `1.35x the column at ${w}`).toBeLessThanOrEqual(0.01);
-      expect(m.gap, `gap at ${w}`).toBeGreaterThanOrEqual(6);
-      expect(m.gap, `gap at ${w}`).toBeLessThanOrEqual(12);
-      expect(Math.abs(m.centred), `centred on the column at ${w}`).toBeLessThanOrEqual(1);
+      expect(Math.abs(m.heightDiff), `as tall as the column at ${w}`).toBeLessThanOrEqual(1); // like the presenter: adds no height
+      expect(Math.abs(m.feet), `feet on the caption line at ${w}`).toBeLessThanOrEqual(1);
+      expect(m.gap, `gap at ${w}`).toBeGreaterThanOrEqual(8);
+      expect(m.gap, `gap at ${w}`).toBeLessThanOrEqual(20);
       expect(m.belowEyebrow, `eyebrow clearance at ${w}`).toBeGreaterThanOrEqual(4);
       expect(m.insideContent, `inside the card's content box at ${w}`).toBe(true);
       expect(Math.abs(m.offCentre), `group centred at ${w}`).toBeLessThanOrEqual(2);
       expect(Math.abs(m.captionUnderDigits), `caption under the digits at ${w}`).toBeLessThanOrEqual(2);
-      expect(m.pigHeight, `legible at ${w}`).toBeGreaterThanOrEqual(100);
+      expect(m.pigHeight, `legible at ${w}`).toBeGreaterThanOrEqual(80);
+      expect(m.today.fits, `"Today" fits the right cell at ${w}`).toBe(true);
+      expect(m.today.lines, `"Today" on one line at ${w}`).toBe(1);
+      // Seamless across the boundary: one tick of income later the result is dated (31) and the presenter is
+      // back, and the row, the digits and the comparison sit exactly where they were (the diamond pig's box is
+      // the presenter's: same height and the same width, so the centred group does not move).
+      await page.fill('#retire-range', '1250');
+      await expect(page.locator('#result-age')).toHaveText('31');
+      const dated = await page.evaluate(() => {
+        const c = document.getElementById('result-card').getBoundingClientRect();
+        return { rowHeight: document.getElementById('result-age-row').getBoundingClientRect().height, compareTop: document.getElementById('compare').getBoundingClientRect().top - c.top, colLeft: document.getElementById('result-age').parentElement.getBoundingClientRect().left - c.left, pigWidth: document.getElementById('result-pig').getBoundingClientRect().width };
+      });
+      expect(Math.abs(dated.rowHeight - m.rowHeight), `row height across the boundary at ${w}`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(dated.compareTop - m.compareTop), `comparison position across the boundary at ${w}`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(dated.colLeft - m.colLeft), `digits in the same place across the boundary at ${w}`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(dated.pigWidth - m.pigWidth), `the two pigs' boxes are the same width at ${w}`).toBeLessThanOrEqual(0.5);
+      await page.fill('#retire-range', '1000');
+      await expect(page.locator('#at-target-block')).toBeVisible();
     }
     await page.setViewportSize(PHONE);
     // Sliding the income out of reach brings the dated result and the presenter back; this pig goes.
@@ -690,7 +776,32 @@ test.describe('the capture section', () => {
     await expect(page.locator('#feasible-block')).toBeVisible();
     await expect(pig).toBeHidden();
     await expect(page.locator('#result-pig')).toBeVisible();
-    await expect(page.locator('#result-card svg:visible')).toHaveCount(2);
+    await expect(page.locator('#result-card svg:visible')).toHaveCount(1);
+  });
+
+  test('"FRED exists to close the gap." is one line on every phone: the heading follows the card\'s width up to its 22px, 26px from sm', async ({ page }) => {
+    await installMocks(page);
+    await page.goto('/index.html');
+    await reveal(page);
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
+    for (const width of [320, 335, 360, 375, 390, 400, 412, 430, 639, 640, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      const m = await page.evaluate(() => {
+        const h = document.getElementById('capture-heading'); const c = document.getElementById('result-card'); const cs = getComputedStyle(c);
+        const inner = c.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const range = document.createRange(); range.selectNodeContents(h);
+        return { lines: range.getClientRects().length, font: parseFloat(getComputedStyle(h).fontSize), textWidth: range.getBoundingClientRect().width, inner };
+      });
+      expect(m.lines, `one line at ${width}`).toBe(1);
+      expect(m.textWidth, `inside the card at ${width}`).toBeLessThanOrEqual(m.inner);
+      if (width >= 640) expect(m.font, `26px from sm at ${width}`).toBe(26);
+      else {
+        // min(6.7cqw, 22px): 6.7% of the card's content box, capped at 22px (the cap from 412 on in this list).
+        expect(m.font, `min(6.7cqw, 22px) at ${width}`).toBeCloseTo(Math.min(0.067 * m.inner, 22), 1);
+        expect(m.font).toBeGreaterThanOrEqual(16);
+        if (width >= 412) expect(m.font, `22px on a wide phone at ${width}`).toBe(22);
+      }
+    }
   });
 
   test('the submit flow is unchanged: the pending block replaces the form inside the reveal card and the note goes with the form', async ({ page }) => {
@@ -714,7 +825,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
     await expect(page.locator('#capture-cta-note')).toBeVisible();
     await expect(page.locator('#btn-loading')).toBeHidden();
-    expect(await expectPig(page)).toBe(COPY.BUTTON);
+    expect(await expectArrow(page)).toBe(COPY.BUTTON);
   });
 
   test('a returning visitor gets the pill, the comparison and the success state mounted on load for the current inputs', async ({ page }) => {
