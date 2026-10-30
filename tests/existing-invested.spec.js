@@ -248,16 +248,27 @@ test.describe('at-target state', () => {
 
     const block = page.locator('#at-target-block');
     await expect(block).toBeVisible();
-    const headline = (await page.locator('#at-target-headline').textContent()).trim();
+    // Since 2026-10-29 the state mirrors the dated reveal: the approved kicker, the visitor's current age
+    // (the default 30 here) counted up in the age's type, "years old. Today.", and the body sentence.
+    await expect(page.locator('#at-target-eyebrow')).toHaveText('You could be free at');
+    await expect(page.locator('#at-target-age')).toHaveText('30');
+    await expect(page.locator('#at-target-age')).not.toHaveAttribute('aria-hidden', 'true'); // the count-up has landed
+    const caption = (await page.locator('#at-target-caption').textContent()).trim();
     const body = (await page.locator('#at-target-body').textContent()).trim();
-    expect(headline.length).toBeGreaterThan(0);
+    expect(caption).toMatch(/^years old\./);
     for (const anchor of AT_TARGET_ANCHORS) expect(body).toMatch(anchor);
-    expect(headline + body).not.toContain('—');
+    expect(caption + body).not.toContain('—');
+    await expect(page.locator('#at-target-headline')).toHaveCount(0); // "You're already there." is gone
     await expect(page.locator('#feasible-block')).toBeHidden();
     await expect(page.locator('#infeasible-block')).toBeHidden();
     await expect(page.locator('#result-card')).toContainText('Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.');
     await expect(page.locator('#capture-email')).toBeVisible();
-    await expect(page.locator('#result-sr')).toHaveText(headline + ' ' + body);
+    await expect(page.locator('#result-sr')).toHaveText('You could be free at 30 ' + caption + ' ' + body);
+    // The age is the slider's, live.
+    await page.fill('#age-range', '41');
+    await expect(page.locator('#at-target-age')).toHaveText('41');
+    await expect(page.locator('#result-sr')).toHaveText('You could be free at 41 ' + caption + ' ' + body);
+    await page.fill('#age-range', '30');
 
     // Raising the income out of reach of the balance restores the dated result live.
     await page.fill('#retire-range', '1250'); // target $375,000

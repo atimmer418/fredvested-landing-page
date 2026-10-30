@@ -537,7 +537,8 @@ test.describe('the capture section', () => {
     await expect(pig).toHaveAttribute('aria-hidden', 'true');
     await expect(pig).toHaveAttribute('focusable', 'false');
     await expect(page.locator('#result-card img')).toHaveCount(0);
-    await expect(page.locator('#result-card svg')).toHaveCount(2); // this one and the button's
+    await expect(page.locator('#result-card svg')).toHaveCount(3); // this one, the button's and the hidden at-target state's
+    await expect(page.locator('#result-card svg:visible')).toHaveCount(2);
     for (const viewport of [PHONE, { width: 1280, height: 900 }]) {
       await page.setViewportSize(viewport);
       const m = await page.evaluate(() => {
@@ -623,11 +624,73 @@ test.describe('the capture section', () => {
     await page.fill('#existing-range', '48'); // $300,000, the target
     await reveal(page);
     await expect(page.locator('#at-target-block')).toBeVisible();
+    await expect(page.locator('#at-target-age')).toHaveText('30');
     await expect(page.locator('#compare')).toBeHidden();
     await expect(page.locator('#compare-right-date')).toBeHidden();
     await expect(page.locator('#capture-heading')).toHaveText(NO_DATE_HEADING);
     await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
     await expect(page.locator('#capture-email')).toBeVisible();
+  });
+
+  test('at the target the $1m+ FRED stands right of the current age: 1.35x the column, centred on it, inside the card at every width, still during the count-up, and gone with the state', async ({ page }) => {
+    await installMocks(page);
+    await page.goto('/index.html');
+    await page.fill('#retire-range', '1000');
+    await page.fill('#existing-range', '48'); // $300,000, the target
+    await page.click('#reveal-btn');
+    // The row must not shift while the digits count up: sample the pig's left edge every frame from the click.
+    const motion = await page.evaluate(() => new Promise((resolve) => {
+      const lefts = []; const t0 = performance.now();
+      (function sample() {
+        const r = document.getElementById('at-target-pig').getBoundingClientRect();
+        if (r.width > 0) lefts.push(r.left);
+        if (performance.now() - t0 < 1300) requestAnimationFrame(sample); else resolve({ min: Math.min(...lefts), max: Math.max(...lefts), frames: lefts.length });
+      })();
+    }));
+    expect(motion.frames).toBeGreaterThan(30);
+    expect(motion.max - motion.min, 'pig held still during the count-up').toBeLessThanOrEqual(0.5);
+    await expect(page.locator('#capture-email')).toBeVisible();
+    await expect(page.locator('#at-target-age')).toHaveText('30');
+    await expect(page.locator('#at-target-age')).not.toHaveAttribute('aria-hidden', 'true');
+    const pig = page.locator('#at-target-block #at-target-age-row > #at-target-pig');
+    await expect(pig).toHaveCount(1);
+    await expect(pig).toHaveAttribute('aria-hidden', 'true');
+    await expect(pig).toHaveAttribute('focusable', 'false');
+    await expect(page.locator('#result-pig')).toBeHidden(); // the presenter goes with the feasible block
+    await expect(page.locator('#result-card img')).toHaveCount(0);
+    await expect(page.locator('#result-card svg:visible')).toHaveCount(2); // this one and the button's
+    for (const viewport of [{ width: 320, height: 660 }, PHONE, { width: 1280, height: 900 }]) {
+      await page.setViewportSize(viewport);
+      const m = await page.evaluate(() => {
+        const g = (id) => document.getElementById(id).getBoundingClientRect();
+        const p = g('at-target-pig'), a = g('at-target-age'), y = g('at-target-caption'), e = g('at-target-eyebrow'), c = g('result-card');
+        const cs = getComputedStyle(document.getElementById('result-card'));
+        const col = document.getElementById('at-target-age').parentElement.getBoundingClientRect(); // the age + caption column
+        return {
+          ratio: p.height / col.height, gap: p.left - col.right, centred: (col.top + col.bottom) / 2 - (p.top + p.bottom) / 2,
+          belowEyebrow: Math.min(p.top, a.top) - e.bottom,
+          insideContent: p.right <= c.right - parseFloat(cs.paddingRight) + 0.5 && col.left >= c.left + parseFloat(cs.paddingLeft) - 0.5,
+          offCentre: (col.left - c.left) - (c.right - p.right), captionUnderDigits: (a.left + a.right) / 2 - (y.left + y.right) / 2, pigHeight: p.height,
+        };
+      });
+      const w = viewport.width;
+      expect(Math.abs(m.ratio - 1.35), `1.35x the column at ${w}`).toBeLessThanOrEqual(0.01);
+      expect(m.gap, `gap at ${w}`).toBeGreaterThanOrEqual(6);
+      expect(m.gap, `gap at ${w}`).toBeLessThanOrEqual(12);
+      expect(Math.abs(m.centred), `centred on the column at ${w}`).toBeLessThanOrEqual(1);
+      expect(m.belowEyebrow, `eyebrow clearance at ${w}`).toBeGreaterThanOrEqual(4);
+      expect(m.insideContent, `inside the card's content box at ${w}`).toBe(true);
+      expect(Math.abs(m.offCentre), `group centred at ${w}`).toBeLessThanOrEqual(2);
+      expect(Math.abs(m.captionUnderDigits), `caption under the digits at ${w}`).toBeLessThanOrEqual(2);
+      expect(m.pigHeight, `legible at ${w}`).toBeGreaterThanOrEqual(100);
+    }
+    await page.setViewportSize(PHONE);
+    // Sliding the income out of reach brings the dated result and the presenter back; this pig goes.
+    await page.fill('#retire-range', '1250');
+    await expect(page.locator('#feasible-block')).toBeVisible();
+    await expect(pig).toBeHidden();
+    await expect(page.locator('#result-pig')).toBeVisible();
+    await expect(page.locator('#result-card svg:visible')).toHaveCount(2);
   });
 
   test('the submit flow is unchanged: the pending block replaces the form inside the reveal card and the note goes with the form', async ({ page }) => {
