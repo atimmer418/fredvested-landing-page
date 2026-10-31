@@ -132,15 +132,18 @@
   //   N = left-cell age (65, shown as 65+) minus the plan's own rounded age, whole year for whole year.
   //   N >= STAKES_MIN_YEARS (1): the comparison shows with the plan's age on the right, source 'plan'.
   //   Else (the plan's age is 65 or later) the comparison is hidden: source 'hidden', years null.
-  // Returns { left, right, years, source } for a feasible result, null otherwise. The lever rung
+  // Returns { left, right, years, source } for a feasible result or an at-target one, null for
+  // the no-date states. At the target (2026-10-30) nothing is projected and the freedom age is
+  // the age entered, so the plan's age is that age and N is the years between it and 65: the
+  // same line ("That gap is N years of your life.") the dated reveal shows. The lever rung
   // of 2026-10-25 (the right cell became "This plan + $step/mo" when the plan alone was under
   // two years) went on 2026-10-29: the cell is always the visitor's own plan.
   function stakes(inputs, projectFn) {
     const run = projectFn || project;
     const current = run(inputs);
-    if (!current.feasible) return null;
+    if (!current.feasible && !current.atTarget) return null;
     const left = doNothingScenario(inputs, run);
-    const planAge = roundAge(current.ageAtFreedom);
+    const planAge = roundAge(current.atTarget ? inputs.age : current.ageAtFreedom);
     const planYears = left.age - planAge;
     if (planYears >= STAKES_MIN_YEARS) {
       return { left: left, right: { age: planAge, step: null }, years: planYears, source: 'plan' };

@@ -202,7 +202,14 @@ test.describe('stakes (65+ against the plan)', () => {
     const s = spy();
     assert.equal(P.stakes({ ...CASES.A, invest: 0 }, s), null);
     assert.equal(s.calls.length, 1);
-    assert.equal(P.stakes({ age: 30, invest: 2000, retire: 1000, existing: 300000, ratePct: 10 }, spy()), null);
+  });
+
+  test('at the target: the plan age is the age entered, N the years to 65, after one projection call (2026-10-30)', () => {
+    const s = spy();
+    const inputs = { age: 30, invest: 2000, retire: 1000, existing: 300000, ratePct: 10 };
+    assert.deepEqual(P.stakes(inputs, s), { left: { age: 65, reaches: false }, right: { age: 30, step: null }, years: 35, source: 'plan' });
+    assert.deepEqual(s.calls, [inputs]);
+    assert.deepEqual(P.stakes({ ...inputs, age: 41 }, spy()), { left: { age: 65, reaches: false }, right: { age: 41, step: null }, years: 24, source: 'plan' });
   });
 });
 

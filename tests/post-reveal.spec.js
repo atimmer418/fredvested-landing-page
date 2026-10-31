@@ -34,6 +34,8 @@ const COPY = {
   HEADLINE_STILL: `This age isn${RSQUO}t set in stone.`,
   SUB_STILL: `Save it and we${RSQUO}ll show you what moves it the day FRED opens.`,
   BUTTON_SAVE: 'Save my Freedom Date',
+  // The at-target sub line (2026-10-30 trim of the 2026-10-22 attorney-pending sentence).
+  AT_TARGET_BODY: 'Based on your inputs, you meet the target. Not an assessment of whether you can retire.',
   EMAIL_LABEL: 'Email',
   DISCLAIMER: 'Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.',
 };
@@ -512,7 +514,7 @@ test.describe('the capture section', () => {
     await page.fill('#retire-range', '1000');
     await page.fill('#existing-range', '48'); // $300,000, the target
     await expect(page.locator('#at-target-block')).toBeVisible();
-    expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE); // at target
+    expect(await expectArrow(page)).toBe(COPY.BUTTON); // at target: the same stakes, so the same button (2026-10-30)
     await expect(page.locator('input[type="email"]')).toHaveCount(1);
   });
 
@@ -646,7 +648,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#result-fineprint')).toContainText('Assumes a 10%');
   });
 
-  test('the at-target state is the dated layout: the comparison with "Today" and this month on FRED\'s side, the at-target sentence in place of the stakes line and the headline, the save button, no pill', async ({ page }) => {
+  test('the at-target state is the dated layout: the comparison with "Today" and this month on FRED\'s side, the same stakes line (years to 65) and headline, the at-target sentence as a two-line sub, the same button, no pill', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#retire-range', '1000');
@@ -676,29 +678,48 @@ test.describe('the capture section', () => {
     expect(cell.dateStyle).toEqual(['11.5px', '700', 'rgb(19, 91, 236)']);
     expect(cell.fits).toBe(true);
     expect(cell.lines).toBe(1);
-    await expect(page.locator('#stakes-line')).toBeHidden();
-    await expect(page.locator('#capture-heading')).toBeHidden();
-    await expect(page.locator('#capture-support')).toBeVisible();
-    await expect(page.locator('#capture-support')).toContainText('Based on your inputs');
-    await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
-    await expect(page.locator('#capture-email')).toBeVisible();
-    // The at-target sentence sits where the stakes line and the headline would: between the comparison and the form.
-    const order = await page.evaluate(() => ['compare', 'capture-support', 'capture-email'].map((id) => document.getElementById(id).getBoundingClientRect().top));
-    expect(order[0]).toBeLessThan(order[1]);
-    expect(order[1]).toBeLessThan(order[2]);
-    // Out of the state and back: the headline returns, then goes again.
-    await page.fill('#retire-range', '1250');
-    await expect(page.locator('#feasible-block')).toBeVisible();
+    // The same stakes line and headline as the dated reveal (Andrew, 2026-10-30): N is 65 minus the age entered
+    // (30 here), from the same stakes() in projection.js; the at-target sentence is the sub line; the same button.
+    await expect(page.locator('#stakes-line')).toBeVisible();
+    await expect(page.locator('#stakes-line')).toHaveText(stakes(35));
     await expect(page.locator('#capture-heading')).toBeVisible();
     await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
+    await expect(page.locator('#capture-support')).toBeVisible();
+    await expect(page.locator('#capture-support')).toHaveText(COPY.AT_TARGET_BODY);
+    await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
+    expect(await expectArrow(page)).toBe(COPY.BUTTON);
+    await expect(page.locator('#capture-email')).toBeVisible();
+    // Stacked as the dated reveal is: comparison, stakes line, headline, sub, form.
+    const order = await page.evaluate(() => ['compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email'].map((id) => document.getElementById(id).getBoundingClientRect().top));
+    for (let i = 1; i < order.length; i++) expect(order[i - 1], `order at ${i}`).toBeLessThan(order[i]);
+    // The sentence was trimmed to hold to two lines in the slot on a 390 phone, as SUB does (the 2026-10-22
+    // sentence ran four); and the heading is one line there like the dated state's.
+    await page.setViewportSize(PHONE);
+    const lines = await page.evaluate(() => {
+      const n = (id) => { const e = document.getElementById(id); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); };
+      return { support: n('capture-support'), heading: n('capture-heading') };
+    });
+    expect(lines.support).toBeLessThanOrEqual(2);
+    expect(lines.heading).toBe(1);
+    // Out of the state and back: the age and the plan's own N return, then "Today" and the years to 65 again.
+    await page.fill('#retire-range', '1250');
+    await expect(page.locator('#feasible-block')).toBeVisible();
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE);
     await expect(page.locator('#compare-right-age')).toHaveText('31');
+    await expect(page.locator('#stakes-line')).toHaveText(stakes(34));
+    await expect(page.locator('#capture-support')).toHaveText(COPY.SUB);
     await page.fill('#retire-range', '1000');
     await expect(page.locator('#at-target-block')).toBeVisible();
-    await expect(page.locator('#capture-heading')).toBeHidden();
     await expect(page.locator('#compare-right-age')).toHaveText('Today');
+    await expect(page.locator('#stakes-line')).toHaveText(stakes(35));
+    await expect(page.locator('#capture-support')).toHaveText(COPY.AT_TARGET_BODY);
+    // The years to 65 follow the age entered.
+    await page.fill('#age-range', '41');
+    await expect(page.locator('#at-target-age')).toHaveText('41');
+    await expect(page.locator('#stakes-line')).toHaveText(stakes(24));
   });
 
-  test('at the target the $1m+ FRED stands right of the current age exactly as the presenter does: as tall as the column, feet on the caption line, inside the card at every width, still during the count-up, the row the same height as the dated one, and gone with the state', async ({ page }) => {
+  test('at the target the $100k-$1m FRED stands right of the current age exactly as the presenter does: as tall as the column, feet on the caption line, inside the card at every width, still during the count-up, the row the same height as the dated one, and gone with the state', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#retire-range', '1000');
@@ -755,8 +776,8 @@ test.describe('the capture section', () => {
       expect(m.today.fits, `"Today" fits the right cell at ${w}`).toBe(true);
       expect(m.today.lines, `"Today" on one line at ${w}`).toBe(1);
       // Seamless across the boundary: one tick of income later the result is dated (31) and the presenter is
-      // back, and the row, the digits and the comparison sit exactly where they were (the diamond pig's box is
-      // the presenter's: same height and the same width, so the centred group does not move).
+      // back, and the row, the digits and the comparison sit exactly where they were (this pig's box is the
+      // presenter's: same height and the same width, so the centred group does not move).
       await page.fill('#retire-range', '1250');
       await expect(page.locator('#result-age')).toHaveText('31');
       const dated = await page.evaluate(() => {

@@ -17,10 +17,10 @@ const { installMocks, forceAnalytics, events, submitWaitlist } = require('./help
 
 const LABEL = 'I already have invested';
 const PARENTHETICAL = '(in personal/retirement accounts)';
-// The at-target copy is still being worded by Andrew in index.html (2026-10-23) and awaits
-// attorney approval, so the test checks its legal anchors rather than the exact sentences;
-// pin the exact text here once counsel has signed it off.
-const AT_TARGET_ANCHORS = [/hypothetical illustration/, /not .*whether you can retire/];
+// The at-target sentence awaits attorney approval (the 2026-10-22 sentence, trimmed by Andrew on
+// 2026-10-30 to two lines in the sub line's slot), so the test checks its legal anchors rather than
+// the exact sentence; pin the exact text here once counsel has signed it off.
+const AT_TARGET_ANCHORS = [/^Based on your inputs/, /[Nn]ot an assessment of whether you can retire\./];
 
 // Same mapping as the page script. Ticks 0..40 are $2,500 steps, 41..76 are $25,000 steps,
 // 77..112 are $250,000 steps; dollarsToTick is the nearest tick, halfway rounding up.
@@ -250,8 +250,8 @@ test.describe('at-target state', () => {
     await expect(block).toBeVisible();
     // Since 2026-10-29 the state is the dated reveal's layout: the approved kicker, the visitor's current age
     // (the default 30 here) counted up in the age's type, "years old", the comparison with "Today" and the
-    // current month and year on FRED's side, and the at-target sentence where the stakes line and the
-    // headline would be.
+    // current month and year on FRED's side, then (2026-10-30) the same stakes line and headline as the dated
+    // reveal, N being the years between the age entered and 65, and the at-target sentence as the sub line.
     await expect(page.locator('#at-target-eyebrow')).toHaveText('You could be free at');
     await expect(page.locator('#at-target-age')).toHaveText('30');
     await expect(page.locator('#at-target-age')).not.toHaveAttribute('aria-hidden', 'true'); // the count-up has landed
@@ -261,8 +261,11 @@ test.describe('at-target state', () => {
     await expect(page.locator('#compare-left-age')).toHaveText('65+');
     await expect(page.locator('#compare-right-age')).toHaveText('Today');
     await expect(page.locator('#compare-right-date')).toHaveText(thisMonth);
-    await expect(page.locator('#stakes-line')).toBeHidden();
-    await expect(page.locator('#capture-heading')).toBeHidden();
+    const gap = (age) => `That gap is ${65 - age} years of your life.`;
+    await expect(page.locator('#stakes-line')).toBeVisible();
+    await expect(page.locator('#stakes-line')).toHaveText(gap(30));
+    await expect(page.locator('#capture-heading')).toBeVisible();
+    await expect(page.locator('#capture-heading')).toHaveText('FRED exists to close the gap.');
     const body = (await page.locator('#capture-support').textContent()).trim();
     for (const anchor of AT_TARGET_ANCHORS) expect(body).toMatch(anchor);
     expect(body).not.toContain('—');
@@ -271,11 +274,14 @@ test.describe('at-target state', () => {
     await expect(page.locator('#infeasible-block')).toBeHidden();
     await expect(page.locator('#result-card')).toContainText('Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.');
     await expect(page.locator('#capture-email')).toBeVisible();
-    const sr = (age) => `You could be free at ${age} years old. Do nothing: 65+. On FRED\u2019s route: Today, ${thisMonth}. ${body}`;
+    // The announcement ends with the disclosure sentence, as the dated reveal's does (the trimmed sentence no longer says "hypothetical").
+    const disclaimer = (await page.locator('#result-disclaimer').textContent()).trim();
+    const sr = (age) => `You could be free at ${age} years old. Do nothing: 65+. On FRED\u2019s route: Today, ${thisMonth}. ${gap(age)} ${body} ${disclaimer}`;
     await expect(page.locator('#result-sr')).toHaveText(sr(30));
-    // The age is the slider's, live.
+    // The age is the slider's, live, and so is the gap.
     await page.fill('#age-range', '41');
     await expect(page.locator('#at-target-age')).toHaveText('41');
+    await expect(page.locator('#stakes-line')).toHaveText(gap(41));
     await expect(page.locator('#result-sr')).toHaveText(sr(41));
     await page.fill('#age-range', '30');
 
@@ -361,8 +367,10 @@ test.describe('payload and analytics', () => {
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
 
     const all = await events(page);
-    expect(named(all, 'Freedom Date Revealed')[0].props).toMatchObject({ existing_invested_band: '250k-1m', freedom_age_band: 'at_target' });
-    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ revealed: 'yes', freedom_age_band: 'at_target' });
+    // The card shows the comparison and the stakes line in this state since 2026-10-30, but nothing is projected,
+    // so the stake bands stay hidden on both events (FREDdocs/analytics-events.md).
+    expect(named(all, 'Freedom Date Revealed')[0].props).toMatchObject({ existing_invested_band: '250k-1m', freedom_age_band: 'at_target', stake_years_band: 'hidden', stake_source: 'hidden' });
+    expect(named(all, 'Waitlist Submitted')[0].props).toMatchObject({ revealed: 'yes', freedom_age_band: 'at_target', stake_years_band: 'hidden', stake_source: 'hidden' });
     const json = JSON.stringify(all);
     expect(json).not.toContain('300000');
   });
