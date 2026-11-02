@@ -391,8 +391,8 @@
       <div id="capture">
         <!-- The pitch goes with the form: hidden once a signup is in (success / pending), back with "Use a different one". -->
         <div id="capture-pitch">
-          <!-- text-balance (already compiled for the subhead): the 65-and-later line is two lines on phones and
-               would otherwise leave "is." alone on the second; the dated line is one line, where it does nothing. -->
+          <!-- text-balance (already compiled for the subhead): where the 65-and-later line wraps (320px) it would
+               otherwise leave "is." alone on the second line; on one line it does nothing. -->
           <p id="stakes-line" class="mt-3 text-balance text-[14px] font-semibold text-[#e3edff]" hidden></p>
           <!-- One line on every phone (Andrew, 2026-10-29: "FRED exists to close the gap." was one line on his phone
                and two on narrower ones). The size follows the card's content box (#result-card is a container, so
@@ -567,11 +567,12 @@
     // "Save it and we'll show you what moves it the day FRED opens." / "Save my Freedom Date" of 2026-10-29, which
     // hid the comparison and read as an apology: a 66 is still a date). Same card as the dated reveal: the
     // comparison with COMPARE_LEFT_NO_DATE on the left and the plan's age and date on the right, then these three
-    // in the stakes, heading and sub slots and the dated BUTTON. {AGE} is the plan's rounded age and {DATE} its month
-    // and year, both as the right cell shows them (Andrew's wording, 2026-11-01). Measured 2026-11-01: the stakes line
-    // is two lines at 320 and 390 and one from 640 (the dated one is one line), the heading one line at 320 and 390,
-    // the sub two lines at 390.
-    STAKES_LATE: "Hope isn\u2019t a plan with a timeline. {AGE}, {DATE} is.",
+    // in the stakes, heading and sub slots and the dated BUTTON. {DATE} is the plan's month and year as the right cell
+    // shows them (Andrew's idea, 2026-11-01: "Hope isn't a plan with a timeline. 67, July 2063 is."; that ran two lines
+    // on every phone, with or without the age, so the opening was cut to fit: with "September 2057", the longest month,
+    // this is one line from 360px and two at 320, where the slot holds about 34 characters). Measured 2026-11-01: the
+    // heading is one line at 320 and 390, the sub two lines at 390.
+    STAKES_LATE: "Hope isn\u2019t a timeline. {DATE} is.",
     HEADLINE_LATE: "FRED exists to pull it closer.",
     SUB_LATE: "Save your Freedom Date and we\u2019ll show you what brings it closer the day we open.",
     // The no-date states' button (no monthly amount, target more than a lifetime away).
@@ -969,7 +970,7 @@
     compareRightAge.textContent = res.atTarget ? COPY.COMPARE_RIGHT_TODAY : String(st.right.age);
     compareRightDate.textContent = formatMonthYear(res.atTarget ? new Date() : res.date); // the month and year of that age
     if (late) {
-      stakesLine.textContent = fill(COPY.STAKES_LATE, { AGE: st.right.age, DATE: compareRightDate.textContent });
+      stakesLine.textContent = fill(COPY.STAKES_LATE, { DATE: compareRightDate.textContent });
       captureHeading.textContent = COPY.HEADLINE_LATE;
       captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB_LATE;
     } else {
