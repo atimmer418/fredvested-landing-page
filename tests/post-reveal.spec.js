@@ -11,13 +11,13 @@
 //
 // Reference numbers (frontend/assets/projection.js, checked in Node; moderate 10% unless said):
 //   defaults 30 / $2,000 / $7,500 / $0:          53; do nothing: 65+; N 12
-//   42 / $500 / $4,000 / $0:                      73; do nothing 65+ (N -8); +$100 -> 71 (N -6): comparison hidden
+//   42 / $500 / $4,000 / $0:                      73; do nothing 65+ (N -8); +$100 -> 71 (N -6): no gap, "No date" left (2026-11-01)
 //   30 / $2,000 / $7,500 / $250,000 (tick 46):    46; do nothing on the balance alone: 52; N 6
 //   30 / $2,000 / $7,500 / $1,000,000 (tick 76):  37; N 28 (2026-10-29: "do nothing" is always 65+)
 //   38 / $1,000 / $5,000 / $0:                    64; N 1, "1 year" (the lever rung of 2026-10-25 is gone)
 //   41 / $2,000 / $7,500 / $0:                    64; N 1
-//   35 / $1,000 / $7,500 / $0:                    65; N 0: comparison hidden, "This age isn't set in stone." 
-//   30 / $500 / $7,500 / $0 (recalculate):        67; do nothing 65+ (N -2); +$100 -> 65 (N 0): comparison hidden
+//   35 / $1,000 / $7,500 / $0:                    65; N 0: no gap, "No date" left, "Hope isn't a plan with a timeline. 65, <month year> is." 
+//   30 / $500 / $7,500 / $0 (recalculate):        67; do nothing 65+ (N -2); +$100 -> 65 (N 0): no gap, "No date" left
 const { test, expect } = require('@playwright/test');
 const { installMocks, forceAnalytics, events, eventNames, collectHosts, assertOnlyAllowedHosts, submitWaitlist, seedStorage } = require('./helpers');
 
@@ -30,10 +30,13 @@ const COPY = {
   COMPARE_RIGHT_LABEL: `On FRED${RSQUO}s route.`,
   HEADLINE: 'FRED exists to close the gap.',
   SUB: `Save your Freedom Date and we${RSQUO}ll help you turn it from a number into a plan the day we open.`,
-  BUTTON: 'I want FRED\u2019s help.',
-  HEADLINE_STILL: `This age isn${RSQUO}t set in stone.`,
-  SUB_STILL: `Save it and we${RSQUO}ll show you what moves it the day FRED opens.`,
-  BUTTON_SAVE: 'Save my Freedom Date',
+  BUTTON: 'I want FRED\u2019s help',
+  // 65 and later (2026-11-01): the comparison stays, "No date" on the left, and these three take the slots.
+  COMPARE_LEFT_NO_DATE: 'No date',
+  STAKES_LATE: (age, date) => `Hope isn${RSQUO}t a plan with a timeline. ${age}, ${date} is.`,
+  HEADLINE_LATE: 'FRED exists to pull it closer.',
+  SUB_LATE: `Save your Freedom Date and we${RSQUO}ll show you what brings it closer the day we open.`, // Andrew's edit, 2026-11-01
+  BUTTON_SAVE: 'Save my Freedom Date', // the no-date states only
   // The at-target sub line (2026-10-30 trim of the 2026-10-22 attorney-pending sentence).
   AT_TARGET_BODY: 'Based on your inputs, you meet the target. Not an assessment of whether you can retire.',
   EMAIL_LABEL: 'Email',
@@ -133,13 +136,26 @@ async function expectComparison(page, { left, leftCaption, rightLabel, right, n 
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
   expect(await expectArrow(page)).toBe(COPY.BUTTON);
 }
-async function expectCollapsed(page) {
-  await expect(page.locator('#compare')).toBeHidden();
-  await expect(page.locator('#stakes-line')).toBeHidden();
-  await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_STILL);
-  await expect(page.locator('#capture-support')).toHaveText(COPY.SUB_STILL);
-  await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON_SAVE);
-  expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE);
+/** The plan's age is 65 or later (2026-11-01): the same card as a dated reveal, with "No date" in the left cell,
+ *  the plan's age and date on the right, no gap counted, and the late copy in the three slots. */
+async function expectLate(page, age) {
+  await expect(page.locator('#result-age')).toHaveText(String(age));
+  await expect(page.locator('#compare')).toBeVisible();
+  await expect(page.locator('#compare-left-label')).toHaveText(COPY.COMPARE_LEFT_LABEL);
+  await expect(page.locator('#compare-left-age')).toHaveText(COPY.COMPARE_LEFT_NO_DATE);
+  await expect(page.locator('#compare-left-caption')).toHaveText(COPY.COMPARE_LEFT_CAPTION_NEVER);
+  await expect(page.locator('#compare-right-label')).toHaveText(COPY.COMPARE_RIGHT_LABEL);
+  await expect(page.locator('#compare-right-age')).toHaveText(String(age));
+  await expect(page.locator('#compare-right-date')).toHaveText(DATE);
+  const date = await page.locator('#compare-right-date').textContent();
+  await expect(page.locator('#stakes-line')).toBeVisible();
+  await expect(page.locator('#stakes-line')).toHaveText(COPY.STAKES_LATE(age, date));
+  await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_LATE);
+  await expect(page.locator('#capture-support')).toHaveText(COPY.SUB_LATE);
+  await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
+  expect(await expectArrow(page)).toBe(COPY.BUTTON);
+  // The live region hears the cells and the line as rendered.
+  expect(await page.locator('#result-sr').textContent()).toContain(`Do nothing: No date. On FRED${RSQUO}s route: ${age}, ${date}. ${COPY.STAKES_LATE(age, date)} `);
 }
 /** The month and year: in the comparison's right cell under the age (the plan's Freedom Date), bold primary;
  *  nowhere else on the card, always in #result-sr. No chip, no header row. */
@@ -257,7 +273,7 @@ for (const vp of VIEWPORTS) {
       expect(await page.locator('#result-sr').textContent()).toMatch(new RegExp('Do nothing: 65\\+\\. ' + COPY.COMPARE_RIGHT_LABEL.replace(/\.$/, '') + ': 64, [A-Z][a-z]+ \\d{4}\\. ' + stakes(1).replace('.', '\\.')));
     });
 
-    test('at exactly 65 (35 / $1,000 / $7,500) the comparison is hidden and the still-moves copy shows; at 73 too', async ({ page }) => {
+    test('at exactly 65 (35 / $1,000 / $7,500) the comparison stays with "No date" on the left and the late copy; at 73 too', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await page.fill('#age-range', '35');
@@ -265,15 +281,15 @@ for (const vp of VIEWPORTS) {
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('65');
       await expectDate(page);
-      await expectCollapsed(page);
+      await expectLate(page, 65);
       await page.fill('#age-range', '42');
       await page.fill('#invest-range', '500');
       await page.fill('#retire-range', '4000');
       await expect(page.locator('#result-age')).toHaveText('73');
-      await expectCollapsed(page);
+      await expectLate(page, 73);
     });
 
-    test('when the plan is past 65 (73) the comparison and the stakes line are hidden and the still-moves copy shows', async ({ page }) => {
+    test('when the plan is past 65 (73) no gap is counted: "No date" against 73 and its date, "Hope isn\'t a plan with a timeline. 73, <date> is.", the dated button', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await page.fill('#age-range', '42');
@@ -282,7 +298,7 @@ for (const vp of VIEWPORTS) {
       await reveal(page);
       await expect(page.locator('#result-age')).toHaveText('73');
       await expectDate(page);
-      await expectCollapsed(page);
+      await expectLate(page, 73);
       expect(await argumentText(page)).not.toMatch(/gap|of your life/i);
     });
 
@@ -296,12 +312,12 @@ for (const vp of VIEWPORTS) {
 
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.fill('#invest-range', '500');
-      await page.fill('#retire-range', '7000'); // 30 / $500 / $7,000: 66, target $2.1M, nothing to compare
+      await page.fill('#retire-range', '7000'); // 30 / $500 / $7,000: 66, target $2.1M, no gap to count ("No date" left)
       await page.click('#reveal-btn'); // Recalculate
       await expect(page.locator('#result-age')).toHaveText('66');
       await expectDate(page);
       expect((await page.locator('#result-sr').textContent()).match(/Freedom Date: ([^.]+)\./)[1]).not.toBe(firstDate);
-      await expectCollapsed(page);
+      await expectLate(page, 66);
       await expect(page.locator('#result-fineprint')).toContainText('Projected portfolio target: $2,100,000.');
       await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
 
@@ -365,7 +381,7 @@ test.describe('the fit at 390 x 660 (iPhone with the Instagram in-app browser ba
     await expectDate(page);
   });
 
-  test('the same holds for the one-year case (65+ against 64, singular stakes line) and the collapsed case', async ({ page }) => {
+  test('the same holds for the one-year case (65+ against 64, singular stakes line) and the 65-and-later case', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#age-range', '38');
@@ -382,7 +398,7 @@ test.describe('the fit at 390 x 660 (iPhone with the Instagram in-app browser ba
     await page.fill('#invest-range', '500');
     await page.fill('#retire-range', '4000');
     await page.click('#reveal-btn');
-    await expectCollapsed(page);
+    await expectLate(page, 73);
     await expect.poll(async () => Math.round((await rects(page)).card.top), { timeout: 3000 }).toBe(8);
     r = await rects(page);
     expect(r.button.bottom).toBeLessThanOrEqual(r.vh);
@@ -482,8 +498,9 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-count')).toBeVisible();
     await expect(page.locator('#capture-count')).toHaveText('40 people are already on the list.');
     await expect(page.locator('#consent-note')).toContainText('By signing up for our waitlist');
-    await expect(page.locator('#capture-cta-note p').nth(0)).toHaveText('No payment until launch. You only pay if invited and choose to claim your spot.');
-    await expect(page.locator('#capture-cta-note p').nth(1)).toHaveText('The private beta is currently iOS only.');
+    // One paragraph since 2026-10-31 (Andrew merged the payment sentence and the iOS line).
+    await expect(page.locator('#capture-cta-note p')).toHaveCount(1);
+    await expect(page.locator('#capture-cta-note p')).toHaveText('No payment until launch. You only pay if invited and choose to claim your spot. The private beta is currently iOS only.');
     // A visible focus indicator on the white field: the primary border and ring, not white on white.
     await input.focus();
     await page.waitForTimeout(650); // the input's colour transition is 500 ms
@@ -492,7 +509,7 @@ test.describe('the capture section', () => {
     expect(focusBorder).toBe('rgb(19, 91, 236)');
   });
 
-  test('the button is label + arrow, no pig, in every state: plan, one-year plan, still-moves, no date, at target', async ({ page }) => {
+  test('the button is label + arrow, no pig, in every state: plan, one-year plan, 65 and later, no date, at target', async ({ page }) => {
     await installMocks(page);
     await page.goto('/index.html');
     await reveal(page);
@@ -505,7 +522,7 @@ test.describe('the capture section', () => {
     await page.fill('#age-range', '42');
     await page.fill('#invest-range', '500');
     await page.fill('#retire-range', '4000');
-    await expectCollapsed(page); // still-moves, Save my Freedom Date
+    await expectLate(page, 73); // 65 and later: the dated button too (2026-11-01)
     await page.fill('#invest-range', '0');
     await expect(page.locator('#infeasible-block')).toBeVisible();
     expect(await expectArrow(page)).toBe(COPY.BUTTON_SAVE); // no date
@@ -896,15 +913,14 @@ test.describe('copy', () => {
     expect(sr).toMatch(new RegExp(`^You could be free at 53 years old\\. Freedom Date: [A-Z][a-z]+ \\d{4}\\. Do nothing: 65\\+\\. On FRED${RSQUO}s route: 53, [A-Z][a-z]+ \\d{4}\\. That gap is 12 years of your life\\. Projected portfolio target: \\$2,250,000\\. Assumes a 10% average annual return \\(Moderate scenario\\) and 4% withdrawal rate\\. Hypothetical illustration`));
     expect(sr).not.toContain('..');
     expect(sr).not.toContain('before the usual 65');
-    // 69 on a large balance, nothing to compare: just the age, the date and the fine print.
+    // 69 on a large balance, no gap to count (2026-11-01: the comparison stays, "No date" on the left): the age,
+    // the date, the two cells, the late stakes line and the fine print; no "of your life".
     await page.fill('#age-range', '60');
     await page.fill('#invest-range', '50');
     await page.fill('#existing-range', '72'); // $900,000
-    await expect(page.locator('#result-age')).toHaveText('69');
-    await expectDate(page);
-    await expect(page.locator('#compare')).toBeHidden();
+    await expectLate(page, 69);
     const sr2 = await page.locator('#result-sr').textContent();
-    expect(sr2).toMatch(/^You could be free at 69 years old\. Freedom Date: /);
+    expect(sr2).toMatch(new RegExp(`^You could be free at 69 years old\\. Freedom Date: ([A-Z][a-z]+ \\d{4})\\. Do nothing: No date\\. On FRED${RSQUO}s route: 69, \\1\\. Hope isn${RSQUO}t a plan with a timeline\\. 69, \\1 is\\. Projected portfolio target: `));
     expect(sr2).not.toContain('of your life');
     expect(sr2).not.toContain('..');
   });
@@ -961,7 +977,7 @@ test.describe('analytics', () => {
     expect(Object.keys(ctx).sort()).toEqual(['freedom_age_band', 'input_edits_band', 'return_scenario', 'revealed', 'stake_source', 'stake_years_band']);
   });
 
-  test('a one-year gap bands as 1-5 plan, the hidden comparison as hidden, the balance case as plan 11+ (never lever)', async ({ page }) => {
+  test('a one-year gap bands as 1-5 plan, a plan at 65 or later as hidden, the balance case as plan 11+ (never lever)', async ({ page }) => {
     await forceAnalytics(page);
     await installMocks(page);
     await page.goto('/index.html');
@@ -971,12 +987,12 @@ test.describe('analytics', () => {
     await page.fill('#retire-range', '5000');
     await reveal(page);
     expect(named(await events(page), 'Freedom Date Revealed')[0].props).toMatchObject({ freedom_age_band: '60-64', stake_years_band: '1-5', stake_source: 'plan' });
-    // 42 / $500 / $4,000: 73, nothing to compare.
+    // 42 / $500 / $4,000: 73, no gap to count: the comparison shows "No date" against 73, both bands hidden.
     await page.fill('#age-range', '42');
     await page.fill('#invest-range', '500');
     await page.fill('#retire-range', '4000');
     await page.click('#reveal-btn');
-    await expectCollapsed(page);
+    await expectLate(page, 73);
     // $250,000 at the defaults: 65+ against 46, nineteen years.
     await page.fill('#age-range', '30');
     await page.fill('#invest-range', '2000');
@@ -997,14 +1013,14 @@ test.describe('analytics', () => {
     for (const e of all) for (const v of Object.values(e.props)) expect(raw).not.toContain(v);
   });
 
-  test('a hidden comparison (and no date at all) bands as hidden on all three events', async ({ page }) => {
+  test('a plan at 65 or later (and no date at all) bands as hidden on all three events', async ({ page }) => {
     await forceAnalytics(page);
     await installMocks(page);
     await page.goto('/index.html');
     await page.fill('#age-range', '35');
-    await page.fill('#invest-range', '1000'); // 35 / $1,000 / $7,500: exactly 65, nothing to compare
+    await page.fill('#invest-range', '1000'); // 35 / $1,000 / $7,500: exactly 65, no gap to count
     await reveal(page);
-    await expectCollapsed(page);
+    await expectLate(page, 65);
     await submitWaitlist(page, 'hidden@example.com');
     await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
     const all = await events(page);

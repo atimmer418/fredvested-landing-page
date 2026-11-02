@@ -190,12 +190,14 @@ test.describe('stakes (65+ against the plan)', () => {
     assert.deepEqual(s.calls, [CASES2.D]);
   });
 
-  test('B: 73 is past 65, hidden; so is exactly 65', () => {
-    assert.deepEqual(P.stakes(CASES.B, spy()), { left: { age: 65, reaches: false }, right: null, years: null, source: 'hidden' });
+  test('B: 73 is past 65, hidden (no years, the plan\'s age still on the right); so is exactly 65', () => {
+    assert.deepEqual(P.stakes(CASES.B, spy()), { left: { age: 65, reaches: false }, right: { age: 73, step: null }, years: null, source: 'hidden' });
     // 35 / $1,000 / $7,500 / $0 at 10%: 64.96 -> 65, N 0.
     const at65 = P.stakes({ age: 35, invest: 1000, retire: 7500, existing: 0, ratePct: 10 }, spy());
     assert.equal(P.roundAge(P.project({ age: 35, invest: 1000, retire: 7500, existing: 0, ratePct: 10 }).ageAtFreedom), 65);
     assert.equal(at65.source, 'hidden');
+    assert.deepEqual(at65.right, { age: 65, step: null });
+    assert.equal(at65.years, null);
   });
 
   test('no current date: null, after one projection call', () => {

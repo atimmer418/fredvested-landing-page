@@ -137,7 +137,9 @@ test('the hidden rung: 42 / $500 / $4,000 sends stakeSource hidden and 0 years',
   await page.goto('/index.html');
   await setSliders(page, { age: 42, invest: 500, retire: 4000 });
   await reveal(page);
-  await expect(page.locator('#compare')).toBeHidden();
+  // Since 2026-11-01 the card shows the comparison here too ("No date" against 73); the payload is unchanged.
+  await expect(page.locator('#compare-left-age')).toHaveText('No date');
+  await expect(page.locator('#compare-right-age')).toHaveText('73');
   await submitWaitlist(page, 'hidden@example.com');
   await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
 

@@ -9,18 +9,18 @@
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <title>FRED: Calculator</title>
-<meta name="description" content="Move four sliders and get the year you could walk away from work for good, in under 30 seconds.">
+<meta name="description" content="Four sliders. 30 seconds. A real date.">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fredvested.com">
 <meta property="og:site_name" content="FRED">
-<meta property="og:title" content="Find the age you could quit your job.">
-<meta property="og:description" content="Move four sliders and get the year you could walk away from work for good, in under 30 seconds.">
+<meta property="og:title" content="Find the day & age you could quit your job.">
+<meta property="og:description" content="Four sliders. 30 seconds. A real date.">
 <meta property="og:image" content="https://fredvested.com/assets/og-image.png">
 <!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Find the age you could quit your job.">
-<meta name="twitter:description" content="Move four sliders and get the year you could walk away from work for good, in under 30 seconds.">
+<meta name="twitter:title" content="Find the day & age you could quit your job.">
+<meta name="twitter:description" content="Four sliders. 30 seconds. A real date.">
 <meta name="twitter:image" content="https://fredvested.com/assets/og-image.png">
 <!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
 <link rel="stylesheet" href="dist/output.css">
@@ -147,30 +147,26 @@
 </head>
 <body class="font-display text-navy antialiased min-h-screen flex flex-col items-center px-4 pt-4 sm:pt-7 pb-6 sm:pb-12 sm:px-5 selection:bg-primary/20 selection:text-primary">
 
-<!-- Logo -->
-<header class="mb-4 sm:mb-8">
-  <a href="/" class="font-montserrat font-black italic text-[36px] sm:text-[48px] tracking-[0px] leading-none text-primary rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">FRED</a>
-</header>
-
 <main class="w-full max-w-[600px] text-center">
 
   <!-- Headline -->
   <!-- ATTORNEY APPROVED 2026-09-01: "exact" removed by attorney direction -->
-  <h1 class="font-montserrat font-extrabold text-[clamp(30px,7.4vw,46px)] leading-[1.05] tracking-[-0.025em] text-navy mb-2 sm:mb-4">
-    Find the <span class="text-primary">age</span> you could quit your job.
+  <h1 class="font-montserrat font-extrabold text-[clamp(30px,7.4vw,46px)] leading-[1.05] tracking-[-0.025em] text-navy mt-2 mb-2 sm:mb-4">
+    Find the <span class="text-primary">day & age</span> you could quit your job.
   </h1>
 
   <!-- Subhead -->
-  <!-- Two lines on every phone: the size tracks the viewport below 17px (a fixed 17px needed three
-       lines under about 412px, e.g. iOS Display Zoom), and text-balance evens the two lines out. -->
+  <!-- One line on every phone from 320px (Andrew, 2026-10-31: the two-line "Move four sliders and get the
+       year you could walk away from work for good, in under 30 seconds." sold the mechanics, not the
+       outcome). Measured headless: about 42 characters fit on one line at 320px at this size. -->
   <p class="text-[clamp(13px,3.9vw,17px)] text-balance text-slate-text max-w-[44ch] mx-auto mb-2 sm:mb-3">
-    Move four sliders and get the year you could walk away from work for good, in under 30<span class="sm:hidden">s.</span><span class="hidden sm:inline"> seconds.</span>
+    Four sliders. 30 seconds. A real date.
   </p>
 
   <!-- Pre-input disclosure -->
   <!-- ATTORNEY REVIEW PENDING: attorney-supplied wording; final language to be confirmed during screenshot review -->
   <p class="mx-auto mb-3 max-w-[54ch] text-[12.5px] leading-snug text-slate-text" role="note">
-    FRED&rsquo;s calculator is an educational planning tool. It does not provide investment advice or recommend any investment.
+    This calculator is an educational planning tool. It does not provide investment advice or recommend any investment.
   </p>
 
   <!-- Input card -->
@@ -264,11 +260,12 @@
     <!-- Result card -->
     <!-- Phone top padding pt-7 and the mt-3 steps under "years old" (2026-10-26 fit trims, spacing tokens only):
          the email input and the button have to sit inside 390 x 660 after the reveal's own scroll. -->
-    <div id="result-card" class="@container mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 pt-7 pb-5 sm:py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
+    <div id="result-card" class="@container mt-4 rounded-[20px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)] px-5 pt-5 pb-5 sm:py-9 sm:px-7 text-center text-white shadow-[0_24px_60px_-18px_rgba(14,58,150,0.5)]">
       <div id="feasible-block">
         <!-- The month and year of the Freedom Date live in the comparison's right cell (#compare-right-date, Andrew's
              pick "F" of the 2026-10-27 sheet, after the pill, a plain line and a header row); the card opens with the
-             approved kicker. They are also in #result-sr, which is where they stay when the comparison is hidden. -->
+             approved kicker. They are also in #result-sr. Since 2026-11-01 every dated result shows the comparison
+             (65 and later with "No date" on the left), so the cell is the one visible month and year on the card. -->
         <!-- ATTORNEY APPROVED 2026-09-01: kicker approved as-is -->
         <p id="result-eyebrow" class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e3edff]">You could be free at</p>
         <!-- The age and "years old" (COPY.YEARS_OLD; the one-line "N years before the usual 65" of 2026-10-25 is gone)
@@ -361,8 +358,9 @@
          capture form's with the card's white focus ring, the row icons are inline SVGs with the page's stroke
          treatment. The dark capture card of 2026-10-24 is gone (2026-10-25). -->
     <template id="post-reveal-template">
-      <!-- Comparison block: two cells, full card width. Hidden (not rendered empty) when the ladder in
-           projection.js finds under two whole years between the cells. -->
+      <!-- Comparison block: two cells, full card width. Shown for every dated result since 2026-11-01 (a gap of a
+           year or more: "65+" on the left; 65 and later: COPY.COMPARE_LEFT_NO_DATE) and for the at-target state;
+           hidden (not rendered empty) only in the two no-date states. -->
       <!-- ATTORNEY REVIEW PENDING 2026-10-25: comparison copy (COPY.COMPARE_*) -->
       <!-- Each cell is a subgrid over the block's three rows, so label, age and caption share rows and the two
            ages stay level when one label wraps ("This plan + $250/mo" does at phone widths). The left cell's text
@@ -386,19 +384,23 @@
            land here, as on about.html), the count line, the consent sentence and the payment / iOS note.
            Turnstile, submit handling and the success / pending / error states are the ones the form always had;
            only the position and the wrapper changed (2026-10-24 into the dark card, 2026-10-25 into this card). -->
-      <!-- ATTORNEY REVIEW PENDING 2026-10-25: capture copy (COPY.STAKES, COPY.HEADLINE*, COPY.SUB*, COPY.BUTTON*).
+      <!-- ATTORNEY REVIEW PENDING 2026-10-25: capture copy (COPY.STAKES*, COPY.HEADLINE*, COPY.SUB*, COPY.BUTTON*;
+           2026-11-01: the 65-and-later lines STAKES_LATE / HEADLINE_LATE / SUB_LATE and the left cell's "No date").
            The headline and button carry a number computed from the visitor's inputs, a departure from the
            product-neutral capture ruling of 2026-08-18 made by the founder in this spec. -->
       <div id="capture">
         <!-- The pitch goes with the form: hidden once a signup is in (success / pending), back with "Use a different one". -->
         <div id="capture-pitch">
-          <p id="stakes-line" class="mt-3 text-[14px] font-semibold text-[#e3edff]" hidden></p>
+          <!-- text-balance (already compiled for the subhead): the 65-and-later line is two lines on phones and
+               would otherwise leave "is." alone on the second; the dated line is one line, where it does nothing. -->
+          <p id="stakes-line" class="mt-3 text-balance text-[14px] font-semibold text-[#e3edff]" hidden></p>
           <!-- One line on every phone (Andrew, 2026-10-29: "FRED exists to close the gap." was one line on his phone
                and two on narrower ones). The size follows the card's content box (#result-card is a container, so
                1cqw is 1% of it): the sentence is 14.82 em wide in Montserrat extrabold, so 100cqw / 14.82 = 6.75cqw
                is the size at which it exactly fills the box, and 6.7cqw leaves about 2px. Capped at the 22px it
-               always had, which it reaches just above a 400px viewport; 26px from sm as before. No nowrap: the other
-               headings ("This age isn't set in stone.", the approved autopilot line) wrap as they always did. -->
+               always had, which it reaches just above a 400px viewport; 26px from sm as before. "FRED exists to pull it
+               closer." (65 and later, 2026-11-01) is one line at this size too (measured at 320 and 390). No nowrap:
+               the approved autopilot line of the no-date states wraps as it always did. -->
           <h2 id="capture-heading" class="mt-2 font-montserrat font-extrabold text-[min(6.7cqw,22px)] sm:text-[26px] leading-[1.15] tracking-[-0.02em] text-white"></h2>
           <p id="capture-support" class="mx-auto mt-2 max-w-[46ch] text-[14px] leading-relaxed text-[#dbe7ff]"></p>
         </div>
@@ -466,14 +468,13 @@
              script-off visitor never reaches a submit without this text. -->
         <!-- The shared constant's link carries hover:text-primary for the light surface on about.html; on this
              blue surface that hover colour is near-invisible, so the card keeps the link white on hover. -->
-        <p id="consent-note" class="mt-3 text-[11px] leading-relaxed text-[#c7d6f5] text-left [&_a:hover]:text-white" role="note"></p>
+        <p id="consent-note" class="mt-2 text-[11px] leading-relaxed text-pretty text-[#c7d6f5] text-left [&_a:hover]:text-white" role="note"></p>
 
         <!-- Payment / iOS note (Andrew's follow-up, 2026-10-25; the two sentences verbatim from commit 600ebb8,
              attorney-approved; same sentences as about.html's Founder Access block and waitlist note). Last line
              of the capture section, in the consent sentence's style. Hidden with the form once a signup succeeds. -->
-        <div id="capture-cta-note" class="mt-2.5 text-[11px] leading-relaxed text-[#c7d6f5] text-left">
-          <p>No payment until launch. You only pay if invited and choose to claim your spot.</p>
-          <p class="mt-1">The private beta is currently <b>iOS only</b>.</p>
+        <div id="capture-cta-note" class="mt-1 text-[11px] leading-relaxed text-[#c7d6f5] text-left">
+          <p>No payment until launch. You only pay if invited and choose to claim your spot. The private beta is currently <b>iOS only</b>.</p>
         </div>
       </div>
     </template>
@@ -547,6 +548,9 @@
     // (2026-10-29). Right cell: the plan's own age, whenever it is under 65.
     COMPARE_LEFT_LABEL: "Do nothing.",
     COMPARE_LEFT_NEVER: "65+",
+    // The left cell's big slot when the plan's age is 65 or later (Andrew, 2026-11-01): "65+" beside a 66 read as
+    // FRED losing by a year, so the cell says what doing nothing gives instead of a number. The caption stays.
+    COMPARE_LEFT_NO_DATE: "No date",
     COMPARE_LEFT_CAPTION_NEVER: "the usual retirement",
     COMPARE_RIGHT_LABEL: "On FRED\u2019s route.",
     // The at-target state's right cell (2026-10-29): already at the target, so the age slot says "Today" and
@@ -558,11 +562,19 @@
     STAKES_ONE: "That gap is 1 year of your life.",
     HEADLINE: "FRED exists to close the gap.",
     SUB: "Save your Freedom Date and we\u2019ll help you turn it from a number into a plan the day we open.",
-    BUTTON: "I want FRED\u2019s help.", // Andrew, 2026-10-29 (was "Let FRED help me get there", 2026-10-27..29)
-    // When the comparison is hidden (under two years either way).
-    // When the comparison is hidden (the plan's age is 65 or later; Andrew, 2026-10-29: only the age shows, so "age").
-    HEADLINE_STILL: "This age isn\u2019t set in stone.",
-    SUB_STILL: "Save it and we\u2019ll show you what moves it the day FRED opens.",
+    BUTTON: "I want FRED\u2019s help", // Andrew, 2026-10-29 (was "Let FRED help me get there", 2026-10-27..29)
+    // The plan's age is 65 or later (no gap to count; Andrew, 2026-11-01, replacing "This age isn't set in stone." /
+    // "Save it and we'll show you what moves it the day FRED opens." / "Save my Freedom Date" of 2026-10-29, which
+    // hid the comparison and read as an apology: a 66 is still a date). Same card as the dated reveal: the
+    // comparison with COMPARE_LEFT_NO_DATE on the left and the plan's age and date on the right, then these three
+    // in the stakes, heading and sub slots and the dated BUTTON. {AGE} is the plan's rounded age and {DATE} its month
+    // and year, both as the right cell shows them (Andrew's wording, 2026-11-01). Measured 2026-11-01: the stakes line
+    // is two lines at 320 and 390 and one from 640 (the dated one is one line), the heading one line at 320 and 390,
+    // the sub two lines at 390.
+    STAKES_LATE: "Hope isn\u2019t a plan with a timeline. {AGE}, {DATE} is.",
+    HEADLINE_LATE: "FRED exists to pull it closer.",
+    SUB_LATE: "Save your Freedom Date and we\u2019ll show you what brings it closer the day we open.",
+    // The no-date states' button (no monthly amount, target more than a lifetime away).
     BUTTON_SAVE: "Save my Freedom Date",
     // The at-target state (balance at or past the target; ATTORNEY REVIEW PENDING 2026-10-22): the sub line's slot,
     // under the same stakes line and headline as the dated reveal. Trimmed 2026-10-30 (Andrew) from the 2026-10-22
@@ -838,7 +850,8 @@
   // date exists then, and analytics bands it as 'at_target' rather than 'unreachable'.
   let atTarget = false;
   // The comparison at the last render: { years, source } with years null and source 'hidden'
-  // when the block is hidden, null when no date exists. Only the whole years and the source
+  // when the plan's age is 65 or later (no gap to count; since 2026-11-01 the block still shows,
+  // "No date" on the left), null when no date exists. Only the whole years and the source
   // word reach analytics, banded there.
   let lastStakes = null;
   // The projection as rendered, sent with the signup as `projection` so the welcome email can
@@ -938,7 +951,8 @@
       return;
     }
     // stakes() in assets/projection.js (2026-10-29 rules): 65+ on the left always, the plan's own
-    // age on the right, shown from a one-year gap; hidden when the plan's age is 65 or later. At the
+    // age on the right, shown from a one-year gap; no gap to count ('hidden') when the plan's age is
+    // 65 or later. Since 2026-11-01 that case shows the comparison too, "No date" on the left. At the
     // target (2026-10-30) the plan's age is the age entered, so N is the years between it and 65 and
     // the state reads exactly as the dated reveal, with "Today" and the current month and year on
     // FRED's side and the at-target sentence in the sub line's slot. Nothing is projected there, so
@@ -946,24 +960,26 @@
     const st = computeStakes({ age: inputs.age, invest: inputs.invest, retire: inputs.retire, existing: inputs.existing, ratePct: currentScenario().pct });
     lastStakes = res.atTarget ? null : { years: st.years, source: st.source };
 
-    // The comparison and the capture copy that argues with it.
-    if (st.source !== "hidden") {
-      compareLeftAge.textContent = COPY.COMPARE_LEFT_NEVER;
-      compareLeftCaption.textContent = COPY.COMPARE_LEFT_CAPTION_NEVER;
-      compareRightLabel.textContent = COPY.COMPARE_RIGHT_LABEL;
-      compareRightAge.textContent = res.atTarget ? COPY.COMPARE_RIGHT_TODAY : String(st.right.age);
-      compareRightDate.textContent = formatMonthYear(res.atTarget ? new Date() : res.date); // the month and year of that age
+    // The comparison and the capture copy that argues with it. One layout for every dated result:
+    // a gap to count (source 'plan') or none (the plan's age is 65 or later, source 'hidden').
+    const late = st.source === "hidden";
+    compareLeftAge.textContent = late ? COPY.COMPARE_LEFT_NO_DATE : COPY.COMPARE_LEFT_NEVER;
+    compareLeftCaption.textContent = COPY.COMPARE_LEFT_CAPTION_NEVER;
+    compareRightLabel.textContent = COPY.COMPARE_RIGHT_LABEL;
+    compareRightAge.textContent = res.atTarget ? COPY.COMPARE_RIGHT_TODAY : String(st.right.age);
+    compareRightDate.textContent = formatMonthYear(res.atTarget ? new Date() : res.date); // the month and year of that age
+    if (late) {
+      stakesLine.textContent = fill(COPY.STAKES_LATE, { AGE: st.right.age, DATE: compareRightDate.textContent });
+      captureHeading.textContent = COPY.HEADLINE_LATE;
+      captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB_LATE;
+    } else {
       stakesLine.textContent = stakesText(st.years);
       captureHeading.textContent = fill(COPY.HEADLINE, { N: st.years });
       captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB;
-      btnLabel.textContent = fill(COPY.BUTTON, { N: st.years });
-    } else {
-      captureHeading.textContent = COPY.HEADLINE_STILL;
-      captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB_STILL;
-      btnLabel.textContent = COPY.BUTTON_SAVE;
     }
-    compareBlock.hidden = st.source === "hidden";
-    stakesLine.hidden = st.source === "hidden";
+    btnLabel.textContent = fill(COPY.BUTTON, { N: st.years });
+    compareBlock.hidden = false;
+    stakesLine.hidden = false;
     captureSupport.hidden = false;
   }
 
@@ -1030,7 +1046,7 @@
       srEl.textContent =
         "You could be free at " + roundedAge + " " + COPY.YEARS_OLD + ". " +
         FREEDOM_LABEL + ": " + formatMonthYear(res.date) + ". " +
-        (lastStakes && lastStakes.source !== "hidden" ? compareSummary() + stakesText(lastStakes.years) + " " : "") +
+        (lastStakes ? compareSummary() + stakesLine.textContent + " " : "") + // the cells and the stakes line as rendered, both rungs
         targetEl.textContent + " " +
         "Assumes " + articleFor(sc.pct) + " " + sc.pct + "% average annual return (" + sc.name + " scenario) and 4% withdrawal rate. " +
         disclaimerEl.textContent;

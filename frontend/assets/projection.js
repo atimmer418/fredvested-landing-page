@@ -131,7 +131,10 @@
   // The comparison and the number it argues with:
   //   N = left-cell age (65, shown as 65+) minus the plan's own rounded age, whole year for whole year.
   //   N >= STAKES_MIN_YEARS (1): the comparison shows with the plan's age on the right, source 'plan'.
-  //   Else (the plan's age is 65 or later) the comparison is hidden: source 'hidden', years null.
+  //   Else (the plan's age is 65 or later) there is no gap to count: source 'hidden', years null, the
+  //   plan's age still on the right. Since 2026-11-01 the page shows the comparison in this case too, with
+  //   "No date" in the left cell and the plan's age and date on the right; 'hidden' is what the analytics
+  //   band and the stakes number are, not the comparison (Andrew: a 66 or a 73 is not a state to hide).
   // Returns { left, right, years, source } for a feasible result or an at-target one, null for
   // the no-date states. At the target (2026-10-30) nothing is projected and the freedom age is
   // the age entered, so the plan's age is that age and N is the years between it and 65: the
@@ -148,7 +151,7 @@
     if (planYears >= STAKES_MIN_YEARS) {
       return { left: left, right: { age: planAge, step: null }, years: planYears, source: 'plan' };
     }
-    return { left: left, right: null, years: null, source: 'hidden' };
+    return { left: left, right: { age: planAge, step: null }, years: null, source: 'hidden' };
   }
 
   // The chart in the personalised welcome email (2026-10-27): the projected balance and the cumulative
