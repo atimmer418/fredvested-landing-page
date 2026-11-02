@@ -674,6 +674,8 @@ test.describe('the capture section', () => {
     await expect(page.locator('#at-target-block')).toBeVisible();
     await expect(page.locator('#at-target-age')).toHaveText('30');
     await expect(page.locator('#at-target-caption')).toHaveText(COPY.YEARS_OLD);
+    // The same fine print as the dated result (2026-11-01): assumptions, the target the sub line names, the disclosure.
+    await expect(page.locator('#result-fineprint')).toHaveText(`Assumes a 10% avg annual return (Moderate scenario) & 4% withdrawal rate. Projected portfolio target: $300,000. ${COPY.DISCLAIMER}`);
     const thisMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     await expect(page.locator('#compare')).toBeVisible();
     await expect(page.locator('#compare-left-label')).toHaveText(COPY.COMPARE_LEFT_LABEL);

@@ -1060,8 +1060,16 @@
       lastFreedomDateIso = null;
       lastPortfolioTarget = Math.round(res.target);
       lastProjection = null;
-      assumptionsEl.hidden = true;
-      targetEl.hidden = true;
+      // The same fine-print block as the dated result (Andrew, 2026-11-01; hidden here from 2026-10-25 to
+      // 2026-11-01 because nothing is projected). "The target" the sub line names is the target line's
+      // figure, and the disclosure's "assumptions shown" needs the assumptions on the card; the 4%
+      // withdrawal rate is what sets the target, the return scenario is the one input this state does
+      // not use. Same strings, same slots, so counsel reviews one block.
+      const scAt = currentScenario();
+      assumptionsEl.textContent = fill(COPY.ASSUMPTIONS, { article: articleFor(scAt.pct), rate: scAt.pct, scenario: scAt.name });
+      targetEl.textContent = fill(COPY.TARGET, { target: formatUSD(res.target) });
+      assumptionsEl.hidden = false;
+      targetEl.hidden = false;
       // The age they entered, in the age's type: at the target, the freedom age is today's age. Counted up
       // like the projected age (same countUp, which holds the column's width so the pig stays put).
       if (animate && !prefersReducedMotion()) {
@@ -1077,7 +1085,9 @@
         document.getElementById("at-target-eyebrow").textContent + " " + age + " " + COPY.YEARS_OLD + ". " +
         (mounted && !compareBlock.hidden ? compareSummary() + stakesLine.textContent + " " : "") +
         COPY.AT_TARGET_BODY + " " +
-        disclaimerEl.textContent; // the dated announcement ends with it too; since the 2026-10-30 trim the sentence itself no longer says "hypothetical"
+        targetEl.textContent + " " +
+        "Assumes " + articleFor(scAt.pct) + " " + scAt.pct + "% average annual return (" + scAt.name + " scenario) and 4% withdrawal rate. " +
+        disclaimerEl.textContent; // the dated announcement ends the same way; since the 2026-10-30 trim the sentence itself no longer says "hypothetical"
     } else {
       feasibleBlock.hidden = true;
       infeasibleBlock.hidden = false;

@@ -272,11 +272,14 @@ test.describe('at-target state', () => {
     await expect(page.locator('#at-target-headline, #at-target-body')).toHaveCount(0); // "You're already there." is gone
     await expect(page.locator('#feasible-block')).toBeHidden();
     await expect(page.locator('#infeasible-block')).toBeHidden();
-    await expect(page.locator('#result-card')).toContainText('Hypothetical illustration based on the assumptions shown, not a prediction or guarantee.');
+    // The same fine-print block as a dated result (Andrew, 2026-11-01; hidden here before): the assumptions, the
+    // target the sub line names, the approved disclosure.
+    await expect(page.locator('#result-fineprint')).toHaveText('Assumes a 10% avg annual return (Moderate scenario) & 4% withdrawal rate. Projected portfolio target: $300,000. Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.');
     await expect(page.locator('#capture-email')).toBeVisible();
-    // The announcement ends with the disclosure sentence, as the dated reveal's does (the trimmed sentence no longer says "hypothetical").
+    // The announcement ends as the dated reveal's does: the target, the assumptions and the disclosure sentence
+    // (the trimmed sentence no longer says "hypothetical").
     const disclaimer = (await page.locator('#result-disclaimer').textContent()).trim();
-    const sr = (age) => `You could be free at ${age} years old. Do nothing: 65+. On FRED\u2019s route: Today, ${thisMonth}. ${gap(age)} ${body} ${disclaimer}`;
+    const sr = (age) => `You could be free at ${age} years old. Do nothing: 65+. On FRED\u2019s route: Today, ${thisMonth}. ${gap(age)} ${body} Projected portfolio target: $300,000. Assumes a 10% average annual return (Moderate scenario) and 4% withdrawal rate. ${disclaimer}`;
     await expect(page.locator('#result-sr')).toHaveText(sr(30));
     // The age is the slider's, live, and so is the gap.
     await page.fill('#age-range', '41');
