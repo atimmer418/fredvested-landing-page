@@ -16,7 +16,7 @@
 //   30 / $2,000 / $7,500 / $1,000,000 (tick 76):  37; N 28 (2026-10-29: "do nothing" is always 65+)
 //   38 / $1,000 / $5,000 / $0:                    64; N 1, "1 year" (the lever rung of 2026-10-25 is gone)
 //   41 / $2,000 / $7,500 / $0:                    64; N 1
-//   35 / $1,000 / $7,500 / $0:                    65; N 0: no gap, "No date" left, "Hope isn't a timeline. <month year> is." 
+//   35 / $1,000 / $7,500 / $0:                    65; N 0: no gap, "No date" left, "Hope isn't a plan. <month year> is." 
 //   30 / $500 / $7,500 / $0 (recalculate):        67; do nothing 65+ (N -2); +$100 -> 65 (N 0): no gap, "No date" left
 const { test, expect } = require('@playwright/test');
 const { installMocks, forceAnalytics, events, eventNames, collectHosts, assertOnlyAllowedHosts, submitWaitlist, seedStorage } = require('./helpers');
@@ -33,7 +33,7 @@ const COPY = {
   BUTTON: 'I want FRED\u2019s help',
   // 65 and later (2026-11-01): the comparison stays, "No date" on the left, and these three take the slots.
   COMPARE_LEFT_NO_DATE: 'No date',
-  STAKES_LATE: (date) => `Hope isn${RSQUO}t a timeline. ${date} is.`, // one line from 360px with the longest month
+  STAKES_LATE: (date) => `Hope isn${RSQUO}t a plan. ${date} is.`, // one line from 360px with the longest month
   HEADLINE_LATE: 'FRED exists to pull it closer.',
   SUB_LATE: `Save your Freedom Date and we${RSQUO}ll show you what brings it closer the day we open.`, // Andrew's edit, 2026-11-01
   BUTTON_SAVE: 'Save my Freedom Date', // the no-date states only
@@ -289,7 +289,7 @@ for (const vp of VIEWPORTS) {
       await expectLate(page, 73);
     });
 
-    test('when the plan is past 65 (73) no gap is counted: "No date" against 73 and its date, "Hope isn\'t a timeline. <date> is.", the dated button', async ({ page }) => {
+    test('when the plan is past 65 (73) no gap is counted: "No date" against 73 and its date, "Hope isn\'t a plan. <date> is.", the dated button', async ({ page }) => {
       await installMocks(page);
       await page.goto('/index.html');
       await page.fill('#age-range', '42');
@@ -920,7 +920,7 @@ test.describe('copy', () => {
     await page.fill('#existing-range', '72'); // $900,000
     await expectLate(page, 69);
     const sr2 = await page.locator('#result-sr').textContent();
-    expect(sr2).toMatch(new RegExp(`^You could be free at 69 years old\\. Freedom Date: ([A-Z][a-z]+ \\d{4})\\. Do nothing: No date\\. On FRED${RSQUO}s route: 69, \\1\\. Hope isn${RSQUO}t a timeline\\. \\1 is\\. Projected portfolio target: `));
+    expect(sr2).toMatch(new RegExp(`^You could be free at 69 years old\\. Freedom Date: ([A-Z][a-z]+ \\d{4})\\. Do nothing: No date\\. On FRED${RSQUO}s route: 69, \\1\\. Hope isn${RSQUO}t a plan\\. \\1 is\\. Projected portfolio target: `));
     expect(sr2).not.toContain('of your life');
     expect(sr2).not.toContain('..');
   });
