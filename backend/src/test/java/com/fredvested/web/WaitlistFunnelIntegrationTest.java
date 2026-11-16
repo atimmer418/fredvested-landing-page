@@ -309,5 +309,17 @@ class WaitlistFunnelIntegrationTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("invalid_projection"));
         assertNull(waitlist.findByEmail("it-bad@example.com"));
         assertEquals(1, outbox.count());
+
+        // V9: the chart token's hash is written by the publisher's targeted update and read back
+        // by the chart endpoint's finder; the unique key holds; the column is NULL until then.
+        com.fredvested.web.service.ConfirmationTokens.Generated chart = com.fredvested.web.service.ConfirmationTokens.generate();
+        assertNull(row.getChartTokenHash());
+        assertEquals(1, waitlist.setChartToken(row.getId(), chart.hash()));
+        assertEquals(row.getId(), waitlist.findByChartTokenHash(chart.hash()).orElseThrow().getId());
+        assertTrue(waitlist.findByChartTokenHash(com.fredvested.web.service.ConfirmationTokens.generate().hash()).isEmpty());
+        mvc.perform(get("/api/email/chart/" + chart.raw() + ".png")).andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "image/png"))
+                .andExpect(header().string("Cache-Control", "private, max-age=31536000, immutable"));
+        mvc.perform(get("/api/email/chart/" + com.fredvested.web.service.ConfirmationTokens.generate().raw() + ".png")).andExpect(status().isNotFound());
     }
 }

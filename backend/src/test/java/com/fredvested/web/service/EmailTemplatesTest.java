@@ -118,7 +118,7 @@ class EmailTemplatesTest {
         EmailTemplates.Rendered r = v2();
         assertTrue(r.html().contains("prefers-color-scheme: dark") && r.html().contains("[data-ogsc]"));
         assertTrue(r.html().contains("<meta name=\"color-scheme\" content=\"light dark\">"));
-        int fred = r.html().indexOf(">FRED</span>");
+        int fred = r.html().indexOf(">FRED </span>");
         String span = r.html().substring(r.html().lastIndexOf("<span", fred), fred);
         assertTrue(span.contains("font-weight:800") && !span.contains("italic"), span);
     }

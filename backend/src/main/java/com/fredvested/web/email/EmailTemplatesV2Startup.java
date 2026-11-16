@@ -33,7 +33,7 @@ public class EmailTemplatesV2Startup {
     @PostConstruct
     public void check() {
         Projection sample = sample();
-        PersonalizedWelcomeEmail.render(sample, "https://example.invalid/unsubscribe", "[PO Box pending]");
+        PersonalizedWelcomeEmail.render(sample, "https://example.invalid/chart.png", "https://example.invalid/unsubscribe", "[PO Box pending]");
         GrowthChartRenderer.Png png = GrowthChartRenderer.render(sample);
         log.info("email templates v2 enabled: sample chart {} bytes at {}x{}", png.bytes().length, png.width(), png.height());
     }

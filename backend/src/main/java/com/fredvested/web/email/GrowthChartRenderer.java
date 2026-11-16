@@ -43,7 +43,6 @@ import java.util.List;
  */
 public final class GrowthChartRenderer {
 
-    public static final String CONTENT_ID = "growth-chart";
     public static final String FILENAME = "growth-chart.png";
     public static final String CONTENT_TYPE = "image/png";
     public static final int MAX_BYTES = 150 * 1024;
@@ -140,8 +139,8 @@ public final class GrowthChartRenderer {
             for (Projection.Point pt : safe(p.series())) max = Math.max(max, finite(pt.value()));
             for (Projection.Point pt : safe(p.contributions())) max = Math.max(max, finite(pt.value()));
             // The renderer is safe on its own, whatever the row holds: a value that is not finite,
-            // negative, or beyond what MAX_GRIDLINES steps can cover is refused (the publisher then
-            // sends the no-chart copy), so the gridline loops below are always short and counted.
+            // negative, or beyond what MAX_GRIDLINES steps can cover is refused (the chart endpoint
+            // then answers a bare 404), so the gridline loops below are always short and counted.
             if (!Double.isFinite(max) || max < 0 || max > MAX_VALUE) throw new IllegalArgumentException("growth chart: value out of range");
             long widened = base;
             while (max / widened > MAX_GRIDLINES) widened *= 2;

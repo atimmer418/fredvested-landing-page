@@ -69,6 +69,12 @@ public class WaitlistEntry {
     @Column(name = "projection_json")
     private String projectionJson;
 
+    // V9: SHA-256 hex of the token in the welcome email's chart URL
+    // (/api/email/chart/<token>.png). Minted at send time like the unsubscribe token;
+    // the raw value exists only in the email. NULL until a welcome with a chart is sent.
+    @Column(name = "chart_token_hash", length = 64)
+    private String chartTokenHash;
+
     // Attribution, sanitised server-side (AttributionSanitizer). Last touch = the
     // visit they converted on; first_* = the content that originally found them.
     @Column(name = "utm_source", length = 100)

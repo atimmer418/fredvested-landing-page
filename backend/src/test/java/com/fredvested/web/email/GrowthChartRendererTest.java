@@ -147,7 +147,7 @@ class GrowthChartRendererTest {
     }
 
     // The renderer is safe on its own: a value beyond what the chart will draw is refused at once
-    // (the publisher then sends the no-chart copy), and the gridline loops are counted, never
+    // (the chart endpoint then answers a bare 404), and the gridline loops are counted, never
     // driven by the data's magnitude, so nothing can hold the outbox thread.
     @Test
     void hugeValuesAreRefusedPromptly_andTheCeilingItselfRenders() throws IOException {

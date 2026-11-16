@@ -70,6 +70,11 @@ public final class EmailTemplateEngine {
         return setAttribute(html, field, "href", url);
     }
 
+    /** Replaces the src of the image marked data-field="field" with the escaped URL. */
+    public static String setSrc(String html, String field, String url) {
+        return setAttribute(html, field, "src", url);
+    }
+
     /** Replaces the alt of the image marked data-field="field". */
     public static String setAlt(String html, String field, String alt) {
         return setAttribute(html, field, "alt", alt);

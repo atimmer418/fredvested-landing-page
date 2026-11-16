@@ -37,7 +37,7 @@ class EmailPreviewControllerProfileTest {
             assertThat(c.preview("nope", "sample").getStatusCode().value()).isEqualTo(400);
             assertThat(c.chart("nope").getStatusCode().value()).isEqualTo(400);
             String html = c.preview("welcome", "sample").getBody();
-            assertThat(html).contains("src=\"/api/dev/email-preview/growth-chart.png?sample=sample\"").doesNotContain("cid:");
+            assertThat(html).contains("src=\"/api/dev/email-preview/growth-chart.png?sample=sample\"").doesNotContain("cid:").doesNotContain("/api/email/chart/");
             assertThat(c.preview("welcome-fallback", "sample").getBody()).contains("Put your financial future on autopilot.");
             assertThat(c.preview("confirmation", "sample").getBody()).contains("Confirm my email");
         });

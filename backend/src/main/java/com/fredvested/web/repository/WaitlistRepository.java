@@ -19,6 +19,8 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntry, Long> {
     // Indexed lookup by the SHA-256 of a confirmation token (never by the raw token)
     Optional<WaitlistEntry> findByConfirmationTokenHash(String confirmationTokenHash);
 
+    Optional<WaitlistEntry> findByChartTokenHash(String chartTokenHash);
+
     // Targeted writes for the outbox publisher. It runs across a network call, so it
     // must never merge a stale snapshot of the row back over a concurrent
     // confirmation, unsubscribe or bounce; it only ever touches its own columns.
@@ -26,6 +28,11 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntry, Long> {
     @Transactional
     @Query("update WaitlistEntry w set w.confirmationTokenHash = :hash, w.confirmationExpiresAt = :expires where w.id = :id")
     int setConfirmationToken(@Param("id") Long id, @Param("hash") String hash, @Param("expires") LocalDateTime expires);
+
+    @Modifying
+    @Transactional
+    @Query("update WaitlistEntry w set w.chartTokenHash = :hash where w.id = :id")
+    int setChartToken(@Param("id") Long id, @Param("hash") String hash);
 
     @Modifying
     @Transactional
