@@ -98,7 +98,6 @@ public final class PersonalizedWelcomeEmail {
             html = EmailTemplateEngine.fillText(html, "total_contributed", EmailFormats.compact(p.totalContributed()));
             html = EmailTemplateEngine.fillText(html, "portfolio_target", EmailFormats.compact(p.portfolioTarget()));
             html = EmailTemplateEngine.fillText(html, "return_rate", EmailFormats.percent(p.returnRate()));
-            html = EmailTemplateEngine.fillText(html, "scenario", p.scenario().label());
             String alt = EmailTemplateEngine.attribute(html, "chart_url", "alt");
             html = EmailTemplateEngine.setAlt(html, "chart_url", alt(alt, p));
         } else {
@@ -136,8 +135,7 @@ public final class PersonalizedWelcomeEmail {
                     + EmailFormats.money(p.targetIncome()) + "/mo starting at " + p.roundedFreedomAge() + ".\n"
                     + EmailFormats.compact(p.totalContributed()) + " in. A projected " + EmailFormats.compact(p.portfolioTarget())
                     + " out. Compounding does the rest.\n";
-            finePrint = "Assumes a " + EmailFormats.percent(p.returnRate()) + " avg annual return (" + p.scenario().label()
-                    + " scenario) & 4% withdrawal rate. " + DISCLOSURE;
+            finePrint = "Assumes a " + EmailFormats.percent(p.returnRate()) + " avg annual return & 4% withdrawal rate. " + DISCLOSURE;
         } else {
             personal = "Put your financial future on autopilot.\n";
             finePrint = DISCLOSURE;

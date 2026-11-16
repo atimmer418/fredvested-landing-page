@@ -33,7 +33,8 @@ class PersonalizedWelcomeEmailTest {
     static final List<String> SENTENCES = List.of(
             "You're on FRED's private beta waitlist.",
             "Here's the math FRED is built around.",
-            "300 spots. 48 hours. One-time offer.",
+            "300 spots. 48 hours.",
+            "One-time offer.",
             "Invites go out in waves. When yours lands, you have",
             "48 hours",
             "to claim it. After that, it goes to the next person in line.",
@@ -90,7 +91,7 @@ class PersonalizedWelcomeEmailTest {
         assertTrue(r.html().contains("12 fewer working years could look like:"));
         assertTrue(r.html().contains("$2,000</b>/mo from age <b style=\"color:#ffffff;\">30</b> &rarr; a projected <b style=\"color:#ffffff;\">$7,500</b>/mo starting&nbsp;at&nbsp;<b style=\"color:#ffffff;\">53</b>."));
         assertTrue(r.html().contains(">$564k in. A projected $2.25M&nbsp;out. <br>Compounding does the rest. </p>"));
-        assertTrue(r.html().contains(">Assumes a 10% avg annual return (Moderate scenario) &amp; 4% withdrawal rate. Hypothetical illustration"));
+        assertTrue(r.html().contains(">Assumes a 10% avg annual return &amp; 4% withdrawal rate. Hypothetical illustration"));
         assertFalse(r.html().contains("<span>"), "bare marker spans collapse to their text");
         assertFalse(r.html().contains("xmlns="), "the XHTML namespace is dropped");
         assertTrue(r.html().contains("alt=\"Line chart of a projected portfolio growing to $2.25M between age 30 and age 53, with $564k put in\""), "alt carries the four numbers");
@@ -98,14 +99,15 @@ class PersonalizedWelcomeEmailTest {
         assertFalse(r.html().contains("cid:"));
         assertFalse(r.html().contains("Put your financial future on autopilot."));
 
-        assertTrue(r.text().contains("12 fewer working years could look like:\n$2,000/mo from age 30 -> a projected $7,500/mo starting at 53.\n$564k in. A projected $2.25M out. Compounding does the rest.\nAssumes a 10% avg annual return (Moderate scenario) & 4% withdrawal rate. Hypothetical illustration"));
+        assertTrue(r.text().contains("12 fewer working years could look like:\n$2,000/mo from age 30 -> a projected $7,500/mo starting at 53.\n$564k in. A projected $2.25M out. Compounding does the rest.\nAssumes a 10% avg annual return & 4% withdrawal rate. Hypothetical illustration"));
     }
 
     @Test
     void anotherRecipient_getsTheirOwnNumbers_includingTheAltText() {
         EmailTemplates.Rendered r = PersonalizedWelcomeEmail.render(Fixtures.projection("existing-100k-optimistic"), CHART, WORDMARK, UNSUB, ADDR);
         assertTrue(r.html().contains("8 fewer working years could look like:"));
-        assertTrue(r.html().contains("Assumes a 12% avg annual return (Optimistic scenario)"));
+        assertTrue(r.html().contains("Assumes a 12% avg annual return &amp; 4% withdrawal rate."));
+        assertFalse(r.html().contains("Optimistic") || r.text().contains("Optimistic"), "the scenario is not printed");
         assertTrue(r.html().contains("growing to $2.25M between age 30 and age 48, with $522k put in\""));
         assertTrue(r.text().contains("starting at 48."));
     }
@@ -124,7 +126,7 @@ class PersonalizedWelcomeEmailTest {
             assertTrue(r.html().contains("src=\"" + CHART + "\""));
             assertTrue(r.html().contains("/mo from age"));
             assertTrue(r.html().contains("Compounding does the rest."));
-            assertTrue(r.html().contains("Assumes a 10% avg annual return (Moderate scenario)"));
+            assertTrue(r.html().contains("Assumes a 10% avg annual return &amp; 4% withdrawal rate."));
             assertTrue(r.text().contains("Put your financial future on autopilot.\n$"));
             assertFalse(r.text().contains("fewer working years") || r.text().contains("Dates move."));
             assertTrue(r.text().contains("Compounding does the rest."));
@@ -154,7 +156,7 @@ class PersonalizedWelcomeEmailTest {
             assertTrue(r.html().contains(">Your date is on the board. Dates move. </p>"), r.html());
             assertFalse(r.html().contains("autopilot") || r.html().contains("fewer working years"), r.html());
             assertTrue(r.html().contains("src=\"" + CHART + "\"") && r.html().contains("/mo from age") && r.html().contains("Compounding does the rest."));
-            assertTrue(r.html().contains("Assumes a 10% avg annual return (Moderate scenario)"));
+            assertTrue(r.html().contains("Assumes a 10% avg annual return &amp; 4% withdrawal rate."));
             assertTrue(r.html().contains("color:#f1f5f9;\">" + PREHEADER_TAIL), "preheader keeps only the frozen sentence");
             assertFalse(r.html().contains("data-projection") || r.html().contains("<span>"));
             assertFalse(r.text().contains("autopilot") || r.text().contains("fewer working years"));
@@ -223,7 +225,7 @@ class PersonalizedWelcomeEmailTest {
                 "12 fewer working years could look like:",
                 "$2,000/mo from age 30 -> a projected $7,500/mo starting at 53.",
                 "$564k in. A projected $2.25M out. Compounding does the rest.",
-                "Assumes a 10% avg annual return (Moderate scenario) & 4% withdrawal rate. " + DISCLOSURES.get(0),
+                "Assumes a 10% avg annual return & 4% withdrawal rate. " + DISCLOSURES.get(0),
                 "",
                 "300 spots. 48 hours. One-time offer.",
                 "Invites go out in waves. When yours lands, you have 48 hours to claim it. After that, it goes to the next person in line.",
@@ -315,6 +317,13 @@ class PersonalizedWelcomeEmailTest {
         assertEquals(2, count(html, "<td class=\"box-inner\""));
         // Every <br> follows a space, so a tag-stripping snippet keeps the word gap.
         assertEquals(count(html, "<br>"), count(html, " <br>"));
+        // Later on 2026-11-16: "One-time offer." is its own line on a phone only (a block under 540px, inline
+        // elsewhere), and the assumptions line no longer names the scenario.
+        assertTrue(html.contains(">300 spots. 48 hours. <span class=\"offer-line\">One-time offer. </span></p>"), "the offer line's span, the block's trailing space inside it");
+        assertTrue(html.contains("@media only screen and (max-width:540px) {\n      .offer-line { display:block !important; }"), "a block under 540px (the heading cannot hold one line below about 520px)");
+        assertFalse(html.contains("class=\"offer-line\" style="), "inline by default: no inline display on the span");
+        assertFalse(html.contains("scenario)") || sample().text().contains("scenario"), "the scenario parenthesis is gone");
+        assertEquals(1, count(html, "avg annual return &amp; 4% withdrawal rate."));
     }
 
     @Test
