@@ -16,7 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (+ .txt), welcome-late-date.html (+ .txt; the 65-or-later variant from the stake-hidden
  * sample, with its own chart) and confirmation-v2.html (+ .txt). The on-disk HTML's chart
  * URL is a PNG in the same directory (growth-chart-sample.png is written by
- * GrowthChartRendererTest); the sent email carries the recipient's tokened URL instead.
+ * GrowthChartRendererTest), and the header wordmark is fred-wordmark.png beside them; the sent
+ * email carries the recipient's tokened chart URL and the API's wordmark URL instead.
  */
 class EmailPreviewFixtureTest {
 
@@ -24,15 +25,17 @@ class EmailPreviewFixtureTest {
     static final String UNSUB = "https://lpapi-dev.fredvested.com/api/waitlist/unsubscribe?token=sample";
     static final String CONFIRM = "https://lpapi-dev.fredvested.com/api/waitlist/confirm?token=sample";
     static final String ADDR = "PO Box 2406, Rockville, MD 20847";
+    static final String WORDMARK = "fred-wordmark.png";
 
     @Test
     void writesTheSampleRenders() throws IOException {
         Files.createDirectories(DIR);
-        write("welcome-sample", PersonalizedWelcomeEmail.render(Fixtures.projection("sample"), "growth-chart-sample.png", UNSUB, ADDR));
-        write("welcome-fallback", PersonalizedWelcomeEmail.render(null, null, UNSUB, ADDR));
-        write("welcome-late-date", PersonalizedWelcomeEmail.render(Fixtures.projection("stake-hidden"), "growth-chart-late-date.png", UNSUB, ADDR));
+        write("welcome-sample", PersonalizedWelcomeEmail.render(Fixtures.projection("sample"), "growth-chart-sample.png", WORDMARK, UNSUB, ADDR));
+        write("welcome-fallback", PersonalizedWelcomeEmail.render(null, null, WORDMARK, UNSUB, ADDR));
+        write("welcome-late-date", PersonalizedWelcomeEmail.render(Fixtures.projection("stake-hidden"), "growth-chart-late-date.png", WORDMARK, UNSUB, ADDR));
         Files.write(DIR.resolve("growth-chart-late-date.png"), GrowthChartRenderer.render(Fixtures.projection("stake-hidden")).bytes());
-        write("confirmation-v2", EmailTemplates.confirmationV2(CONFIRM, UNSUB, 7, ADDR));
+        Files.write(DIR.resolve(WORDMARK), WordmarkRenderer.render().bytes());
+        write("confirmation-v2", EmailTemplates.confirmationV2(CONFIRM, UNSUB, 7, ADDR, WORDMARK));
         for (String name : new String[] { "welcome-sample", "welcome-fallback", "welcome-late-date", "confirmation-v2" }) {
             assertTrue(Files.size(DIR.resolve(name + ".html")) > 1000, name);
             assertTrue(Files.size(DIR.resolve(name + ".txt")) > 100, name);

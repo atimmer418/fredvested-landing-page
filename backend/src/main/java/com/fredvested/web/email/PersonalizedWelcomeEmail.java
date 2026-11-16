@@ -12,7 +12,8 @@ import java.util.regex.Pattern;
  * the template's (frozen, pending counsel); only the data-field values change.
  * The chart is an image URL on this API (EmailChartController: an unguessable token,
  * nothing else), drawn on request from the same stored projection; it was a cid
- * attachment until 2026-11-15, which some mail apps never resolve.
+ * attachment until 2026-11-15, which some mail apps never resolve. The header's wordmark is
+ * the navbar logo as an image on this API too (EmailWordmarkController, one static picture).
  */
 public final class PersonalizedWelcomeEmail {
 
@@ -61,14 +62,17 @@ public final class PersonalizedWelcomeEmail {
 
     /**
      * @param p        the recipient's projection, or null for the no-chart fallback
-     * @param chartUrl the URL of this recipient's chart image (ignored without a projection)
+     * @param chartUrl    the URL of this recipient's chart image (ignored without a projection)
+     * @param wordmarkUrl the URL of the header wordmark image (EmailWordmarkController.url)
      */
-    public static EmailTemplates.Rendered render(Projection p, String chartUrl, String unsubscribeUrl, String postalAddress) {
-        return new EmailTemplates.Rendered(Holder.SUBJECT, html(p, chartUrl, unsubscribeUrl, postalAddress), text(p, unsubscribeUrl, postalAddress));
+    public static EmailTemplates.Rendered render(Projection p, String chartUrl, String wordmarkUrl, String unsubscribeUrl, String postalAddress) {
+        return new EmailTemplates.Rendered(Holder.SUBJECT, html(p, chartUrl, wordmarkUrl, unsubscribeUrl, postalAddress), text(p, unsubscribeUrl, postalAddress));
     }
 
-    static String html(Projection p, String chartUrl, String unsubscribeUrl, String postalAddress) {
+    static String html(Projection p, String chartUrl, String wordmarkUrl, String unsubscribeUrl, String postalAddress) {
+        if (wordmarkUrl == null || wordmarkUrl.isBlank()) throw new IllegalArgumentException("the header wordmark needs a URL");
         String html = EmailTemplateEngine.stripLeadingComment(Holder.HTML);
+        html = EmailTemplateEngine.setSrc(html, "wordmark_url", wordmarkUrl);
         if (p != null) {
             if (chartUrl == null || chartUrl.isBlank()) throw new IllegalArgumentException("a projection needs a chart URL");
             html = EmailTemplateEngine.setSrc(html, "chart_url", chartUrl);
@@ -147,8 +151,9 @@ public final class PersonalizedWelcomeEmail {
                 + "300 spots. 48 hours. One-time offer.\n"
                 + "Invites go out in waves. When yours lands, you have 48 hours to claim it. After that, it goes to the next person in line.\n"
                 + "\n"
-                + "Nothing to do now. Watch your inbox.\n"
-                + "No payment until launch. Private beta is iOS only.\n"
+                + "Kick your hooves up. FRED will be oinking in your inbox when it's time.\n"
+                + "No payment until launch.\n"
+                + "Private beta is iOS only.\n"
                 + "\n"
                 + "The FRED Team\n"
                 + "help@fredvested.com\n"

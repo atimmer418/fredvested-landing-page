@@ -11,6 +11,7 @@ class EmailTemplatesTest {
     static final String CONFIRM = "https://lpapi-dev.fredvested.com/api/waitlist/confirm?token=abc";
     static final String UNSUB = "https://lpapi-dev.fredvested.com/api/waitlist/unsubscribe?token=def";
     static final String ADDR = "PO Box 123, Baltimore, MD 21201";
+    static final String WORDMARK = "https://lpapi-dev.fredvested.com/api/email/wordmark-v1.png";
 
     // The v1 templates (email.templates.v2.enabled=false, the default): every assertion on
     // them is unchanged. The v2 confirmation (confirmationV2, in the personalised welcome's
@@ -20,7 +21,7 @@ class EmailTemplatesTest {
     }
 
     static EmailTemplates.Rendered v2() {
-        return EmailTemplates.confirmationV2(CONFIRM, UNSUB, 7, ADDR);
+        return EmailTemplates.confirmationV2(CONFIRM, UNSUB, 7, ADDR, WORDMARK);
     }
 
     // Counsel, 2026-09-24: every email carries an unsubscribe link and our postal address,
@@ -86,12 +87,16 @@ class EmailTemplatesTest {
         assertTrue(r.html().contains("text-wrap:pretty"));
         // No calculator sentence on a consent email, and nothing else from the welcome's body.
         assertFalse(r.html().contains("This email reflects") || r.text().contains("This email reflects"));
-        assertFalse(r.html().contains("cid:") || r.html().contains("<img"));
+        // The one image is the static header wordmark on this API (the same for everyone); no chart, no cid.
+        assertFalse(r.html().contains("cid:") || r.html().contains("/api/email/chart/"));
+        assertEquals(1, count(r.html(), "<img"));
+        assertTrue(r.html().contains("src=\"" + WORDMARK + "\"") && r.html().contains("alt=\"FRED\""));
+        assertThrows(IllegalArgumentException.class, () -> EmailTemplates.confirmationV2(CONFIRM, UNSUB, 7, ADDR, " "));
         assertFalse(r.html().contains("data-field") || r.html().contains("data-projection") || r.html().startsWith("<!--"));
         assertTrue(r.html().startsWith("<!DOCTYPE html>"));
-        EmailTemplates.Rendered hostile = EmailTemplates.confirmationV2(CONFIRM, UNSUB, 7, "<b>x</b>");
+        EmailTemplates.Rendered hostile = EmailTemplates.confirmationV2(CONFIRM, UNSUB, 7, "<b>x</b>", WORDMARK);
         assertFalse(hostile.html().contains("<b>x</b>"), "address is escaped in HTML");
-        EmailTemplates.Rendered ten = EmailTemplates.confirmationV2(CONFIRM, UNSUB, 10, ADDR);
+        EmailTemplates.Rendered ten = EmailTemplates.confirmationV2(CONFIRM, UNSUB, 10, ADDR, WORDMARK);
         assertTrue(ten.html().contains("10 days") && ten.text().contains("10 days") && !ten.html().contains("7 days"));
     }
 
@@ -113,14 +118,19 @@ class EmailTemplatesTest {
         }
     }
 
+    // The v2 wordmark is the navbar logo as an image since 2026-11-16 (Andrew), with a styled "FRED"
+    // as the alt text; its size attributes are the PNG's CSS size.
     @Test
-    void v2_declaresBothColorSchemes_andAnUprightWordmark() {
+    void v2_declaresBothColorSchemes_andTheNavbarWordmarkImage() {
         EmailTemplates.Rendered r = v2();
         assertTrue(r.html().contains("prefers-color-scheme: dark") && r.html().contains("[data-ogsc]"));
         assertTrue(r.html().contains("<meta name=\"color-scheme\" content=\"light dark\">"));
-        int fred = r.html().indexOf(">FRED </span>");
-        String span = r.html().substring(r.html().lastIndexOf("<span", fred), fred);
-        assertTrue(span.contains("font-weight:800") && !span.contains("italic"), span);
+        int img = r.html().indexOf("<img class=\"wordmark\"");
+        assertTrue(img > 0 && img < r.html().indexOf("<h1"));
+        String tag = r.html().substring(img, r.html().indexOf(">", img) + 1);
+        assertTrue(tag.contains("src=\"" + WORDMARK + "\"") && tag.contains("alt=\"FRED\"") && tag.contains("font-style:italic") && tag.contains("Montserrat,"), tag);
+        assertTrue(tag.contains("width=\"" + com.fredvested.web.email.WordmarkRenderer.render().cssWidth() + "\" height=\"" + com.fredvested.web.email.WordmarkRenderer.render().cssHeight() + "\""), tag);
+        assertFalse(r.html().contains(">FRED </span>"));
     }
 
     // iOS has no Arial Black; Arial's heaviest weight there is bold, so the wordmark
@@ -177,10 +187,21 @@ class EmailTemplatesTest {
             String html = r.html();
             assertFalse(html.contains("<link"), "no stylesheet links");
             assertFalse(html.contains("@import") || html.contains("url("), "no fetched fonts or images");
-            assertFalse(html.contains("<img"), "no remote images");
+            // v1: no image at all. v2: only the header wordmark, on this API.
+            if (html.contains("wordmark-v1.png")) {
+                assertEquals(count(html, "<img"), count(html, "src=\"" + WORDMARK + "\""), "no image but the wordmark");
+            } else {
+                assertFalse(html.contains("<img"), "no remote images");
+            }
             assertFalse(html.contains("http://"), "no cleartext links");
             assertFalse(html.contains("—") || r.text().contains("—") || r.subject().contains("—"), "no em dashes");
             assertTrue(html.contains(UNSUB) && r.text().contains(UNSUB), "unsubscribe link in both parts");
         }
+    }
+
+    private static int count(String s, String needle) {
+        int n = 0;
+        for (int i = s.indexOf(needle); i >= 0; i = s.indexOf(needle, i + needle.length())) n++;
+        return n;
     }
 }

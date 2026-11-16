@@ -73,10 +73,14 @@ FREDvested LLC, %s
      * The v2 confirmation email (email.templates.v2.enabled): the same consent-only
      * sentences as {@link #confirmation}, in the frame of the personalised welcome
      * email (email/confirmation-v2.html, rendered by EmailTemplateEngine). The text
-     * part is the v1 text with the "Privacy policy:" label matching the HTML.
+     * part is the v1 text with the "Privacy policy:" label matching the HTML. The header's
+     * wordmark is the navbar logo as an image on this API (wordmarkUrl, one static picture:
+     * EmailWordmarkController.url), the only image a consent email carries.
      */
-    public static Rendered confirmationV2(String confirmUrl, String unsubscribeUrl, int ttlDays, String postalAddress) {
+    public static Rendered confirmationV2(String confirmUrl, String unsubscribeUrl, int ttlDays, String postalAddress, String wordmarkUrl) {
+        if (wordmarkUrl == null || wordmarkUrl.isBlank()) throw new IllegalArgumentException("the header wordmark needs a URL");
         String html = EmailTemplateEngine.stripLeadingComment(ConfirmationV2.HTML);
+        html = EmailTemplateEngine.setSrc(html, "wordmark_url", wordmarkUrl);
         html = EmailTemplateEngine.setHref(html, "confirm_url", confirmUrl);
         html = EmailTemplateEngine.fillText(html, "ttl_days", String.valueOf(ttlDays));
         html = EmailTemplateEngine.fillText(html, "postal_address", postalAddress == null ? "" : postalAddress);

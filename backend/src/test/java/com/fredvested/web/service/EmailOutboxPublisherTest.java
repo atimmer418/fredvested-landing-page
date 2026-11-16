@@ -212,6 +212,7 @@ class EmailOutboxPublisherTest {
         assertEquals(ConfirmationTokens.hash(raw), hash.getValue(), "only the hash is stored");
         assertFalse(html.getValue().contains(hash.getValue()), "the hash is not in the email");
         assertFalse(html.getValue().contains("cid:") || html.getValue().contains("a@example.com"));
+        assertEquals(1, count(html.getValue(), "src=\"https://lpapi.fredvested.com/api/email/wordmark-v1.png\""), "the header wordmark on the API's public origin");
         assertTrue(html.getValue().contains("12 fewer working years could look like:"), html.getValue());
         assertTrue(html.getValue().contains("$2,000</b>/mo from age <b style=\"color:#ffffff;\">30</b>"));
         assertFalse(html.getValue().contains("Put your financial future on autopilot."));
@@ -236,7 +237,9 @@ class EmailOutboxPublisherTest {
         verify(emailService).send(eq("a@example.com"), eq("You're in"), html.capture(), anyString(), anyMap());
         verify(waitlist, never()).setChartToken(anyLong(), anyString());
         assertTrue(html.getValue().contains("Put your financial future on autopilot."));
-        assertFalse(html.getValue().contains("/api/email/chart/") || html.getValue().contains("<img"));
+        assertFalse(html.getValue().contains("/api/email/chart/"));
+        assertEquals(1, count(html.getValue(), "<img"), "the header wordmark is the only image");
+        assertEquals(1, count(html.getValue(), "src=\"https://lpapi.fredvested.com/api/email/wordmark-v1.png\""));
         assertFalse(html.getValue().contains("fewer working years"));
         assertEquals(EmailMessage.STATUS_SENT, message.getStatus());
     }

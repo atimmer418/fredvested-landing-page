@@ -12,6 +12,15 @@
   width (600 - 2*32 - 2*24) at the chart's 2:1 ratio, for the Word engine in Outlook, which ignores the CSS widths.
   The 65-or-later variant (headline-late and body-late, shown when the rounded Freedom Date is 65 or later,
   whatever rung of the stakes ladder) is Andrew's copy of 2026-10-28, verbatim.
+  2026-11-16 (Andrew): the header's wordmark is the navbar's logo, Montserrat Black Italic in the brand blue, as
+  an image on this API (/api/email/wordmark-v1.png, WordmarkRenderer: one static picture, nothing per recipient;
+  no mail client has the face and none fetches a web font); its width/height attributes are the PNG's CSS size
+  and a styled "FRED" is the alt text. Line breaks he asked for: "starting at N." never breaks (the age stood
+  alone on a third line on an iPhone), "out." stays on the first line of the summary (a <br> before
+  "Compounding"), and "No payment until launch." / "Private beta is iOS only." are two lines. Under 480px the
+  two boxes lose 8px of outer and 8px of inner side padding (.box-cell / .box-inner) so the inputs line and
+  the summary hold two lines in the iPhone system font from 375px up; desktop is unchanged. A <br> is
+  preceded by a space so a tag-stripping snippet keeps the word gap.
 -->
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -43,6 +52,10 @@
     [data-ogsc] .wordmark { color: #5b8cff !important; }
     [data-ogsc] .rule { border-bottom-color: #2f6bff !important; }
     [data-ogsc] .footer-link { color: #cbd5e1 !important; }
+    @media only screen and (max-width:480px) {
+      .box-cell { padding-left:24px !important; padding-right:24px !important; }
+      .box-inner { padding-left:16px !important; padding-right:16px !important; }
+    }
   </style>
 </head>
 <body class="page" style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
@@ -53,7 +66,7 @@
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
           <tr>
             <td class="rule" style="padding:36px 40px 28px;text-align:center;border-bottom:3px solid #1d4ed8;">
-              <span class="wordmark" style="font-size:40px;font-weight:800;line-height:1;letter-spacing:-0.5px;color:#1d4ed8;">FRED </span>
+              <img class="wordmark" data-field="wordmark_url" src="https://lpapi.fredvested.com/api/email/wordmark-v1.png" width="120" height="40" alt="FRED" style="display:block;margin:0 auto;width:120px;height:40px;border:0;font-family:Montserrat,'Arial Black','Avenir Next',Arial,sans-serif;font-size:40px;font-weight:900;font-style:italic;line-height:40px;color:#135bec;text-align:center;">
             </td>
           </tr>
           <tr>
@@ -63,15 +76,15 @@
             </td>
           </tr>
           <tr>
-            <td style="padding:20px 32px 0;">
+            <td class="box-cell" style="padding:20px 32px 0;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1d4ed8;border-radius:20px;">
                 <tr>
-                  <td style="padding:28px 24px 24px;text-align:center;color:#ffffff;">
+                  <td class="box-inner" style="padding:28px 24px 24px;text-align:center;color:#ffffff;">
                     <p style="margin:0 0 10px;font-size:24px;line-height:1.25;font-weight:800;color:#ffffff;"><span data-projection="headline"><span data-field="stake_years">12</span> fewer working years could look like:</span><span data-projection="headline-late">Your date is on the board. Dates move.</span><span data-projection="headline-fallback">Put your financial future on autopilot.</span> </p>
                     <p data-projection="body-late" style="margin:0 0 20px;font-size:16px;line-height:1.5;color:#dbeafe;text-align:left;">Based on what you entered, your projected Freedom Date landed at <b style="color:#ffffff;" data-field="freedom_age">53</b>. A first projection is a starting point, not a verdict. Two things move a date like this in the math: how much goes in each month, and how long compounding gets to run. The calculator stays open, and the sliders are the point: test different monthly amounts and watch what the projection does. When FRED opens, the automation handles the showing-up part, which is the part most people lose years to. </p>
-                    <p data-projection="inputs" style="margin:0 0 20px;font-size:16px;line-height:1.4;color:#dbeafe;"><b style="color:#ffffff;" data-field="monthly_invest">$2,000</b>/mo from age <b style="color:#ffffff;" data-field="current_age">30</b> &rarr; a projected <b style="color:#ffffff;" data-field="target_income">$7,500</b>/mo starting at <b style="color:#ffffff;" data-field="freedom_age">53</b>. </p>
+                    <p data-projection="inputs" style="margin:0 0 20px;font-size:16px;line-height:1.4;color:#dbeafe;"><b style="color:#ffffff;" data-field="monthly_invest">$2,000</b>/mo from age <b style="color:#ffffff;" data-field="current_age">30</b> &rarr; a projected <b style="color:#ffffff;" data-field="target_income">$7,500</b>/mo starting&nbsp;at&nbsp;<b style="color:#ffffff;" data-field="freedom_age">53</b>. </p>
                     <img data-projection="chart" data-field="chart_url" src="https://lpapi.fredvested.com/api/email/chart/sample.png" width="488" height="244" alt="Line chart of a projected portfolio growing to $2.25M between age 30 and age 53, with $560k put in" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto 16px;border:0;">
-                    <p data-projection="summary" style="margin:0 0 14px;font-size:16px;line-height:1.35;font-weight:700;color:#ffffff;"><span data-field="total_contributed">$560k</span> in. A projected <span data-field="portfolio_target">$2.25M</span> out. Compounding does the rest. </p>
+                    <p data-projection="summary" style="margin:0 0 14px;font-size:16px;line-height:1.35;font-weight:700;color:#ffffff;"><span data-field="total_contributed">$560k</span> in. A projected <span data-field="portfolio_target">$2.25M</span>&nbsp;out. <br>Compounding does the rest. </p>
                     <p style="margin:0;font-size:12px;line-height:1.5;color:#bfdbfe;"><span data-projection="assumptions">Assumes a <span data-field="return_rate">10%</span> avg annual return (<span data-field="scenario">Moderate</span> scenario) &amp; 4% withdrawal rate. </span>Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary. Investing involves risk, including possible loss of principal. </p>
                   </td>
                 </tr>
@@ -79,10 +92,10 @@
             </td>
           </tr>
           <tr>
-            <td style="padding:24px 32px 0;">
+            <td class="box-cell" style="padding:24px 32px 0;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="offer" style="background-color:#f1f5f9;border-radius:20px;">
                 <tr>
-                  <td style="padding:26px 24px;text-align:center;">
+                  <td class="box-inner" style="padding:26px 24px;text-align:center;">
                     <p class="ink" style="margin:0 0 10px;font-size:22px;line-height:1.25;font-weight:800;color:#0f172a;">300 spots. 48 hours. One-time offer. </p>
                     <p class="ink" style="margin:0;font-size:17px;line-height:1.5;color:#334155;">Invites go out in waves. When yours lands, you have <b>48 hours</b> to claim it. After that, it goes to the next person in line. </p>
                   </td>
@@ -92,8 +105,8 @@
           </tr>
           <tr>
             <td style="padding:36px 32px 40px;text-align:center;">
-              <p class="ink" style="margin:0 0 8px;font-size:19px;line-height:1.35;color:#0f172a;">Nothing to do now. Watch your inbox. </p>
-              <p class="muted" style="margin:0;font-size:15px;line-height:1.4;color:#64748b;">No payment until launch. Private beta is iOS only. </p>
+              <p class="ink" style="margin:0 0 8px;font-size:19px;line-height:1.35;color:#0f172a;">Kick your hooves up. FRED will be oinking in your inbox when it's time. </p>
+              <p class="muted" style="margin:0;font-size:15px;line-height:1.4;color:#64748b;">No payment until launch. <br>Private beta is iOS only. </p>
             </td>
           </tr>
           <tr>

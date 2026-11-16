@@ -2,6 +2,7 @@ package com.fredvested.web.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fredvested.web.email.EmailChartController;
+import com.fredvested.web.email.EmailWordmarkController;
 import com.fredvested.web.email.PersonalizedWelcomeEmail;
 import com.fredvested.web.email.Projection;
 import com.fredvested.web.email.ProjectionJson;
@@ -176,7 +177,7 @@ public class EmailOutboxPublisher {
             EmailTemplates.Rendered rendered;
             if (confirmation) {
                 rendered = templatesV2
-                        ? EmailTemplates.confirmationV2(confirmUrl, unsubscribeUrl, ttlDays, postalAddress)
+                        ? EmailTemplates.confirmationV2(confirmUrl, unsubscribeUrl, ttlDays, postalAddress, EmailWordmarkController.url(apiPublicUrl))
                         : EmailTemplates.confirmation(confirmUrl, unsubscribeUrl, ttlDays, postalAddress);
             } else if (templatesV2) {
                 Projection projection = projection(entry);
@@ -191,7 +192,7 @@ public class EmailOutboxPublisher {
                     waitlist.setChartToken(entry.getId(), chart.hash());
                     chartUrl = EmailChartController.url(apiPublicUrl, chart.raw());
                 }
-                rendered = PersonalizedWelcomeEmail.render(projection, chartUrl, unsubscribeUrl, postalAddress);
+                rendered = PersonalizedWelcomeEmail.render(projection, chartUrl, EmailWordmarkController.url(apiPublicUrl), unsubscribeUrl, postalAddress);
             } else {
                 rendered = EmailTemplates.welcome(unsubscribeUrl, postalAddress);
             }

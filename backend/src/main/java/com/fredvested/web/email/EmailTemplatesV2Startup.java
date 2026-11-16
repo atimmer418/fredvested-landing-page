@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 
 /**
- * With the v2 templates on, renders the bundled sample projection (email and chart) once
+ * With the v2 templates on, renders the bundled sample projection (email, chart and the header wordmark) once
  * at boot and lets any failure stop startup: a JDK without a working Java2D or font stack
  * would otherwise be discovered only by the scheduler thread, one welcome email at a time
  * (the same principle as ddl-auto=validate: loud at boot, never silent later).
@@ -33,9 +33,11 @@ public class EmailTemplatesV2Startup {
     @PostConstruct
     public void check() {
         Projection sample = sample();
-        PersonalizedWelcomeEmail.render(sample, "https://example.invalid/chart.png", "https://example.invalid/unsubscribe", "[PO Box pending]");
+        PersonalizedWelcomeEmail.render(sample, "https://example.invalid/chart.png", "https://example.invalid/wordmark.png", "https://example.invalid/unsubscribe", "[PO Box pending]");
         GrowthChartRenderer.Png png = GrowthChartRenderer.render(sample);
-        log.info("email templates v2 enabled: sample chart {} bytes at {}x{}", png.bytes().length, png.width(), png.height());
+        WordmarkRenderer.Png wordmark = WordmarkRenderer.render();
+        log.info("email templates v2 enabled: sample chart {} bytes at {}x{}, wordmark {} bytes at {}x{}",
+                png.bytes().length, png.width(), png.height(), wordmark.bytes().length, wordmark.width(), wordmark.height());
     }
 
     private Projection sample() {

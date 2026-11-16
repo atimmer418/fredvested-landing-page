@@ -4,6 +4,7 @@
   Consent only (counsel, 2026-09-24): the sentences are those of EmailTemplates.confirmation,
   nothing promotional, no dollar sign anywhere (EmailTemplatesTest's deny-list), and the footer
   carries no calculator sentence. data-field and this comment are stripped from the sent output.
+  The header's wordmark is the navbar logo as an image on this API (see welcome-personalized.html).
 -->
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -44,7 +45,7 @@
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
           <tr>
             <td class="rule" style="padding:36px 40px 28px;text-align:center;border-bottom:3px solid #1d4ed8;">
-              <span class="wordmark" style="font-size:40px;font-weight:800;line-height:1;letter-spacing:-0.5px;color:#1d4ed8;">FRED </span>
+              <img class="wordmark" data-field="wordmark_url" src="https://lpapi.fredvested.com/api/email/wordmark-v1.png" width="120" height="40" alt="FRED" style="display:block;margin:0 auto;width:120px;height:40px;border:0;font-family:Montserrat,'Arial Black','Avenir Next',Arial,sans-serif;font-size:40px;font-weight:900;font-style:italic;line-height:40px;color:#135bec;text-align:center;">
             </td>
           </tr>
           <tr>
