@@ -265,7 +265,7 @@ test.describe('at-target state', () => {
     await expect(page.locator('#stakes-line')).toBeVisible();
     await expect(page.locator('#stakes-line')).toHaveText(gap(30));
     await expect(page.locator('#capture-heading')).toBeVisible();
-    await expect(page.locator('#capture-heading')).toHaveText('FRED exists to close the gap.');
+    await expect(page.locator('#capture-heading')).toHaveText('FRED exists to help it last.'); // the at-target heading (Andrew, 2026-11-16)
     const body = (await page.locator('#capture-support').textContent()).trim();
     for (const anchor of AT_TARGET_ANCHORS) expect(body).toMatch(anchor);
     expect(body).not.toContain('—');

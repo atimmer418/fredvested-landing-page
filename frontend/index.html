@@ -370,8 +370,10 @@
            below, shared with the feasible block) whose right cell says "Today" in primary with the current month
            and year under it, then the SAME stakes line and headline as the dated reveal (Andrew, 2026-10-30:
            "That gap is N years of your life." with N the years between the age entered and 65, from the same
-           stakes() as the dated state, and "FRED exists to close the gap."), with the at-target sentence
-           (COPY.AT_TARGET_BODY, trimmed to two lines) in the sub line's slot, and the same button. The pig: the
+           stakes() as the dated state) under its own heading since 2026-11-16 (COPY.HEADLINE_AT_TARGET, "FRED exists
+           to help it last."; the dated "close the gap" and "pull it closer" read wrong for a visitor who is there
+           today), with the at-target sentence (COPY.AT_TARGET_BODY, trimmed to two lines) in the sub line's slot,
+           and the same button. The pig: the
            same svgo precision-0 recipe as the other two, Illustrator styles turned into fill attributes, ids
            stripped, viewBox cropped to the drawing (47 KB inlined; the 1.4 MB source is never requested). The
            signup and analytics still carry no freedomAge / freedom_age for this state (at_target), no stakes
@@ -446,7 +448,8 @@
            Turnstile, submit handling and the success / pending / error states are the ones the form always had;
            only the position and the wrapper changed (2026-10-24 into the dark card, 2026-10-25 into this card). -->
       <!-- ATTORNEY REVIEW PENDING 2026-10-25: capture copy (COPY.STAKES*, COPY.HEADLINE*, COPY.SUB*, COPY.BUTTON*;
-           2026-11-01: the 65-and-later lines STAKES_LATE / HEADLINE_LATE / SUB_LATE and the left cell's "No date").
+           2026-11-01: the 65-and-later lines STAKES_LATE / HEADLINE_LATE / SUB_LATE and the left cell's "No date";
+           2026-11-16: the at-target heading HEADLINE_AT_TARGET).
            The headline and button carry a number computed from the visitor's inputs, a departure from the
            product-neutral capture ruling of 2026-08-18 made by the founder in this spec. -->
       <div id="capture">
@@ -732,6 +735,11 @@
     // illustration, not an assessment of whether you can retire.") so it holds to two lines in the slot at 390px, as
     // SUB does; counsel's hedge clause is kept word for word and the hypothetical point is made by DISCLAIMER below.
     AT_TARGET_BODY: "Based on your inputs, you meet the target. Not an assessment of whether you can retire.",
+    // The at-target heading (Andrew, 2026-11-16): a visitor who meets the target today has nothing to close or pull
+    // closer, so neither dated heading fits; his sentence was "FRED exists to help your money last", cut to the slot
+    // (about 30 characters on every phone; "money", "longer" and "for life" all wrapped). Measured 2026-11-16: one
+    // line at 320, 360 and 390. Takes the heading slot in both at-target branches (under and over 64).
+    HEADLINE_AT_TARGET: "FRED exists to help it last.",
     EMAIL_LABEL: "Email",
     // The small block under the capture section: assumptions, target and the approved disclosure
     // sentence (2026-09-01), which is static in the markup (#result-disclaimer). {article} is
@@ -1126,7 +1134,7 @@
     // 65 or later. Since 2026-11-01 that case shows the comparison too, "No date" on the left. At the
     // target (2026-10-30) the plan's age is the age entered, so N is the years between it and 65 and
     // the state reads exactly as the dated reveal, with "Today" and the current month and year on
-    // FRED's side and the at-target sentence in the sub line's slot. Nothing is projected there, so
+    // FRED's side, its own heading (HEADLINE_AT_TARGET) and the at-target sentence in the sub line's slot. Nothing is projected there, so
     // the analytics' stake_source stays "hidden" and the signup carries no projection (lastStakes null).
     const st = computeStakes({ age: inputs.age, invest: inputs.invest, retire: inputs.retire, existing: inputs.existing, ratePct: currentScenario().pct });
     lastStakes = res.atTarget ? null : { years: st.years, source: st.source };
@@ -1141,11 +1149,11 @@
     compareRightDate.textContent = formatMonthYear(res.atTarget ? new Date() : res.date); // the month and year of that age
     if (late) {
       stakesLine.textContent = fill(COPY.STAKES_LATE, { DATE: compareRightDate.textContent });
-      captureHeading.textContent = COPY.HEADLINE_LATE;
+      captureHeading.textContent = res.atTarget ? COPY.HEADLINE_AT_TARGET : COPY.HEADLINE_LATE;
       captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB_LATE;
     } else {
       stakesLine.textContent = stakesText(st.years);
-      captureHeading.textContent = fill(COPY.HEADLINE, { N: st.years });
+      captureHeading.textContent = res.atTarget ? COPY.HEADLINE_AT_TARGET : fill(COPY.HEADLINE, { N: st.years });
       captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB;
     }
     btnLabel.textContent = fill(COPY.BUTTON, { N: st.years });
