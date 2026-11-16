@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  *   1. it matches {@code ^(\d{2,3})-(\d{4})-(\d{2})$} giving age, year, month;
  *   2. 18 <= age <= 100 and 1 <= month <= 12;
  *   3. monthsOut = (year*12 + month-1) - (nowYear*12 + nowMonth-1) is within 0..864;
- *   4. 17 <= age - monthsOut/12 <= 61 (the age slider is 18 to 60; one year of tolerance).
+ *   4. 17 <= age - monthsOut/12 <= 81 (the age slider is 18 to 80; one year of tolerance).
  * Anyone can type a link, so this keeps FRED from drawing an image the calculator could
  * never produce.
  */
@@ -28,7 +28,7 @@ public record ShareResult(int age, int year, int month) {
     static final int MAX_AGE = 100;
     static final int MAX_MONTHS_OUT = 864;
     static final int MIN_IMPLIED_AGE = 17;
-    static final int MAX_IMPLIED_AGE = 61;
+    static final int MAX_IMPLIED_AGE = 81;
     /** The usual retirement age the page compares against. */
     static final int USUAL_AGE = 65;
 
@@ -55,7 +55,7 @@ public record ShareResult(int age, int year, int month) {
         YearMonth now = YearMonth.now(clock.withZone(ZoneOffset.UTC));
         int monthsOut = (year * 12 + month - 1) - (now.getYear() * 12 + now.getMonthValue() - 1);
         if (monthsOut < 0 || monthsOut > MAX_MONTHS_OUT) return Optional.empty();
-        // age - monthsOut/12 within 17..61, in whole months so no rounding is involved.
+        // age - monthsOut/12 within 17..81, in whole months so no rounding is involved.
         int impliedMonths = ageValue * 12 - monthsOut;
         if (impliedMonths < MIN_IMPLIED_AGE * 12 || impliedMonths > MAX_IMPLIED_AGE * 12) return Optional.empty();
         return Optional.of(new ShareResult(ageValue, year, month));

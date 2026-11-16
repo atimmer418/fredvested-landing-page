@@ -40,6 +40,8 @@ const VECTORS = [
   ['101-2090-01', false], // age
   ['52-2048-13', false],  // month
   ['52-2048-7', false],   // shape
+  ['83-2030-01', true],   // implied age 79.8 (the slider's 80)
+  ['85-2030-01', false],  // implied age 81.8
   ['90-2030-01', false],  // implied age 86.8
   ['30-2060-01', false],  // implied age -3.2
   ['', false],

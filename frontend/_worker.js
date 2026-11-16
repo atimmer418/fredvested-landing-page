@@ -132,10 +132,10 @@ function parseShareParam(r, now) {
   // Not in the past, and no further out than 72 years.
   const monthsOut = (year * 12 + month - 1) - (now.getUTCFullYear() * 12 + now.getUTCMonth());
   if (monthsOut < 0 || monthsOut > 864) return null;
-  // The age today that this result implies. The age slider is 18 to 60; one
+  // The age today that this result implies. The age slider is 18 to 80; one
   // year of tolerance either side.
   const impliedAge = age - monthsOut / 12;
-  if (impliedAge < 17 || impliedAge > 61) return null;
+  if (impliedAge < 17 || impliedAge > 81) return null;
   return { age, year, month };
 }
 

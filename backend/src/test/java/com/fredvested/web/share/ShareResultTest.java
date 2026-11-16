@@ -33,6 +33,8 @@ class ShareResultTest {
             "101-2090-01, false",
             "52-2048-13, false",
             "52-2048-7, false",
+            "83-2030-01, true",
+            "85-2030-01, false",
             "90-2030-01, false",
             "30-2060-01, false",
             "'', false",

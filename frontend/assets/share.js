@@ -27,10 +27,10 @@
   // The date runs from the current month to 72 years out, the calculator's own horizon.
   const MAX_MONTHS_OUT = 864;
   // The current age the pair implies (the age minus the years until the date) must be one
-  // the age slider can produce, 18 to 60, with a year of tolerance for rounding. Anyone
+  // the age slider can produce, 18 to 80, with a year of tolerance for rounding. Anyone
   // can type a link; this keeps FRED from showing a result the calculator never could.
   const MIN_IMPLIED_AGE = 17;
-  const MAX_IMPLIED_AGE = 61;
+  const MAX_IMPLIED_AGE = 81;
 
   // The path and the UTM values of the share link (FREDdocs/utm-conventions.md).
   const SHARE_PATH = '/s';

@@ -200,7 +200,7 @@ public class WaitlistController {
         // no tiers) and, with double opt-in off, confirms it at once.
         WaitlistEntry entry = new WaitlistEntry();
         entry.setEmail(email);
-        entry.setCurrentAge(clampOrNull("age", request.getAge(), 18, 60));
+        entry.setCurrentAge(clampOrNull("age", request.getAge(), 18, 80));
         entry.setInvestMonthly(clampOrNull("investMonthly", request.getInvestMonthly(), 0, 10000));
         entry.setRetireMonthly(clampOrNull("retireMonthly", request.getRetireMonthly(), 1000, 30000));
         entry.setInteracted(request.getInteracted());
