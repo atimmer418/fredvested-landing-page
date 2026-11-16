@@ -2,6 +2,8 @@
 
 Written 2026-09-24 against the working tree of `develop`. Everything in the "what the code expects" section is read from the code; the dashboard, DNS and Railway steps are things only Andrew can do, and where a step is a choice rather than a code requirement it says so. Where a Resend or Cloudflare screen label is uncertain, the step is described by purpose.
 
+**Updated 2026-11-03 (Andrew): single opt-in is the default.** `WAITLIST_DOUBLE_OPT_IN` unset means `false`: a signup is confirmed at once and gets the welcome email ("You're in") at signup, with no confirmation email. The confirmation checks in the end-to-end test below apply only with `WAITLIST_DOUBLE_OPT_IN=true`; under single opt-in, check the welcome email (footer unsubscribe link, Privacy Policy link, postal address, `Reply-To`, no `List-Unsubscribe` header) and `confirmed_source = 'single_opt_in'` instead.
+
 ## What the code expects
 
 | Need | Where in code | Property | Environment variable and default |
@@ -14,7 +16,7 @@ Written 2026-09-24 against the working tree of `develop`. Everything in the "wha
 | Link base for emailed links | `backend/src/main/java/com/fredvested/web/service/EmailOutboxPublisher.java`, `@Value("${api.public-url:http://localhost:8081}")` | `api.public-url` | base: `${API_PUBLIC_URL:http://localhost:8081}`; dev: `${API_PUBLIC_URL:https://lpapi-dev.fredvested.com}`; prod: `${API_PUBLIC_URL:https://lpapi.fredvested.com}` |
 | Postal address in every footer | `EmailOutboxPublisher`, `@Value("${email.postal-address:[PO Box pending]}")` | `email.postal-address` | base: `${POSTAL_ADDRESS:[PO Box pending]}` (`application.properties`); prod: `${POSTAL_ADDRESS}`, no default (`application-prod.properties`), so the placeholder can only ever appear in dev or local |
 | Landing site for redirects | `backend/src/main/java/com/fredvested/web/service/LandingUrls.java`, `@Value("${landing.url:https://fredvested.com}")` | `landing.url` | dev: `${LANDING_URL:https://develop.fredvested-landing-page.pages.dev}`; prod: not set in the profile, so the code default `https://fredvested.com` applies |
-| Double opt-in flag | `backend/src/main/java/com/fredvested/web/service/SignupService.java`, `@Value("${waitlist.double-opt-in.enabled:true}")` | `waitlist.double-opt-in.enabled` | `${WAITLIST_DOUBLE_OPT_IN:true}` |
+| Double opt-in flag | `backend/src/main/java/com/fredvested/web/service/SignupService.java`, `@Value("${waitlist.double-opt-in.enabled:false}")` | `waitlist.double-opt-in.enabled` | `${WAITLIST_DOUBLE_OPT_IN:false}` (single opt-in since 2026-11-03; was `true`) |
 | CORS | `backend/src/main/java/com/fredvested/web/config/WebConfig.java`, `@Value("${cors.allowed.origins}")` | `cors.allowed.origins` | base: `${CORS_ALLOWED_ORIGINS:http://localhost:3000}`; dev: `${CORS_ALLOWED_ORIGINS:http://127.0.0.1:5500,https://*.fredvested-landing-page.pages.dev}`; prod: `${CORS_ALLOWED_ORIGINS}`, no default |
 
 The SDK is `com.resend:resend-java:3.1.0` (`backend/build.gradle`). `EmailService.send(to, subject, html, text, headers)` sets `from`, `to`, `subject`, `html`, `text` and, when the map is not empty, `headers` on the Resend request. `EmailOutboxPublisher.publish` passes an empty headers map: no `List-Unsubscribe` headers on any email (Andrew, 2026-09-25; mail clients label such messages as list mail). The footer unsubscribe link is the opt-out. The RFC 8058 pair can be added back per template if the Gmail and Yahoo bulk-sender threshold (about 5,000 messages a day) is ever reached; `POST /api/waitlist/unsubscribe` already honours the one-click body. `EmailService.options` also sets Reply-To on every message from `email.reply-to` (`EMAIL_REPLY_TO`, default `help@fredvested.com`), so replies never land on the sending subdomain. Nothing sets tags.
@@ -231,7 +233,7 @@ Both environments: Railway project, the backend service, **Variables**. A variab
 | `POSTAL_ADDRESS` | FREDvested LLC's mailing address as one line, e.g. `PO Box 123, Baltimore, MD 21201` | Unset = `[PO Box pending]` printed in every email footer |
 | `API_PUBLIC_URL` | `https://lpapi-dev.fredvested.com`, or unset (same default) | This is the base of the confirm and unsubscribe links. Pointing it at `https://lpapi.fredvested.com` would put production links (and production tokens that do not exist there) into dev emails. `http://` on a public host is upgraded to `https://` with a WARN (`EmailOutboxPublisher.publicBaseUrl`); only localhost and private-range hosts keep `http` |
 | `LANDING_URL` | unset | Default `https://develop.fredvested-landing-page.pages.dev`; where `/confirmed?status=...` redirects land and where `GET /` on the API redirects |
-| `WAITLIST_DOUBLE_OPT_IN` | unset | Default `true`. A blank value took dev down on 2026-09-24 before the blank-as-unset fix; now blank = default |
+| `WAITLIST_DOUBLE_OPT_IN` | unset | Default `false` since 2026-11-03 (single opt-in; was `true`). A blank value took dev down on 2026-09-24 before the blank-as-unset fix; now blank = default |
 | `CORS_ALLOWED_ORIGINS` | unset | Default `http://127.0.0.1:5500,https://*.fredvested-landing-page.pages.dev` (patterns, comma-separated) |
 | `CLOUDFLARE_TURNSTILE_SECRET` | unset | Default is the Turnstile test secret |
 | `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQLPASSWORD` | from the Railway MySQL service | Required; unchanged by this setup |
@@ -246,7 +248,7 @@ Both environments: Railway project, the backend service, **Variables**. A variab
 | `POSTAL_ADDRESS` | same address as dev | Required, no default: `application-prod.properties` sets `email.postal-address=${POSTAL_ADDRESS}`, so the API does not start without it (counsel classed the confirmation email as commercial, so the CAN-SPAM address must never ship as the placeholder). `[PO Box pending]` can only appear in dev or local |
 | `API_PUBLIC_URL` | `https://lpapi.fredvested.com`, or unset (same default) | Pointing it at the dev origin would put dev links into production emails, and the tokens in them would be unknown to the dev database: a confirmation click would end on the dev landing site's `/confirmed?status=invalid`, and an unsubscribe click would get the dev API's `Unsubscribe link not valid` page |
 | `LANDING_URL` | unset | `application-prod.properties` does not set `landing.url`; the code default `https://fredvested.com` in `LandingUrls` applies |
-| `WAITLIST_DOUBLE_OPT_IN` | unset | Default `true` |
+| `WAITLIST_DOUBLE_OPT_IN` | unset | Default `false` since 2026-11-03 (single opt-in; was `true`) |
 | `CORS_ALLOWED_ORIGINS` | `https://fredvested.com`, plus `https://www.fredvested.com` if the www host serves the site | Required, no default. `frontend/assets/analytics.js` treats both hosts as production, so include both if both resolve |
 | `CLOUDFLARE_TURNSTILE_SECRET` | the real Turnstile secret | Required, no default |
 | `WAITLIST_US_ONLY` | unset | Default `true` in prod |

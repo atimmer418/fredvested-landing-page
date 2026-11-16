@@ -106,7 +106,7 @@ FREDvested LLC, %s
         static final String SUBJECT = EmailTemplateEngine.title(HTML);
     }
 
-    /** The welcome email ("You're in"): sent on confirmation, or at signup with double opt-in off. */
+    /** The welcome email ("You're in"): sent at signup (single opt-in, the default since 2026-11-03), or on confirmation with double opt-in on. */
     public static Rendered welcome(String unsubscribeUrl, String postalAddress) {
         String subject = "You're in";
         String text = """

@@ -1,4 +1,10 @@
+Inter (Inter-Regular.ttf, Inter-Medium.ttf, Inter-Bold.ttf):
 Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
+
+Montserrat (Montserrat-Black.ttf, Montserrat-BlackItalic.ttf):
+Copyright 2011 The Montserrat Project Authors (https://github.com/JulietaUla/Montserrat)
+
+Each of these Font Software families is licensed separately under the same terms:
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

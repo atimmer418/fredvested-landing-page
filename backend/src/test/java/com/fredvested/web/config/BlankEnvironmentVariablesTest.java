@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 // Railway dev, 2026-09-24: WAITLIST_DOUBLE_OPT_IN existed with an empty value.
-// `${WAITLIST_DOUBLE_OPT_IN:true}` only falls back when the variable is ABSENT,
+// `${WAITLIST_DOUBLE_OPT_IN:true}` (the default then) only falls back when the variable is ABSENT,
 // so "" reached a boolean @Value and the API never started. A blank variable
 // must behave exactly like an unset one.
 class BlankEnvironmentVariablesTest {
@@ -37,11 +37,11 @@ class BlankEnvironmentVariablesTest {
                 "RESEND_WEBHOOK_SECRET", "   ",
                 "WAITLIST_US_ONLY", "true",
                 "PORT", "8081"));
-        assertEquals("", env.resolvePlaceholders("${WAITLIST_DOUBLE_OPT_IN:true}"), "the bug: blank wins over the default");
+        assertEquals("", env.resolvePlaceholders("${WAITLIST_DOUBLE_OPT_IN:false}"), "the bug: blank wins over the default");
 
         new BlankEnvironmentVariables(new DeferredLogs()).postProcessEnvironment(env, null);
 
-        assertEquals("true", env.resolvePlaceholders("${WAITLIST_DOUBLE_OPT_IN:true}"));
+        assertEquals("false", env.resolvePlaceholders("${WAITLIST_DOUBLE_OPT_IN:false}"));
         assertEquals("unset", env.resolvePlaceholders("${RESEND_WEBHOOK_SECRET:unset}"));
         assertEquals("true", env.resolvePlaceholders("${WAITLIST_US_ONLY:false}"));
         assertEquals("8081", env.resolvePlaceholders("${PORT:8080}"));
@@ -55,7 +55,7 @@ class BlankEnvironmentVariablesTest {
     void withoutTheFilter_theDevCrashReproduces_withIt_signupServiceStartsOnTheDefault() {
         ApplicationContextRunner runner = new ApplicationContextRunner()
                 .withInitializer(ctx -> fakeEnvironment(ctx.getEnvironment(), Map.of("WAITLIST_DOUBLE_OPT_IN", "")))
-                .withPropertyValues("waitlist.double-opt-in.enabled=${WAITLIST_DOUBLE_OPT_IN:true}")
+                .withPropertyValues("waitlist.double-opt-in.enabled=${WAITLIST_DOUBLE_OPT_IN:false}")
                 .withBean(WaitlistRepository.class, () -> mock(WaitlistRepository.class))
                 .withBean(EmailMessageRepository.class, () -> mock(EmailMessageRepository.class))
                 .withBean(SignupService.class);
@@ -68,7 +68,7 @@ class BlankEnvironmentVariablesTest {
         runner.withInitializer(ctx -> new BlankEnvironmentVariables(new DeferredLogs()).postProcessEnvironment(ctx.getEnvironment(), null))
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();
-                    assertTrue(ctx.getBean(SignupService.class).isDoubleOptIn(), "blank flag means the documented default: double opt-in on");
+                    assertFalse(ctx.getBean(SignupService.class).isDoubleOptIn(), "blank flag means the documented default: single opt-in (since 2026-11-03)");
                 });
     }
 

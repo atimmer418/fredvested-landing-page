@@ -12,7 +12,9 @@
 // at most: Calc Engaged, Explainer Opened, Freedom Date Revealed, Recalculated,
 // Email Focused, Waitlist Submitted (each once) and Waitlist Failed (max 3). Waitlist Confirmed fires
 // once on confirmed.html, a separate page load with its own pageview, so it
-// sits outside that budget.
+// sits outside that budget. Result Shared ("Share my Freedom Date", 2026-11-14) exists only after
+// a signup and is sent once per method (native, copy, story) per shared result, at most
+// SHARED_LIMIT (6) per page load.
 (function (global) {
   const PRODUCTION_HOSTS = ['fredvested.com', 'www.fredvested.com'];
   const FORCE_KEY = 'fred_analytics_force'; // localStorage; '1' sends from any host
@@ -31,6 +33,15 @@
   const FIELDS = new Set(['age', 'monthly_invest', 'target_income', 'existing_invested', 'return_scenario']);
   const SCENARIOS = new Set(['conservative', 'moderate', 'optimistic']);
   const EDIT_DEBOUNCE_MS = 400;
+  // Result Shared: which action of the share sheet was used, and the two stake bands of the
+  // SHARED age (assets/share.js band(), the reveal's own labels). The page passes the labels,
+  // never the age or the date; anything outside these sets is dropped or reads as 'hidden'.
+  const SHARE_METHODS = new Set(['native', 'copy', 'story']);
+  // A repeat of the same action on the same result is the same share. A joined visitor who
+  // recalculates shares a different result, which counts again; the ceiling keeps the page
+  // load's budget bounded however often they do (two results through all three actions).
+  const SHARED_LIMIT = 6;
+  const STAKE_YEARS_BANDS = new Set(['hidden', '1-5', '6-10', '11+']);
 
   // --- bands: raw numbers never leave this file ---------------------------
   function band(value, edges, labels) {
@@ -62,6 +73,7 @@
   // --- session state (in memory only; a new page load starts over) --------
   const fired = new Set();
   let failedCount = 0;
+  const sharedOnce = new Set(); // "<method>|<result_key>", in memory only
   let enabled = false;
   let debug = false;
   let firstInteractionAt = null;
@@ -172,6 +184,22 @@
         Object.assign(props, stakeProps());
       }
       return props;
+    },
+
+    // The share sheet on index.html's success state. Once per method per shared result: a second
+    // "Copy link" of the same result is the same share, a recalculated result is a new one, and
+    // SHARED_LIMIT caps the page load. `result_key` (the link's r, e.g. "52-2048-07") is read here
+    // only to tell results apart; it is never a property. Bands only (the exact age and date never
+    // leave the page); a 'plan' source with no band, or the reverse, is not a pair the reveal can produce.
+    'Result Shared': (ctx) => {
+      if (!SHARE_METHODS.has(ctx.method)) return false;
+      const once = ctx.method + '|' + (typeof ctx.result_key === 'string' ? ctx.result_key : '');
+      if (sharedOnce.has(once) || sharedOnce.size >= SHARED_LIMIT) return false;
+      const years = STAKE_YEARS_BANDS.has(ctx.stake_years_band) ? ctx.stake_years_band : 'hidden';
+      const source = stakeSource(ctx.stake_source);
+      const hidden = years === 'hidden' || source === 'hidden';
+      sharedOnce.add(once);
+      return { method: ctx.method, stake_years_band: hidden ? 'hidden' : years, stake_source: hidden ? 'hidden' : source };
     },
 
     'Waitlist Failed': (ctx) => (FAILED_REASONS.has(ctx.reason) ? { reason: ctx.reason } : { reason: 'server_error' }),

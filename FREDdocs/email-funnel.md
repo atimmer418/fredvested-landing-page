@@ -2,6 +2,8 @@
 
 The post-submit path as implemented in the working tree on 2026-09-24: from the waitlist POST to the confirmed row, including the outbox, the Resend webhook, suppression, the public statistic and the two reporting views. Everything here is read from the code; where a behaviour is a decision rather than code, it says so.
 
+**Updated 2026-11-03 (Andrew): single opt-in is the live flow.** `waitlist.double-opt-in.enabled` now defaults to `false` (`${WAITLIST_DOUBLE_OPT_IN:false}`): a new signup is confirmed at once (`confirmed_at = now`, `confirmed_source = 'single_opt_in'`), the welcome email ("You're in") is queued at signup instead of a confirmation, the response carries `requiresConfirmation: false`, and the page shows the success block ("You’re in! See how FRED works") rather than the pending card. The public statistic still counts confirmed rows only; under single opt-in that is every new row the moment it is saved. The double opt-in path below (confirmation email, `/confirm`, resend, the pending card) is unchanged and comes back with `WAITLIST_DOUBLE_OPT_IN=true`; there were no unconfirmed rows in any environment at the switch, so nothing was migrated. Sections below that describe the confirmation flow describe that flag-on path.
+
 ## Where things live
 
 | Piece | Code |
@@ -31,7 +33,7 @@ From `backend/src/main/resources/application.properties` and the profile files. 
 
 | Property | Env var | Default | Notes |
 |---|---|---|---|
-| `waitlist.double-opt-in.enabled` | `WAITLIST_DOUBLE_OPT_IN` | `true` | `true` = confirmation email at signup, welcome email after the click; `false` = single opt-in: row confirmed at signup, welcome email at signup, no confirmation |
+| `waitlist.double-opt-in.enabled` | `WAITLIST_DOUBLE_OPT_IN` | `false` (since 2026-11-03; `true` before) | `true` = confirmation email at signup, welcome email after the click; `false` = single opt-in: row confirmed at signup, welcome email at signup, no confirmation |
 | `waitlist.confirmation.ttl-days` | (none) | `7` | Confirmation link lifetime; also printed in the email |
 | `api.public-url` | `API_PUBLIC_URL` | base `http://localhost:8081`, dev `https://lpapi-dev.fredvested.com`, prod `https://lpapi.fredvested.com` | Origin of every emailed link. Trailing slashes dropped. A public host is forced to `https` whatever the value says; only `localhost`, `127.0.0.1`, `::1`, `[::1]` and the private LAN ranges `192.168.*`, `10.*` and `172.16-31.*` keep `http` (`EmailOutboxPublisher.publicBaseUrl`) |
 | `email.from` | `EMAIL_FROM` | `FRED <fred@fredvested.com>` | Resend from header |

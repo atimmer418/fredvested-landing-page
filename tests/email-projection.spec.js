@@ -63,7 +63,7 @@ test('the defaults send the projection the page rendered, field for field the co
   await page.goto('/index.html');
   await reveal(page);
   await submitWaitlist(page, 'projection@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
   expect(calls.signup).toHaveLength(1);
   const body = calls.signup[0];
@@ -106,7 +106,7 @@ test('$150,000 already invested at the Optimistic scenario: the chart starts at 
   await page.click('#return-seg .seg-btn[data-return="optimistic"]');
   await reveal(page);
   await submitWaitlist(page, 'optimistic@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
   const p = calls.signup[0].projection;
   expect(p).toMatchObject({ existingBalance: 150000, returnRate: 12, scenario: 'OPTIMISTIC', currentAge: 30, monthlyInvest: 2000, targetIncome: 7500, stakeSource: 'plan', stakeYears: 19 });
@@ -124,7 +124,7 @@ test('a one-year gap: 38 / $1,000 / $5,000 sends stakeSource plan and 1 year (ne
   await setSliders(page, { age: 38, invest: 1000, retire: 5000 });
   await reveal(page);
   await submitWaitlist(page, 'lever@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
   const p = calls.signup[0].projection;
   expect(p).toMatchObject({ stakeSource: 'plan', stakeYears: 1, currentAge: 38, monthlyInvest: 1000, targetIncome: 5000, portfolioTarget: 1500000 });
@@ -141,7 +141,7 @@ test('the hidden rung: 42 / $500 / $4,000 sends stakeSource hidden and 0 years',
   await expect(page.locator('#compare-left-age')).toHaveText('No date');
   await expect(page.locator('#compare-right-age')).toHaveText('73');
   await submitWaitlist(page, 'hidden@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
   const p = calls.signup[0].projection;
   expect(p).toMatchObject({ stakeSource: 'hidden', stakeYears: 0, currentAge: 42, monthlyInvest: 500, targetIncome: 4000 });
@@ -157,7 +157,7 @@ test('the at-target state (balance at the target) sends no projection key', asyn
   await reveal(page);
   await expect(page.locator('#at-target-block')).toBeVisible();
   await submitWaitlist(page, 'at-target@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
   expect(atTarget.signup).toHaveLength(1);
   expect(atTarget.signup[0]).not.toHaveProperty('projection');
   expect(atTarget.signup[0]).not.toHaveProperty('freedomAge');
@@ -171,7 +171,7 @@ test('$0 a month (no date) sends no projection key', async ({ page }) => {
   await reveal(page);
   await expect(page.locator('#infeasible-block')).toBeVisible();
   await submitWaitlist(page, 'no-invest@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
   expect(calls.signup).toHaveLength(1);
   expect(calls.signup[0]).not.toHaveProperty('projection');
   expect(calls.signup[0]).not.toHaveProperty('freedomAge');
@@ -187,7 +187,7 @@ test('the payload follows the last render: a slider change after the reveal send
   await page.fill('#invest-range', '3000');
   await expect(page.locator('#result-age')).toHaveText('50');
   await submitWaitlist(page, 'recalc@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
   const p = calls.signup[0].projection;
   const res = P.project({ ...DEFAULTS, invest: 3000 });

@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "include": ["/js/script.js", "/api/event"],
+  "include": ["/js/script.js", "/api/event", "/s"],
   "exclude": []
 }

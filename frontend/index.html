@@ -9,21 +9,45 @@
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <title>FRED: Calculator</title>
-<meta name="description" content="Four sliders. 30 seconds. A real date.">
+<meta name="description" content="Four sliders. 30 seconds. A projected date.">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fredvested.com">
 <meta property="og:site_name" content="FRED">
 <meta property="og:title" content="Find the day & age you could quit your job.">
-<meta property="og:description" content="Four sliders. 30 seconds. A real date.">
+<meta property="og:description" content="Four sliders. 30 seconds. A projected date.">
 <meta property="og:image" content="https://fredvested.com/assets/og-image.png">
 <!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Find the day & age you could quit your job.">
-<meta name="twitter:description" content="Four sliders. 30 seconds. A real date.">
+<meta name="twitter:description" content="Four sliders. 30 seconds. A projected date.">
 <meta name="twitter:image" content="https://fredvested.com/assets/og-image.png">
 <!-- Tailwind build; also carries the self-hosted @font-face rules for Inter + Montserrat (see src/input.css) -->
 <link rel="stylesheet" href="dist/output.css">
+<!-- "Share my Freedom Date" (2026-11-14). A share link is /s?r=<age>-<yyyy>-<mm> plus UTM values; the worker
+     serves this page there (frontend/_worker.js). The recipient gets the plain calculator, and `r` (the
+     sharer's rounded age and date) is taken out of the address here, BEFORE the Plausible script below
+     records its pageview, so it never reaches analytics; the UTM values stay for attribution.js. The
+     address becomes "/" so a reload is the homepage. This script depends on nothing: it must not wait
+     for, or fail with, any file (assets/share.js loads at the end of <body> with the other scripts).
+     Its rule is FredShare.stripParam's, kept identical by tests/unit/share.test.js: every `r` goes
+     (a percent-encoded key too), everything else stays byte for byte. -->
+<script id="share-strip">
+  (function () {
+    try {
+      if (location.pathname !== "/s") return;
+      var search = location.search;
+      var query = search.charAt(0) === "?" ? search.slice(1) : search;
+      var kept = query === "" ? [] : query.split("&").filter(function (segment) {
+        var key = segment.split("=")[0];
+        if (key === "r") return false;
+        try { return decodeURIComponent(key) !== "r"; } catch (e) { return true; }
+      });
+      var rest = kept.join("&");
+      history.replaceState(null, "", "/" + (rest === "" ? "" : "?" + rest) + location.hash);
+    } catch (e) { /* history unavailable: the page still works, the address just keeps r */ }
+  })();
+</script>
 <!-- Privacy-friendly analytics by Plausible, proxied through our own domain -->
 <script defer data-domain="fredvested.com" src="/js/script.js"></script>
 <script>
@@ -132,6 +156,43 @@
   /* The submit button is white on the result card's blue (2026-10-25), so its spinner is the primary colour */
   .spinner-primary { border-color: rgba(19, 91, 236, 0.3); border-top-color: #135bec; }
 
+  /* "Share my Freedom Date" (2026-11-14): FRED's own bottom sheet and the full-screen story view.
+     The sheet is fixed to the viewport bottom over a scrim and keeps clear of the home indicator;
+     both scroll inside themselves on a short screen. The slide and fade are animations, so the
+     reduced-motion block below switches them off with everything else. */
+  .share-scrim { animation: share-fade 0.2s ease both; }
+  .share-sheet {
+    max-height: 100vh; max-height: 100dvh;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    animation: share-rise 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes share-rise { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes share-fade { from { opacity: 0; } to { opacity: 1; } }
+  .share-action {
+    display: flex; width: 100%; min-height: 58px; align-items: center; gap: 12px;
+    padding: 9px 14px; border: 0; background: #fff; color: var(--color-navy, #0f172a);
+    font: inherit; text-align: left; cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .share-action + .share-action { border-top: 1px solid #e5e7eb; }
+  .share-action:hover { background: #f1f5f9; }
+  .share-action:focus-visible { outline: none; box-shadow: inset 0 0 0 3px rgba(19, 91, 236, 0.55); }
+  .share-action svg { flex-shrink: 0; }
+  .share-action-title { display: block; font-weight: 700; font-size: 15px; line-height: 1.25; }
+  .share-action-sub { display: block; margin-top: 1px; font-size: 12.5px; line-height: 1.3; color: var(--color-slate-text, #475569); }
+  .share-action-status { font-weight: 600; color: var(--color-primary, #135bec); }
+  /* The lead action: the phone's share menu, or "Copy link" where that is missing. */
+  .share-action.is-lead { background: var(--color-primary, #135bec); color: #fff; }
+  .share-action.is-lead:hover { background: var(--color-primary-dark, #0e4ac5); }
+  .share-action.is-lead:focus-visible { box-shadow: inset 0 0 0 3px #fff; }
+  .share-action.is-lead .share-action-sub { color: rgba(255, 255, 255, 0.88); }
+  .story-view {
+    padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    animation: share-fade 0.2s ease both;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       transition: none !important;
@@ -160,7 +221,7 @@
        year you could walk away from work for good, in under 30 seconds." sold the mechanics, not the
        outcome). Measured headless: about 42 characters fit on one line at 320px at this size. -->
   <p class="text-[clamp(13px,3.9vw,17px)] text-balance text-slate-text max-w-[44ch] mx-auto mb-2 sm:mb-3">
-    Four sliders. 30 seconds. A real date.
+    Four sliders. 30 seconds. A projected date.
   </p>
 
   <!-- Pre-input disclosure -->
@@ -479,6 +540,90 @@
       </div>
     </template>
 
+    <!-- "Share my Freedom Date" (2026-11-14). Stamped out by mountShare() when the success state is first shown
+         (a signup, or on load for a saved one) and never before, the same rule as the template above: the row
+         goes into #success-block under #success-note, the sheet and the story view onto <body> (the result card
+         is a container, which would capture position: fixed). The row is hidden unless a shareable result exists:
+         a dated one, under 65 or 65 and later; never the at-target or the two no-date states, never the pending
+         block. Every sentence is in COPY (SHARE_*, SHEET_*, STORY_HINT); this markup carries structure only. The
+         link and both images carry the rounded age and the month and year, nothing else the visitor entered. -->
+    <!-- ATTORNEY REVIEW PENDING 2026-11-14: share copy (COPY.SHARE_*, COPY.SHEET_*, COPY.STORY_HINT), the share
+         link's preview and both images. Not to go live before counsel's answer. -->
+    <template id="share-template">
+      <div id="share-row" class="mt-4 flex items-center justify-between gap-3 border-t border-white/20 pt-3.5 text-left" hidden>
+        <div class="min-w-0">
+          <p id="share-label" class="text-[14px] font-semibold leading-snug text-white"></p>
+          <p id="share-sub" class="mt-0.5 text-[12.5px] leading-snug text-[#dbe7ff]"></p>
+        </div>
+        <button type="button" id="share-open" aria-haspopup="dialog"
+          class="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-white/35 bg-white/15 px-4 font-montserrat font-extrabold text-[14px] text-white transition hover:bg-white/25 active:translate-y-px cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-dark">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+          <span id="share-open-label"></span>
+        </button>
+      </div>
+
+      <!-- The sheet: a dialog fixed to the viewport bottom over a scrim. Focus moves in on open; Escape, the
+           close button and a tap on the scrim close it and focus returns to #share-open. -->
+      <div id="share-layer" class="fixed inset-0 z-50 text-left" hidden>
+        <div id="share-scrim" class="share-scrim absolute inset-0 bg-[rgba(15,23,42,0.55)]"></div>
+        <div id="share-sheet" role="dialog" aria-modal="true" aria-labelledby="share-sheet-title" aria-describedby="share-sheet-summary" tabindex="-1"
+          class="share-sheet absolute inset-x-0 bottom-0 mx-auto w-full max-w-[520px] overflow-y-auto rounded-t-[22px] bg-white pt-11 text-navy shadow-[0_-18px_50px_-12px_rgba(15,23,42,0.45)] focus:outline-none">
+          <div class="absolute left-1/2 top-2.5 h-1 w-10 -translate-x-1/2 rounded-full bg-gray-300" aria-hidden="true"></div>
+          <button type="button" id="share-close"
+            class="absolute right-1 top-0 flex h-11 w-11 items-center justify-center rounded-full text-slate-text transition hover:text-navy cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+          </button>
+          <div class="flex items-center gap-3">
+            <!-- The link image (1200 x 630, drawn by the API), so the visitor sees what a message will show. The
+                 gradient behind it is the image's own background, in case the picture is slow or missing. -->
+            <span class="block aspect-[1200/630] w-[104px] min-[380px]:w-[128px] shrink-0 overflow-hidden rounded-[10px] bg-[linear-gradient(160deg,#1e60e3_0%,#0e3a96_100%)]">
+              <img id="share-sheet-thumb" alt="" width="1200" height="630" decoding="async" class="h-full w-full object-cover">
+            </span>
+            <div class="min-w-0 flex-1">
+              <h2 id="share-sheet-title" class="font-montserrat font-extrabold text-[17px] leading-[1.2] tracking-[-0.01em] text-navy"></h2>
+              <p id="share-sheet-summary" class="mt-1 text-[13px] text-slate-text"></p>
+            </div>
+          </div>
+          <div id="share-actions" class="mt-3.5 overflow-hidden rounded-[14px] border border-gray-200">
+            <button type="button" id="share-native" class="share-action is-lead">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+              <span class="min-w-0 flex-1"><span id="share-native-title" class="share-action-title"></span><span id="share-native-sub" class="share-action-sub"></span></span>
+            </button>
+            <button type="button" id="share-story" class="share-action">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+              <span class="min-w-0 flex-1"><span id="share-story-title" class="share-action-title"></span><span id="share-story-sub" class="share-action-sub"></span></span>
+            </button>
+            <button type="button" id="share-copy" class="share-action">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>
+              <!-- "Link copied" takes the sub line's place for a few seconds (a polite live region, empty and
+                   without height until then). -->
+              <span class="min-w-0 flex-1"><span id="share-copy-title" class="share-action-title"></span><span id="share-copy-sub" class="share-action-sub"></span><span id="share-copy-status" class="share-action-sub share-action-status" role="status" aria-live="polite"></span></span>
+            </button>
+          </div>
+          <!-- Only when the link could not be copied (no clipboard API and no execCommand, as in some in-app
+               browsers): the link itself, selected, to copy by hand. No sentence of its own; it is named by
+               the "Copy link" title. 16px so iOS does not zoom to it. -->
+          <input id="share-link-field" type="text" readonly hidden aria-labelledby="share-copy-title" inputmode="none" autocomplete="off" spellcheck="false"
+            class="mt-3 block w-full rounded-[10px] border border-gray-300 bg-[#f6f6f8] px-3 py-2.5 text-[16px] leading-snug text-navy focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <p id="share-fine" class="mt-3 text-[11.5px] leading-relaxed text-slate-text"></p>
+        </div>
+      </div>
+
+      <!-- The story image (1080 x 1920, drawn by the API) as a real <img>, scaled to fit, so a press and hold
+           saves it; downloads are unreliable inside the Instagram and TikTok browsers. Opens over the sheet. -->
+      <div id="story-view" role="dialog" aria-modal="true" aria-labelledby="story-hint" tabindex="-1"
+        class="story-view fixed inset-0 z-[60] flex flex-col items-center bg-[rgba(8,18,44,0.97)] text-white focus:outline-none" hidden>
+        <div class="flex w-full shrink-0 justify-end">
+          <button type="button" id="story-close"
+            class="flex h-11 w-11 items-center justify-center rounded-full text-white transition hover:bg-white/15 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+          </button>
+        </div>
+        <img id="story-img" alt="" width="1080" height="1920" class="min-h-0 w-auto max-w-full flex-1 aspect-[9/16] rounded-[14px] object-contain">
+        <p id="story-hint" class="mt-3 shrink-0 text-center text-[14px] font-semibold text-white"></p>
+      </div>
+    </template>
+
     <!-- Methodology accordion (collapsed by default) -->
     <!-- ATTORNEY APPROVED 2026-09-01 (Option 2 structure) -->
     <details id="calc-method" class="calc-method mt-3 text-left">
@@ -524,6 +669,10 @@
 <!-- projection.js is the calculator's pure projection (compute() below wraps it) and the two
      "what moves your date" scenarios built on it; the unit tests in tests/unit/ load the same file. -->
 <script src="assets/projection.js"></script>
+<!-- share.js: the share link's pure helpers (window.FredShare). Optional: if it does not load, the
+     page works as before and only the share row stays away. -->
+<script src="assets/share.js"></script>
+<script src="assets/email-typo.js"></script>
 <script src="assets/waitlist.js"></script>
 <!-- attribution.js captures UTM/first-touch on load; analytics.js owns every event and the
      production-hostname gate. Both must run before Plausible's deferred script executes. -->
@@ -552,7 +701,7 @@
     // FRED losing by a year, so the cell says what doing nothing gives instead of a number. The caption stays.
     COMPARE_LEFT_NO_DATE: "No date",
     COMPARE_LEFT_CAPTION_NEVER: "the usual retirement",
-    COMPARE_RIGHT_LABEL: "On FRED\u2019s route.",
+    COMPARE_RIGHT_LABEL: "On the FRED plan.",
     // The at-target state's right cell (2026-10-29): already at the target, so the age slot says "Today" and
     // the date slot the current month and year.
     COMPARE_RIGHT_TODAY: "Today",
@@ -589,6 +738,25 @@
     // "a" or "an" for the spoken rate, as the line always had.
     ASSUMPTIONS: "Assumes {article} {rate}% avg annual return ({scenario} scenario) & 4% withdrawal rate.",
     TARGET: "Projected portfolio target: {target}.",
+    // "Share my Freedom Date" (2026-11-14): the row under the success note, FRED's own share sheet and the
+    // story view. ATTORNEY REVIEW PENDING 2026-11-14, all of it. {DATE} is the shared month and year, {AGE}
+    // the shared rounded age. (The words ON the two images and in the link's preview are not here: the API
+    // draws the images, ShareImageCopy.java, and the worker writes the preview tags, _worker.js.)
+    SHARE_LABEL: "Show someone your date",
+    SHARE_SUB: "Sends your age and date. Nothing else you entered.",
+    SHARE_BUTTON: "Share",
+    SHEET_TITLE: "Share your Freedom Date",
+    SHEET_SUMMARY: "{DATE}, age {AGE}",
+    SHEET_LINK: "Share link",
+    SHEET_LINK_SUB: "Opens your phone\u2019s share menu",
+    SHEET_STORY: "Save a story postable image", // Andrew's wording
+    SHEET_STORY_SUB: "Story size, ready for Instagram or TikTok",
+    SHEET_COPY: "Copy link",
+    SHEET_COPY_SUB: "Pastes with your Freedom Date as the preview",
+    SHEET_COPIED: "Link copied",
+    SHEET_FINE: "The link carries your age and date only. No email, no income, no amounts.",
+    STORY_HINT: "Press and hold the image to save it.",
+    SHEET_CLOSE: "Close",
   };
   // No-date states (no monthly amount, target more than a lifetime away): there is no date to keep
   // or save, so the capture headline falls back to the one the attorney approved on 2026-09-01,
@@ -613,7 +781,7 @@
   // "an 8%", "a 10%", "a 12%": the article follows the spoken number.
   const articleFor = (pct) => (/^(8|11|18)/.test(String(pct)) ? "an" : "a");
 
-  const { isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, clearFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
+  const { API_BASE, isValidEmail, getSavedStatus, saveStatus, clearStatus, savePendingEmail, getPendingEmail, clearPendingEmail, saveFreedomDate, getFreedomDate, clearFreedomDate, fetchStats, createTurnstile, submitWaitlist, resendConfirmation, devLinkMap, renderConsent, STAT_TILE_MIN_N, PREVIEW_STAT, PREVIEW_COUNT } = window.FredWaitlist;
   // The projection (assets/projection.js): compute() below wraps project() and adds the calendar
   // date; stakes() measures the plan's age against 65 (no second formula).
   const { project, stakes: computeStakes, roundAge, growthSeries, USUAL_RETIREMENT_AGE } = window.FredProjection;
@@ -905,6 +1073,8 @@
   let stakesLine, captureHeading, captureSupport;
   let form, emailInput, joinBtn, btnText, btnLoading, successBlock, successNote, msg, pendingBlock, ctaNote, capturePitch;
   let ts = { getToken: () => null, reset: () => {} };
+  // The "Did you mean name@gmail.com?" hint (assets/email-typo.js), bound with the form.
+  let typo = { hold: () => false, hide: () => {} };
 
   function mountPostReveal() {
     if (mounted) return;
@@ -1116,6 +1286,7 @@
     if (!resultShown) return;
     render(false);
     persistResultIfJoined();
+    refreshShareFromLive();
   }
 
   // The about page shows the saved freedom date back in its hero. It is written at signup;
@@ -1136,7 +1307,16 @@
     resultShown = true;
     mountPostReveal();
     render(firstReveal);
-    persistResultIfJoined();
+    // Someone who has joined comes back to an open zone showing the DEFAULT sliders
+    // (openZoneForSavedState). A click here before they have moved anything re-renders that default
+    // result, one they never computed: it must not replace their saved result, neither the date
+    // about.html shows nor what the share link carries (2026-11-14). Once they have moved a slider
+    // the result is theirs. (Joined in this page load without touching anything: saved and shown
+    // are already the same.)
+    if (hasInteracted) {
+      persistResultIfJoined();
+      refreshShareFromLive();
+    }
     revealZone.removeAttribute("inert");
     revealZone.classList.add("open");
     revealBtn.setAttribute("aria-expanded", "true");
@@ -1214,6 +1394,7 @@
   }
 
   function showSuccess(displayStatus, fadeIn) {
+    typo.hide();
     form.style.display = "none";
     ctaNote.hidden = true;
     capturePitch.hidden = true;
@@ -1233,6 +1414,7 @@
   // The address also lives in pendingEmailMemory for the session, so "resend" works even when storage is blocked.
   function showPending(email, fadeIn) {
     if (email) pendingEmailMemory = email;
+    typo.hide();
     form.style.display = "none";
     ctaNote.hidden = true;
     capturePitch.hidden = true;
@@ -1248,6 +1430,7 @@
   // Back to an empty, working form (the loading animation collapsed the input and
   // spent the Turnstile token), and forget the pending state in this browser.
   function restoreForm() {
+    typo.hide();
     pendingBlock.classList.add("hidden");
     pendingBlock.classList.add("opacity-0");
     document.getElementById("pending-msg").innerHTML = "";
@@ -1317,6 +1500,14 @@
 
   function bindCapture() {
     ts = createTurnstile(form);
+    // Inserted right after the form (so before the Turnstile host it just added): under the
+    // button, which therefore never moves when a click on it blurs the field. Empty (no height)
+    // until a suggestion shows; light text on the blue card, the address as an underlined button.
+    typo = window.FredEmailTypo.attach(emailInput, {
+      after: form,
+      className: "mt-2 text-[13px] leading-snug font-medium text-[#dbe7ff] text-left",
+      buttonClassName: "font-semibold text-white underline underline-offset-2 break-all cursor-pointer hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm",
+    });
     emailInput.addEventListener("focus", () => Analytics.track("Email Focused"));
 
     document.getElementById("pending-reset").addEventListener("click", () => {
@@ -1350,6 +1541,9 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       msg.innerHTML = "";
+      // A likely typo holds this one submit (no request, no token spent) and shows the hint;
+      // submitting the same value again goes ahead with what they typed.
+      if (typo.hold()) return;
 
       const email = emailInput.value.trim().toLowerCase();
       if (!email) {
@@ -1406,13 +1600,19 @@
         const pending = data.requiresConfirmation === true;
         saveStatus(pending ? "pending_confirmation" : (data.realStatus || data.status));
         if (pending) { savePendingEmail(email); pendingEmailMemory = email; }
+        // A result with no date (at the target, no monthly amount, a lifetime away) clears whatever an
+        // earlier result left behind, so neither about.html nor the share row can show a stale age.
         if (lastFreedomAge !== null) saveFreedomDate(lastFreedomAge, lastFreedomMonthYear);
+        else clearFreedomDate();
 
         // Fade the loading button out, then fade the success state in.
         joinBtn.style.opacity = "0";
         joinBtn.style.transition = "opacity 300ms ease";
         await new Promise((r) => setTimeout(r, 300));
-        if (pending) showPending(email, true); else showSuccess(data.status, true);
+        // The share row reads the result in memory here, so it works with storage blocked too. It is
+        // an extra: showShare() swallows its own errors, so nothing in it can reach the catch below
+        // and turn a signup that succeeded into "Waitlist Failed".
+        if (pending) showPending(email, true); else { showSuccess(data.status, true); showShare(liveShareable); }
         // The signup response carries only the total; the line wants the live, confirmed count.
         refreshCount();
       } catch (err) {
@@ -1422,6 +1622,275 @@
         Analytics.track("Waitlist Failed", { reason: err.reason || "server_error" });
       }
     });
+  }
+
+  // --- Share my Freedom Date (2026-11-14) -----------------------------------------------------
+  // The row under the success note, FRED's own sheet and the story view, stamped out of
+  // #share-template the first time the success state shows and never before. What is shared is
+  // `shareResult` (assets/share.js: { age, year, month, ym, dateLabel }): the result in memory
+  // right after a signup or a recalculation by someone who has joined, the saved one
+  // (waitlist_freedom) on a return visit, where the card shows the default sliders. share.js
+  // validates both the same way the worker and the API do, so a stale or malformed saved value,
+  // or a result with no date, is null and the row stays hidden rather than share a wrong age.
+  // Sharing is optional: when share.js did not load, `Share` is null, nothing is shareable and
+  // the row never shows; the signup, the success state and a return visit are untouched.
+  const Share = window.FredShare || null;
+  // The images come from the API origin the page already talks to (no new host).
+  const API_ORIGIN = API_BASE.replace(/\/api\/waitlist$/, "");
+  const COPIED_MS = 4000;
+  let shareMounted = false;
+  let shareResult = null;
+  let shareRow, shareOpenBtn, shareLayer, shareSheet, shareThumb, shareSummary, shareNative, shareStory, shareCopy, shareCopySub, shareCopyStatus, shareLinkField;
+  let storyView, storyImg, storyClose;
+  let storyResult = null;
+  let copiedTimer = 0;
+
+  // Known edge (accepted 2026-11-14): compute() dates the result from the visitor's LOCAL month, the
+  // shared rule measures from the UTC month. In the hours when UTC is already in the next month, a
+  // result that lands in the visitor's current month (a balance within a month's growth of the
+  // target) reads as past and is not shareable. The row stays hidden, which is the safe side; the
+  // rule is not loosened here alone (tests/unit/share.test.js pins it).
+  function liveShareable() {
+    return !Share || lastFreedomAge === null ? null : Share.fromSaved(lastFreedomAge, lastFreedomMonthYear, new Date());
+  }
+  function savedShareable() {
+    if (!Share) return null;
+    const saved = getFreedomDate();
+    return saved && typeof saved === "object" ? Share.fromSaved(saved.age, saved.monthYear, new Date()) : null;
+  }
+
+  function mountShare() {
+    if (shareMounted) return;
+    shareMounted = true;
+    const tpl = document.getElementById("share-template").content.cloneNode(true);
+    successBlock.appendChild(tpl.getElementById("share-row"));
+    document.body.appendChild(tpl.getElementById("share-layer"));
+    document.body.appendChild(tpl.getElementById("story-view"));
+    const $ = (id) => document.getElementById(id);
+    shareRow = $("share-row"); shareOpenBtn = $("share-open"); shareLayer = $("share-layer"); shareSheet = $("share-sheet");
+    shareThumb = $("share-sheet-thumb"); shareSummary = $("share-sheet-summary");
+    shareNative = $("share-native"); shareStory = $("share-story"); shareCopy = $("share-copy");
+    shareCopySub = $("share-copy-sub"); shareCopyStatus = $("share-copy-status");
+    storyView = $("story-view"); storyImg = $("story-img"); storyClose = $("story-close");
+    shareLinkField = $("share-link-field");
+    // The fixed sentences, from COPY.
+    $("share-label").textContent = COPY.SHARE_LABEL;
+    $("share-sub").textContent = COPY.SHARE_SUB;
+    $("share-open-label").textContent = COPY.SHARE_BUTTON;
+    $("share-sheet-title").textContent = COPY.SHEET_TITLE;
+    $("share-native-title").textContent = COPY.SHEET_LINK;
+    $("share-native-sub").textContent = COPY.SHEET_LINK_SUB;
+    $("share-story-title").textContent = COPY.SHEET_STORY;
+    $("share-story-sub").textContent = COPY.SHEET_STORY_SUB;
+    $("share-copy-title").textContent = COPY.SHEET_COPY;
+    shareCopySub.textContent = COPY.SHEET_COPY_SUB;
+    $("share-fine").textContent = COPY.SHEET_FINE;
+    $("story-hint").textContent = COPY.STORY_HINT;
+    $("share-close").setAttribute("aria-label", COPY.SHEET_CLOSE);
+    storyClose.setAttribute("aria-label", COPY.SHEET_CLOSE);
+    // No share menu (expected inside some in-app browsers): the action goes and "Copy link" leads.
+    if (typeof navigator.share !== "function") {
+      shareNative.hidden = true;
+      shareCopy.classList.add("is-lead");
+      $("share-actions").insertBefore(shareCopy, shareStory);
+    }
+    // A picture that does not arrive leaves the gradient behind it, not a broken-image mark.
+    shareThumb.addEventListener("error", () => { shareThumb.hidden = true; });
+    // The story image: a share once it is on screen, not when the view opens; one that does not
+    // arrive closes the view (see onStoryLoaded / onStoryFailed).
+    storyImg.addEventListener("load", onStoryLoaded);
+    storyImg.addEventListener("error", onStoryFailed);
+
+    shareOpenBtn.addEventListener("click", openShareSheet);
+    $("share-close").addEventListener("click", () => closeShareSheet(true));
+    $("share-scrim").addEventListener("click", () => closeShareSheet(true));
+    shareNative.addEventListener("click", shareNatively);
+    shareStory.addEventListener("click", openStory);
+    shareCopy.addEventListener("click", copyShareLink);
+    storyClose.addEventListener("click", () => closeStory(true));
+    document.addEventListener("keydown", onShareKeydown);
+  }
+
+  // Called with the success state: mounts the row and shows it when there is something to share.
+  // `pick` is liveShareable or savedShareable. Never throws: the success state it follows is
+  // already on screen, and a fault here must not undo a signup or stop the page's start-up.
+  function showShare(pick) {
+    try {
+      mountShare();
+      setShareResult(pick());
+    } catch (e) { /* no share row; everything else stands */ }
+  }
+  function setShareResult(result) {
+    shareResult = result;
+    shareRow.hidden = !result;
+    if (!result) { closeStory(false); closeShareSheet(false); }
+  }
+  // A visitor who has joined and moves a slider or reveals again shares what is now on the card
+  // (it is also what persistResultIfJoined() just saved). Only after the row exists.
+  function refreshShareFromLive() {
+    if (!shareMounted) return;
+    try { setShareResult(liveShareable()); } catch (e) { /* as in showShare */ }
+  }
+
+  const sheetIsOpen = () => shareMounted && !shareLayer.hidden;
+  const storyIsOpen = () => shareMounted && !storyView.hidden;
+
+  function openShareSheet() {
+    if (!shareResult) return;
+    shareSummary.textContent = fill(COPY.SHEET_SUMMARY, { DATE: shareResult.dateLabel, AGE: shareResult.age });
+    const thumb = Share.linkImageUrl(API_ORIGIN, shareResult);
+    if (shareThumb.getAttribute("src") !== thumb) { shareThumb.hidden = false; shareThumb.src = thumb; }
+    clearCopied();
+    hideLinkField();
+    shareLayer.hidden = false;
+    document.documentElement.style.overflow = "hidden"; // the page behind does not scroll
+    shareSheet.scrollTop = 0;
+    shareSheet.focus();
+  }
+  function closeShareSheet(returnFocus) {
+    if (!sheetIsOpen()) return;
+    shareLayer.hidden = true;
+    document.documentElement.style.overflow = "";
+    clearCopied();
+    hideLinkField();
+    if (returnFocus) shareOpenBtn.focus();
+  }
+
+  function openStory() {
+    if (!shareResult) return;
+    const src = Share.storyImageUrl(API_ORIGIN, shareResult);
+    storyResult = shareResult;
+    storyImg.alt = shareSummary.textContent;
+    storyView.hidden = false;
+    storyClose.focus();
+    // A new image: its load or error event decides what happens next. The same image again, already
+    // on screen: nothing to wait for (analytics.js drops the repeat of a result already counted).
+    if (storyImg.getAttribute("src") !== src) storyImg.src = src;
+    else if (storyImg.complete && storyImg.naturalWidth > 0) trackShared("story", storyResult);
+  }
+  // "Result Shared" for the story is the image arriving in front of the visitor (the save itself, a
+  // press and hold, is invisible to the page). Not when it lands after the view was closed.
+  function onStoryLoaded() {
+    if (storyIsOpen() && storyResult) trackShared("story", storyResult);
+  }
+  // The image did not arrive (the API is down, or the date passed while the page sat open): no
+  // broken picture under "Press and hold the image to save it." The view closes back to the sheet,
+  // no event, and without its src the next tap asks for the image again.
+  function onStoryFailed() {
+    storyImg.removeAttribute("src");
+    closeStory(true);
+  }
+  function closeStory(returnFocus) {
+    if (!storyIsOpen()) return;
+    storyView.hidden = true;
+    if (returnFocus) shareStory.focus();
+  }
+
+  // Escape closes the top layer; Tab stays inside it (both are modal dialogs).
+  function onShareKeydown(e) {
+    if (!sheetIsOpen() && !storyIsOpen()) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (storyIsOpen()) closeStory(true); else closeShareSheet(true);
+      return;
+    }
+    if (e.key !== "Tab") return;
+    if (storyIsOpen()) { e.preventDefault(); storyClose.focus(); return; }
+    const stops = Array.from(shareSheet.querySelectorAll("button, input")).filter((b) => !b.hidden);
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    const at = document.activeElement;
+    if (e.shiftKey && (at === first || !shareSheet.contains(at) || at === shareSheet)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (at === last || !shareSheet.contains(at))) { e.preventDefault(); first.focus(); }
+  }
+
+  // The link is built from this page's own origin, so it works on dev and on prod. Nothing but
+  // the url is handed to the share menu: no pre-written message.
+  const shareLink = () => Share.shareUrl(location.origin, shareResult);
+
+  function shareNatively() {
+    if (!shareResult || typeof navigator.share !== "function") return;
+    const result = shareResult;
+    let done;
+    // A share menu that cannot open (it throws, or rejects with anything but a cancel: seen inside
+    // in-app browsers) must not leave the lead button looking dead: the link is copied instead and
+    // the visitor gets the "Link copied" confirmation. That is a `copy`, not a `native` share.
+    try { done = navigator.share({ url: shareLink() }); } catch (e) { copyShareLink(); return; }
+    // A visitor who backs out of the share menu rejects with AbortError: not a share, and not an
+    // error to show.
+    Promise.resolve(done).then(
+      () => trackShared("native", result),
+      (err) => { if (!err || err.name !== "AbortError") copyShareLink(); }
+    );
+  }
+
+  async function copyShareLink() {
+    if (!shareResult) return;
+    const result = shareResult;
+    const url = shareLink();
+    let copied = false;
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      }
+    } catch (e) { /* blocked (permissions, an in-app browser): try the old way */ }
+    if (!copied) copied = copyWithExecCommand(url);
+    // Neither way worked: show the link itself, selected, so it can be copied by hand. Not a share
+    // yet (what the visitor does with it is invisible), so no event.
+    if (!copied) { clearCopied(); showLinkField(url); return; }
+    // "Link copied" in the sub line's place; emptied first so a second copy is announced again.
+    hideLinkField();
+    clearCopied();
+    shareCopySub.hidden = true;
+    shareCopyStatus.textContent = COPY.SHEET_COPIED;
+    copiedTimer = setTimeout(clearCopied, COPIED_MS);
+    trackShared("copy", result);
+  }
+  function clearCopied() {
+    clearTimeout(copiedTimer);
+    shareCopyStatus.textContent = "";
+    shareCopySub.hidden = false;
+  }
+  function showLinkField(url) {
+    shareLinkField.value = url;
+    shareLinkField.hidden = false;
+    shareLinkField.focus();
+    shareLinkField.select();
+    try { shareLinkField.setSelectionRange(0, url.length); } catch (e) { /* select() was enough */ }
+    shareLinkField.scrollLeft = 0;
+  }
+  function hideLinkField() {
+    shareLinkField.hidden = true;
+    shareLinkField.value = "";
+  }
+  // For browsers without the async clipboard API: a scratch field inside the sheet (so the dialog
+  // keeps the focus), selected and copied. 16px so iOS does not zoom to it.
+  function copyWithExecCommand(text) {
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.readOnly = true;
+    field.setAttribute("aria-hidden", "true");
+    field.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;opacity:0;font-size:16px;";
+    shareSheet.appendChild(field);
+    let ok = false;
+    try {
+      field.focus();
+      field.select();
+      field.setSelectionRange(0, text.length);
+      ok = document.execCommand("copy");
+    } catch (e) { ok = false; }
+    field.remove();
+    shareCopy.focus();
+    return ok;
+  }
+
+  // Result Shared: which action, and the two bands of the SHARED age (65 minus it), never the
+  // age or the date themselves. `result_key` only tells analytics.js which result this was, so a
+  // second "Copy link" of the same result sends nothing while a new result on the card is a new
+  // share; it is not a property and never leaves the page.
+  function trackShared(method, result) {
+    Analytics.track("Result Shared", Object.assign({ method: method, result_key: Share.param(result) }, Share.band(result.age)));
   }
 
   // A returning visitor with a saved state must see it at once, not a calculator that
@@ -1448,6 +1917,8 @@
   } else if (savedStatus) {
     openZoneForSavedState();
     showSuccess(savedStatus, false);
+    // The zone opened on the default sliders, so the share row reads the saved result, never the render.
+    showShare(savedShareable);
   }
 
   devLinkMap({ "/about": "about.html", "/privacy": "privacy.html", "/terms": "terms.html" });

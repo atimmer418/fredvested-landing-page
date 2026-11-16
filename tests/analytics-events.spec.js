@@ -234,7 +234,7 @@ test.describe('index.html: calculator events', () => {
     expect(revealed[0].props).toEqual({ ...DEFAULT_REVEAL, invest_band: '0-99', freedom_age_band: 'unreachable', input_edits_band: '1-3', stake_years_band: 'hidden', stake_source: 'hidden' });
 
     await submitWaitlist(page, 'unreachable@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     const submitted = await eventsNamed(page, 'Waitlist Submitted');
     expect(submitted).toHaveLength(1);
     // No date, so no comparison: both stake bands are 'hidden'.
@@ -307,8 +307,8 @@ test.describe('index.html: calculator events', () => {
     await reveal(page);
 
     await submitWaitlist(page, 'home@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('#pending-email')).toHaveText('home@example.com');
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
+    expect(await storage(page, 'waitlist_status')).toBe('WAITLISTED');
 
     expect(calls.signup).toHaveLength(1);
     expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Submitted']);
@@ -330,7 +330,7 @@ test.describe('index.html: calculator events', () => {
     await reveal(page);
 
     await submitWaitlist(page, 'utm@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
     const submitted = await eventsNamed(page, 'Waitlist Submitted');
     expect(submitted).toHaveLength(1);
@@ -362,8 +362,8 @@ test.describe('about.html: email events without a calculator', () => {
     expect(await recorded(page)).toEqual([{ name: 'Email Focused', props: {}, url: 'http://localhost:5500/about.html' }]);
 
     await submitWaitlist(page, 'about@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('#nav-cta')).toHaveText('You got mail ✓');
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#nav-cta')).toHaveText('You’re in ✓');
 
     expect(calls.signup).toHaveLength(1);
     expect(calls.signup[0]).toMatchObject({ email: 'about@example.com', revealedBeforeSubmit: false });
@@ -424,7 +424,7 @@ test.describe('failure paths', () => {
 
     // The failure reset Turnstile; the helper waits for the fresh token.
     await submitWaitlist(page, 'retry@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     expect(calls.signup).toHaveLength(2);
     expect(await sequence(page)).toEqual(['Freedom Date Revealed', 'Email Focused', 'Waitlist Failed', 'Waitlist Submitted']);
   });
@@ -543,7 +543,7 @@ test.describe('hostname gate', () => {
     await page.locator('#calc-method summary').click();
     await expect(page.locator('#calc-method')).toHaveJSProperty('open', true);
     await submitWaitlist(page, 'gated@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
     expect(calls.signup).toHaveLength(1);
     expect(await recorded(page)).toEqual([]);
@@ -601,7 +601,7 @@ test.describe('schema sweep', () => {
     await submitWaitlist(page, 'sweep+tag@example.com');
     await expect(page.locator('#waitlist-msg')).toContainText('Something went wrong');
     await submitWaitlist(page, 'sweep+tag@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
     const all = await events(page);
     expect(new Set(all.map((e) => e.name))).toEqual(new Set(LANDING_EVENTS));

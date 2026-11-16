@@ -863,6 +863,7 @@
 }
 </script>
 
+<script src="assets/email-typo.js"></script>
 <script src="assets/waitlist.js"></script>
 <!-- attribution.js captures UTM/first-touch on load; analytics.js owns every event and the
      production-hostname gate. Both must run before Plausible's deferred script executes. -->
@@ -958,6 +959,13 @@
 
   // --- Signup flow (same motion system as the calculator page) ---
   const ts = createTurnstile(form);
+  // "Did you mean name@gmail.com?" (assets/email-typo.js): under the whole form, which is a row
+  // from sm, between the form and the Turnstile host. Empty (no height) until a suggestion shows.
+  const typo = window.FredEmailTypo.attach(emailInput, {
+    after: form,
+    className: "mt-2 text-[13px] leading-snug text-slate-text text-left",
+    buttonClassName: "font-semibold text-primary underline underline-offset-2 break-all cursor-pointer hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm",
+  });
   emailInput.addEventListener("focus", () => Analytics.track("Email Focused"));
 
   function showMsg(kind, text) {
@@ -973,6 +981,7 @@
   }
 
   function showSuccess(displayStatus, fadeIn) {
+    typo.hide();
     form.style.display = "none";
     successNote.textContent = STATUS_NOTES[displayStatus] || STATUS_NOTES.already_joined;
     successBlock.classList.remove("hidden");
@@ -1005,6 +1014,7 @@
   let pendingEmailMemory = null;
   function showPending(email, fadeIn) {
     if (email) pendingEmailMemory = email;
+    typo.hide();
     form.style.display = "none";
     document.getElementById("pending-email").textContent = email || "the address you entered";
     pendingBlock.classList.remove("hidden");
@@ -1020,6 +1030,7 @@
   // Back to an empty, working form (the loading animation collapsed the input and
   // spent the Turnstile token), and forget the pending state in this browser.
   function restoreForm() {
+    typo.hide();
     pendingBlock.classList.add("hidden");
     pendingBlock.classList.add("opacity-0");
     document.getElementById("pending-msg").innerHTML = "";
@@ -1137,6 +1148,8 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     msg.innerHTML = "";
+    // A likely typo holds this one submit (no request, no token spent); the same value again goes ahead.
+    if (typo.hold()) return;
 
     const email = emailInput.value.trim().toLowerCase();
     if (!email) {

@@ -12,7 +12,7 @@
 // The API is mocked in the browser; no backend runs.
 const { test, expect } = require('@playwright/test');
 const {
-  installMocks, forceAnalytics, seedStorage, events, eventNames, submitWaitlist, storage,
+  DOUBLE_OPT_IN_SIGNUP, installMocks, forceAnalytics, seedStorage, events, eventNames, submitWaitlist, storage,
 } = require('./helpers');
 
 const CONFIRM_URL = '/confirmed.html?status=confirmed&hours=%3C1';
@@ -331,7 +331,7 @@ test('an unknown status shows the default state', async ({ page }) => {
 // --- the pending block's onward link ------------------------------------------
 
 test('the pending block\'s "Find out how FRED works" button carries the computed Freedom Date into the about-page hero', async ({ page }) => {
-  await installMocks(page);
+  await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
   await page.goto('/index.html');
   await submitWaitlist(page, 'pending@example.com');
   await expect(page.locator('#pending-block')).toBeVisible();
@@ -352,7 +352,7 @@ test('the pending block\'s "Find out how FRED works" button carries the computed
 // --- the handoff back to index.html ------------------------------------------
 
 test('a confirmation turns the pending block on index.html into the confirmed success state', async ({ page }) => {
-  await installMocks(page);
+  await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
 
   // 1. A fresh signup on index.html: double opt-in leaves the page in the pending state.
   await page.goto('/index.html');

@@ -36,7 +36,7 @@ public class SignupService {
     public SignupService(WaitlistRepository waitlist,
                          EmailMessageRepository outbox,
                          ApplicationEventPublisher events,
-                         @Value("${waitlist.double-opt-in.enabled:true}") boolean doubleOptIn) {
+                         @Value("${waitlist.double-opt-in.enabled:false}") boolean doubleOptIn) {
         this.waitlist = waitlist;
         this.outbox = outbox;
         this.events = events;

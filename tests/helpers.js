@@ -7,6 +7,7 @@
 //   - .../api/waitlist/stats            -> the stats JSON the test chooses
 //   - .../api/waitlist (POST)           -> the signup response the test chooses
 //   - .../api/waitlist/resend-confirmation -> {"status":"ok"}
+//   - .../api/og/v1/**                  -> a tiny PNG (the share link and story images)
 // On localhost, assets/waitlist.js points the API at http://localhost:8081, and
 // the routes below match any host, so no backend is needed.
 //
@@ -17,7 +18,16 @@ const fs = require('fs');
 const path = require('path');
 const { expect } = require('@playwright/test');
 
-const RECORDER = fs.readFileSync(path.join(__dirname, 'fixtures', 'plausible-recorder.js'), 'utf8');
+// The recorder, plus the address at the moment the Plausible script runs: the real script sends
+// its automatic pageview with that address, so it is "the pageview URL" (see pageviewUrl()).
+const RECORDER = fs.readFileSync(path.join(__dirname, 'fixtures', 'plausible-recorder.js'), 'utf8')
+  + '\nwindow.__plausibleScriptUrl = location.href;\n';
+
+// A 1x1 transparent PNG, the answer to the share images ("Share my Freedom Date", 2026-11-14):
+// the backend draws them at <api origin>/api/og/v1/..., and no backend runs here.
+const TINY_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+// The path the share link uses; frontend/serve.py serves index.html there (on Cloudflare the worker does).
+const SHARE_PATH = '/s';
 
 // The only hosts a page may talk to. The privacy policy names Plausible (reached
 // through our own origin), Resend (never from the browser), Cloudflare and
@@ -28,15 +38,22 @@ const ALLOWED_HOSTS = new Set([
   'challenges.cloudflare.com',
 ]);
 
+// The default answer to a new signup: single opt-in, live since 2026-11-03 (Andrew), exactly as
+// WaitlistController answers with waitlist.double-opt-in.enabled=false: the stats map, status
+// WAITLISTED and requiresConfirmation false. The page shows #success-block.
 const FRESH_SIGNUP = {
   status: 'WAITLISTED',
-  requiresConfirmation: true,
+  requiresConfirmation: false,
   count: 41,
   avgFreedomAge: 0,
   projectionCount: 0,
   projectionStartDate: null,
   projectionEndDate: null,
 };
+
+// The same signup under double opt-in (WAITLIST_DOUBLE_OPT_IN=true): the page shows the pending
+// block until the emailed link is clicked. Specs about that state ask for it explicitly.
+const DOUBLE_OPT_IN_SIGNUP = { ...FRESH_SIGNUP, requiresConfirmation: true };
 
 const STATS = {
   status: 'success',
@@ -53,12 +70,29 @@ const STATS = {
  * failure paths. Returns a recorder of the API calls the page made.
  */
 async function installMocks(page, { stats = STATS, signup = FRESH_SIGNUP, resend = { status: 'ok' } } = {}) {
-  const calls = { signup: [], resend: [], stats: 0, events: [] };
+  const calls = { signup: [], resend: [], stats: 0, events: [], images: [] };
 
   await page.route('**/js/script.js', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: RECORDER }));
   await page.route('**/api/event', (route) => {
     calls.events.push(route.request().postData());
     route.fulfill({ status: 202, contentType: 'text/plain', body: 'ok' });
+  });
+  // The share link's path. frontend/serve.py serves index.html at /s itself; a dev server that was
+  // started before it learned to (reuseExistingServer picks up whatever already holds port 5500)
+  // answers 404, and only then is the homepage handed back here, as the server would have. That
+  // cover is for a stale LOCAL server only: under CI the suite starts serve.py itself, so a 404
+  // there means the mapping is gone and the test must fail. (The mapping itself is pinned by
+  // tests/unit/worker-share.test.js, which starts serve.py's handler on a free port.)
+  await page.route((url) => url.pathname === SHARE_PATH, async (route) => {
+    const response = await route.fetch();
+    if (response.status() !== 404) return route.fulfill({ response });
+    if (process.env.CI) throw new Error('frontend/serve.py answered 404 for ' + SHARE_PATH + ': it must serve index.html there');
+    const home = await route.fetch({ url: new URL('/index.html', route.request().url()).href });
+    return route.fulfill({ response: home });
+  });
+  await page.route('**/api/og/v1/**', (route) => {
+    calls.images.push(route.request().url());
+    route.fulfill({ status: 200, contentType: 'image/png', body: TINY_PNG });
   });
   await page.route('**/api/waitlist/stats', (route) => {
     calls.stats += 1;
@@ -103,6 +137,12 @@ async function blockStorage(page) {
 /** The plausible() calls the page has made so far: [{ name, props, url }]. */
 async function events(page) {
   return page.evaluate(() => (window.__plausible || []).map((e) => ({ name: e.name, props: e.props, url: e.url })));
+}
+
+/** The address the Plausible script saw when it ran, i.e. the URL of its automatic pageview. */
+async function pageviewUrl(page) {
+  await page.waitForFunction(() => typeof window.__plausibleScriptUrl === 'string');
+  return page.evaluate(() => window.__plausibleScriptUrl);
 }
 
 async function eventNames(page) {
@@ -163,7 +203,7 @@ function assertOnlyAllowedHosts(seen) {
 }
 
 module.exports = {
-  ALLOWED_HOSTS, FRESH_SIGNUP, STATS,
+  ALLOWED_HOSTS, FRESH_SIGNUP, DOUBLE_OPT_IN_SIGNUP, STATS, SHARE_PATH,
   installMocks, forceAnalytics, seedStorage, blockStorage,
-  events, eventNames, collectHosts, waitForTurnstile, revealIfNeeded, submitWaitlist, storage, assertOnlyAllowedHosts,
+  events, eventNames, pageviewUrl, collectHosts, waitForTurnstile, revealIfNeeded, submitWaitlist, storage, assertOnlyAllowedHosts,
 };

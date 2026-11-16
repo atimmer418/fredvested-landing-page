@@ -138,6 +138,7 @@
 </div>
 </section>
 
+<script src="assets/email-typo.js"></script>
 <script src="assets/waitlist.js"></script>
 <script src="assets/attribution.js"></script>
 <script src="assets/analytics.js"></script>
@@ -187,6 +188,12 @@
   const emailInput = document.getElementById("resend-email");
   const btn = document.getElementById("resend-btn");
   const msg = document.getElementById("resend-msg");
+  // "Did you mean name@gmail.com?" (assets/email-typo.js), under the form; empty until shown.
+  const typo = window.FredEmailTypo ? window.FredEmailTypo.attach(emailInput, {
+    after: form,
+    className: "mt-2 text-[13px] leading-snug text-slate-text text-left",
+    buttonClassName: "font-semibold text-primary underline underline-offset-2 break-all cursor-pointer hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm",
+  }) : { hold: () => false, hide: () => {} };
 
   function showMsg(kind, text) {
     const styles = kind === "error"
@@ -198,6 +205,7 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     msg.innerHTML = "";
+    if (typo.hold()) return;
     const email = emailInput.value.trim().toLowerCase();
     if (!email || !isValidEmail(email)) {
       showMsg("error", "Please enter a valid email address.");

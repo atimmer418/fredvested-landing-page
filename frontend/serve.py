@@ -22,6 +22,13 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
     def translate_path(self, path):
         # Clean URLs, as Cloudflare Pages serves them: /privacy -> privacy.html.
         # Lets the e2e suite request the paths the site links to.
+        #
+        # /s (the share link, with any query) is the homepage: on Cloudflare the
+        # worker serves index.html there and rewrites its Open Graph tags
+        # (_worker.js). This server does not run the worker, so the tags are the
+        # homepage's own; the page's script behaves the same.
+        if path.split("?", 1)[0].split("#", 1)[0] == "/s":
+            path = "/index.html"
         full = super().translate_path(path)
         if not os.path.exists(full) and not os.path.splitext(full)[1]:
             candidate = full.rstrip("/") + ".html"

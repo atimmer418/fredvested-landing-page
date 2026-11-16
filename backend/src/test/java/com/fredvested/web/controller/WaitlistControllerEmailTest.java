@@ -18,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -35,6 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // The signup never talks to Resend on the request thread: it queues an outbox row
 // in the same transaction, and the scheduled publisher sends it later.
 @WebMvcTest(WaitlistController.class)
+// Double opt-in on explicitly: the default is single opt-in since 2026-11-03, and this
+// test is about the confirmation email (WaitlistControllerSingleOptInTest covers the welcome).
+@TestPropertySource(properties = "waitlist.double-opt-in.enabled=true")
 @Import(SignupService.class)
 class WaitlistControllerEmailTest {
 

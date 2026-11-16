@@ -7,9 +7,11 @@
 // that needs no confirmation (or an address already on the list) shows the success
 // block and never the pending block. On about.html the nav CTA reads
 // "you got mail" while pending and the price card CTA is left alone.
+// Single opt-in is the live flow since 2026-11-03 (helpers' FRESH_SIGNUP); double opt-in is
+// kept behind WAITLIST_DOUBLE_OPT_IN=true, so every signup here asks for DOUBLE_OPT_IN_SIGNUP.
 const { test, expect } = require('@playwright/test');
 const {
-  FRESH_SIGNUP, installMocks, seedStorage, blockStorage, submitWaitlist, revealIfNeeded, storage, events,
+  FRESH_SIGNUP, DOUBLE_OPT_IN_SIGNUP, installMocks, seedStorage, blockStorage, submitWaitlist, revealIfNeeded, storage, events,
 } = require('./helpers');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -70,7 +72,7 @@ function pendingEntry(email, ageMs) {
 for (const p of PAGES) {
   test.describe(p.name, () => {
     test('a fresh signup hides the form and shows the pending block with the address', async ({ page }) => {
-      const calls = await installMocks(page);
+      const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
       await page.goto(p.path);
       const email = 'pending@example.com';
       const before = Date.now();
@@ -93,7 +95,7 @@ for (const p of PAGES) {
     });
 
     test('a reload shows the pending block again with the address and no form', async ({ page }) => {
-      const calls = await installMocks(page);
+      const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
       await page.goto(p.path);
       const email = 'reload@example.com';
       await submitWaitlist(page, email);
@@ -115,7 +117,7 @@ for (const p of PAGES) {
     });
 
     test('"resend the email" posts exactly the address and shows the neutral sentence', async ({ page }) => {
-      const calls = await installMocks(page);
+      const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
       await page.goto(p.path);
       const email = 'resend@example.com';
       await submitWaitlist(page, email);
@@ -134,7 +136,7 @@ for (const p of PAGES) {
     });
 
     test('"Use a different one" restores a working form and clears both storage keys', async ({ page }) => {
-      const calls = await installMocks(page);
+      const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
       await page.goto(p.path);
       const email = 'reset@example.com';
       await submitWaitlist(page, email);
@@ -159,7 +161,7 @@ for (const p of PAGES) {
 
     test('with storage blocked a signup still shows the pending block and resend uses the in-memory address', async ({ page }) => {
       await blockStorage(page);
-      const calls = await installMocks(page);
+      const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
       await page.goto(p.path);
       const email = 'nostorage@example.com';
       await submitWaitlist(page, email);
@@ -182,7 +184,7 @@ for (const p of PAGES) {
         waitlist_status: 'pending_confirmation',
         waitlist_pending: pendingEntry(email, 6 * DAY_MS),
       });
-      const calls = await installMocks(page);
+      const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
       await page.goto(p.path);
 
       await expect(page.locator('#waitlist-form')).toBeHidden();
@@ -200,7 +202,7 @@ for (const p of PAGES) {
         waitlist_status: 'pending_confirmation',
         waitlist_pending: pendingEntry('stale@example.com', 8 * DAY_MS),
       });
-      const calls = await installMocks(page);
+      const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
       await page.goto(p.path);
 
       // The expired record reads as absent: cleared on load, together with the status.
@@ -259,7 +261,7 @@ for (const p of PAGES) {
 
 test.describe('about.html nav and price card', () => {
   test('while pending the nav CTA reads "you got mail" and the price card CTA is untouched', async ({ page }) => {
-    await installMocks(page);
+    await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
     await page.goto('/about.html');
     const nav = page.locator('#nav-cta');
     const founderCta = page.locator('#founder-cta');

@@ -279,7 +279,7 @@ test.describe('at-target state', () => {
     // The announcement ends as the dated reveal's does: the target, the assumptions and the disclosure sentence
     // (the trimmed sentence no longer says "hypothetical").
     const disclaimer = (await page.locator('#result-disclaimer').textContent()).trim();
-    const sr = (age) => `You could be free at ${age} years old. Do nothing: 65+. On FRED\u2019s route: Today, ${thisMonth}. ${gap(age)} ${body} Projected portfolio target: $300,000. Assumes a 10% average annual return (Moderate scenario) and 4% withdrawal rate. ${disclaimer}`;
+    const sr = (age) => `You could be free at ${age} years old. Do nothing: 65+. On the FRED plan: Today, ${thisMonth}. ${gap(age)} ${body} Projected portfolio target: $300,000. Assumes a 10% average annual return (Moderate scenario) and 4% withdrawal rate. ${disclaimer}`;
     await expect(page.locator('#result-sr')).toHaveText(sr(30));
     // The age is the slider's, live, and so is the gap.
     await page.fill('#age-range', '41');
@@ -313,7 +313,7 @@ test.describe('payload and analytics', () => {
     await setExisting(page, 150000); // tick 42
     await reveal(page);
     await submitWaitlist(page, 'existing@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     expect(calls.signup).toHaveLength(1);
     expect(calls.signup[0]).toMatchObject({ existingInvested: 150000, investMonthly: 2000, retireMonthly: 7500, freedomAge: 49, interacted: true });
   });
@@ -322,7 +322,7 @@ test.describe('payload and analytics', () => {
     const calls = await installMocks(page);
     await page.goto('/index.html');
     await submitWaitlist(page, 'zero@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     expect(calls.signup[0]).toMatchObject({ existingInvested: 0, interacted: false, freedomAge: 53 });
   });
 
@@ -332,7 +332,7 @@ test.describe('payload and analytics', () => {
     await page.fill('#retire-range', '1000');
     await setExisting(page, 300000);
     await submitWaitlist(page, 'attarget@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     expect(calls.signup[0]).toMatchObject({ existingInvested: 300000, portfolioTarget: 300000 });
     expect(calls.signup[0]).not.toHaveProperty('freedomAge');
     expect(calls.signup[0]).not.toHaveProperty('freedomDate');
@@ -367,7 +367,7 @@ test.describe('payload and analytics', () => {
     await setExisting(page, 300000);
     await reveal(page);
     await submitWaitlist(page, 'attarget@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
 
     const all = await events(page);
     // The card shows the comparison and the stakes line in this state since 2026-10-30, but nothing is projected,

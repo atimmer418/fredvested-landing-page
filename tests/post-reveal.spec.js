@@ -19,7 +19,7 @@
 //   35 / $1,000 / $7,500 / $0:                    65; N 0: no gap, "No date" left, "Hope isn't a plan. <month year> is." 
 //   30 / $500 / $7,500 / $0 (recalculate):        67; do nothing 65+ (N -2); +$100 -> 65 (N 0): no gap, "No date" left
 const { test, expect } = require('@playwright/test');
-const { installMocks, forceAnalytics, events, eventNames, collectHosts, assertOnlyAllowedHosts, submitWaitlist, seedStorage } = require('./helpers');
+const { DOUBLE_OPT_IN_SIGNUP, installMocks, forceAnalytics, events, eventNames, collectHosts, assertOnlyAllowedHosts, submitWaitlist, seedStorage } = require('./helpers');
 
 const RSQUO = String.fromCharCode(0x2019);
 const COPY = {
@@ -27,7 +27,7 @@ const COPY = {
   COMPARE_LEFT_LABEL: 'Do nothing.',
   COMPARE_LEFT_NEVER: '65+',
   COMPARE_LEFT_CAPTION_NEVER: 'the usual retirement',
-  COMPARE_RIGHT_LABEL: `On FRED${RSQUO}s route.`,
+  COMPARE_RIGHT_LABEL: `On the FRED plan.`,
   HEADLINE: 'FRED exists to close the gap.',
   SUB: `Save your Freedom Date and we${RSQUO}ll help you turn it from a number into a plan the day we open.`,
   BUTTON: 'I want FRED\u2019s help',
@@ -155,7 +155,7 @@ async function expectLate(page, age) {
   await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
   expect(await expectArrow(page)).toBe(COPY.BUTTON);
   // The live region hears the cells and the line as rendered.
-  expect(await page.locator('#result-sr').textContent()).toContain(`Do nothing: No date. On FRED${RSQUO}s route: ${age}, ${date}. ${COPY.STAKES_LATE(date)} `);
+  expect(await page.locator('#result-sr').textContent()).toContain(`Do nothing: No date. On the FRED plan: ${age}, ${date}. ${COPY.STAKES_LATE(date)} `);
 }
 /** The month and year: in the comparison's right cell under the age (the plan's Freedom Date), bold primary;
  *  nowhere else on the card, always in #result-sr. No chip, no header row. */
@@ -845,7 +845,8 @@ test.describe('the capture section', () => {
   });
 
   test('the submit flow is unchanged: the pending block replaces the form inside the reveal card and the note goes with the form', async ({ page }) => {
-    const calls = await installMocks(page);
+    // Double opt-in (WAITLIST_DOUBLE_OPT_IN=true) asked for explicitly: this is the pending block's flow.
+    const calls = await installMocks(page, { signup: DOUBLE_OPT_IN_SIGNUP });
     await page.goto('/index.html');
     await submitWaitlist(page, 'moved@example.com');
     await expect(page.locator('#result-card #join #pending-block')).toBeVisible({ timeout: 10_000 });
@@ -866,6 +867,21 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-cta-note')).toBeVisible();
     await expect(page.locator('#btn-loading')).toBeHidden();
     expect(await expectArrow(page)).toBe(COPY.BUTTON);
+  });
+
+  test('single opt-in (the default since 2026-11-03): the success block replaces the form inside the reveal card and the note goes with the form', async ({ page }) => {
+    const calls = await installMocks(page);
+    await page.goto('/index.html');
+    await submitWaitlist(page, 'single-card@example.com');
+    await expect(page.locator('#result-card #join #success-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-link')).toHaveText(/You’re in! See how FRED works/);
+    await expect(page.locator('#pending-block')).toBeHidden();
+    await expect(page.locator('#waitlist-form')).toBeHidden();
+    await expect(page.locator('#capture-cta-note')).toBeHidden();
+    await expect(page.locator('#capture-pitch')).toBeHidden();
+    await expect(page.locator('#compare')).toBeVisible();
+    await expect(page.locator('#capture-count')).toBeVisible();
+    expect(calls.signup[0]).toMatchObject({ email: 'single-card@example.com', freedomAge: 53, revealedBeforeSubmit: true });
   });
 
   test('a returning visitor gets the pill, the comparison and the success state mounted on load for the current inputs', async ({ page }) => {
@@ -912,7 +928,7 @@ test.describe('copy', () => {
     await reveal(page);
     const sr = await page.locator('#result-sr').textContent();
     // The label's apostrophe is the page's typographic one (COPY.COMPARE_RIGHT_LABEL), so the pattern is built from RSQUO.
-    expect(sr).toMatch(new RegExp(`^You could be free at 53 years old\\. Freedom Date: [A-Z][a-z]+ \\d{4}\\. Do nothing: 65\\+\\. On FRED${RSQUO}s route: 53, [A-Z][a-z]+ \\d{4}\\. That gap is 12 years of your life\\. Projected portfolio target: \\$2,250,000\\. Assumes a 10% average annual return \\(Moderate scenario\\) and 4% withdrawal rate\\. Hypothetical illustration`));
+    expect(sr).toMatch(new RegExp(`^You could be free at 53 years old\\. Freedom Date: [A-Z][a-z]+ \\d{4}\\. Do nothing: 65\\+\\. On the FRED plan: 53, [A-Z][a-z]+ \\d{4}\\. That gap is 12 years of your life\\. Projected portfolio target: \\$2,250,000\\. Assumes a 10% average annual return \\(Moderate scenario\\) and 4% withdrawal rate\\. Hypothetical illustration`));
     expect(sr).not.toContain('..');
     expect(sr).not.toContain('before the usual 65');
     // 69 on a large balance, no gap to count (2026-11-01: the comparison stays, "No date" on the left): the age,
@@ -922,7 +938,7 @@ test.describe('copy', () => {
     await page.fill('#existing-range', '72'); // $900,000
     await expectLate(page, 69);
     const sr2 = await page.locator('#result-sr').textContent();
-    expect(sr2).toMatch(new RegExp(`^You could be free at 69 years old\\. Freedom Date: ([A-Z][a-z]+ \\d{4})\\. Do nothing: No date\\. On FRED${RSQUO}s route: 69, \\1\\. Hope isn${RSQUO}t a plan\\. \\1 is\\. Projected portfolio target: `));
+    expect(sr2).toMatch(new RegExp(`^You could be free at 69 years old\\. Freedom Date: ([A-Z][a-z]+ \\d{4})\\. Do nothing: No date\\. On the FRED plan: 69, \\1\\. Hope isn${RSQUO}t a plan\\. \\1 is\\. Projected portfolio target: `));
     expect(sr2).not.toContain('of your life');
     expect(sr2).not.toContain('..');
   });
@@ -955,7 +971,7 @@ test.describe('analytics', () => {
     await page.goto('/index.html');
     await reveal(page);
     await submitWaitlist(page, 'stake@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     const all = await events(page);
     expect(named(all, 'Freedom Date Revealed')[0].props).toMatchObject({ freedom_age_band: '50-54', ...DEFAULT_STAKE });
     expect(named(all, 'Email Focused')[0].props).toEqual(DEFAULT_STAKE);
@@ -1004,7 +1020,7 @@ test.describe('analytics', () => {
     await expect(page.locator('#compare-left-age')).toHaveText('65+');
     await expect(page.locator('#compare-right-age')).toHaveText('46');
     await submitWaitlist(page, 'plan@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     const all = await events(page);
     expect(named(all, 'Recalculated')).toHaveLength(1);
     expect(named(all, 'Email Focused')[0].props).toEqual({ stake_years_band: '11+', stake_source: 'plan' });
@@ -1024,7 +1040,7 @@ test.describe('analytics', () => {
     await reveal(page);
     await expectLate(page, 65);
     await submitWaitlist(page, 'hidden@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     const all = await events(page);
     expect(named(all, 'Freedom Date Revealed')[0].props).toMatchObject(HIDDEN_STAKE);
     expect(named(all, 'Email Focused')[0].props).toEqual(HIDDEN_STAKE);
@@ -1065,7 +1081,7 @@ test.describe('analytics', () => {
     await page.waitForFunction(() => document.getElementById('reveal-zone').style.maxHeight === 'none');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await submitWaitlist(page, 'hosts@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     await page.waitForLoadState('networkidle');
     assertOnlyAllowedHosts(seen);
     expect(svgRequests).toEqual([]);
@@ -1083,7 +1099,7 @@ test.describe('analytics', () => {
     expect(calls.stats).toBe(1);
     expect(calls.signup).toHaveLength(0);
     await submitWaitlist(page, 'only-submit@example.com');
-    await expect(page.locator('#pending-block')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#success-block')).toBeVisible({ timeout: 10_000 });
     await expect.poll(() => calls.stats).toBe(2);
     expect(calls.signup).toHaveLength(1);
   });

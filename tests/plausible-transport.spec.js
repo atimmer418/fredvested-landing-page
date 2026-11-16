@@ -49,8 +49,8 @@ test('index.html: pageview, Calc Engaged and Waitlist Submitted each complete as
   expect(submitted.p.source_page).toBe('home');
   expect(submitted.p.revealed).toBe('yes');
   expect(JSON.stringify(submitted)).not.toContain('@');
-  // And the page did not move on: the pending block is on screen, same document.
-  await expect(page.locator('#pending-block')).toBeVisible();
+  // And the page did not move on: the success block is on screen, same document.
+  await expect(page.locator('#success-block')).toBeVisible();
   expect(page.url()).toContain('/index.html');
 });
 
@@ -66,7 +66,7 @@ test('about.html: pageview and Waitlist Submitted each complete as a POST to /ap
   expect(submitted.p.source_page).toBe('about');
   expect(submitted.p.revealed).toBe('no');
   expect(JSON.stringify(submitted)).not.toContain('@');
-  await expect(page.locator('#pending-block')).toBeVisible();
+  await expect(page.locator('#success-block')).toBeVisible();
   expect(page.url()).toContain('/about.html');
 });
 

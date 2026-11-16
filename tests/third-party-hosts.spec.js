@@ -28,7 +28,7 @@ test('a full signup on index.html stays inside the allowed hosts', async ({ page
   const seen = collectHosts(page);
   await page.goto('/index.html#join');
   await submitWaitlist(page, 'hosts@example.com');
-  await expect(page.locator('#pending-block')).toBeVisible();
+  await expect(page.locator('#success-block')).toBeVisible();
   await page.waitForLoadState('networkidle');
   assertOnlyAllowedHosts(seen);
 });

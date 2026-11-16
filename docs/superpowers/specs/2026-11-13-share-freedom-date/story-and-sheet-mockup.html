@@ -1,0 +1,249 @@
+<style>
+.opt-c{font-family:'Inter',system-ui,sans-serif;color:inherit;line-height:1.4;text-align:left}
+.opt-c *{box-sizing:border-box;margin:0;padding:0}
+.opt-c .c-h{font:800 22px/1.2 'Montserrat',sans-serif;letter-spacing:-.02em}
+.opt-c .c-lede{margin-top:6px;font-size:14px;opacity:.75;max-width:62ch}
+.opt-c .c-grid{display:flex;flex-wrap:wrap;gap:28px 32px;margin-top:24px;align-items:flex-start}
+.opt-c .c-col{flex:1 1 420px;min-width:0;max-width:600px}
+.opt-c .c-col.c-narrow{flex:0 1 250px}
+.opt-c .c-col.c-phone{flex:0 1 390px;max-width:100%}
+.opt-c .c-cap{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.65;margin-bottom:8px}
+.opt-c .c-note{font-size:12.5px;opacity:.7;margin-top:8px;max-width:60ch}
+.opt-c .c-why{margin-top:28px;font-size:14.5px;line-height:1.6;max-width:72ch}
+
+/* ---- the ticket: every size is --u (1cqw on the link image, 1.6cqw on the story) ---- */
+.opt-c .og,.opt-c .story{container-type:inline-size;width:100%;background:linear-gradient(160deg,#1e60e3 0%,#0e3a96 100%);color:#0F172A;overflow:hidden;display:flex}
+.opt-c .og{--u:1cqw;aspect-ratio:1200/630;max-width:600px}
+.opt-c .og .tk{margin:3.5cqw}
+.opt-c .story{--u:1.6cqw;aspect-ratio:1080/1920;max-width:250px;flex-direction:column;justify-content:center;align-items:center}
+.opt-c .tk{--n:calc(var(--u)*1.6);flex:1;display:flex;min-width:0;filter:drop-shadow(0 calc(var(--u)*1.2) calc(var(--u)*2) rgba(5,20,60,.45))}
+.opt-c .story .tk{flex:none;width:76cqw;flex-direction:column}
+.opt-c .pp{flex:1;min-width:0;background:radial-gradient(circle at 100% 0,#0000 var(--n),#f6f6f8 calc(var(--n) + .5px)) top/100% 51% no-repeat,radial-gradient(circle at 100% 100%,#0000 var(--n),#f6f6f8 calc(var(--n) + .5px)) bottom/100% 51% no-repeat;border-radius:calc(var(--u)*2.2) 0 0 calc(var(--u)*2.2);padding:calc(var(--u)*2.6) calc(var(--u)*3.2);display:flex;flex-direction:column;justify-content:space-between}
+.opt-c .story .pp{background:radial-gradient(circle at 0 100%,#0000 var(--n),#f6f6f8 calc(var(--n) + .5px)) left/51% 100% no-repeat,radial-gradient(circle at 100% 100%,#0000 var(--n),#f6f6f8 calc(var(--n) + .5px)) right/51% 100% no-repeat;border-radius:calc(var(--u)*2.2) calc(var(--u)*2.2) 0 0;gap:calc(var(--u)*2.4);padding:calc(var(--u)*3.2)}
+.opt-c .hd{display:flex;justify-content:space-between;align-items:baseline;font-size:calc(var(--u)*1.5);font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#5B6B80}
+.opt-c .hd b{font:900 calc(var(--u)*2.3)/1 'Montserrat',sans-serif;letter-spacing:-.01em;color:#135bec}
+.opt-c .mo{display:block;font:800 calc(var(--u)*5)/1 'Montserrat',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#135bec}
+.opt-c .yr{display:block;font:900 calc(var(--u)*13.5)/.86 'Montserrat',sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:#0F172A}
+.opt-c .rt{display:flex;align-items:flex-end;gap:calc(var(--u)*1.4)}
+.opt-c .rt i{display:block;font-style:normal;font-size:calc(var(--u)*1.45);font-weight:600;color:#5B6B80;white-space:nowrap}
+.opt-c .rt b{display:block;font:900 calc(var(--u)*3.6)/1.1 'Montserrat',sans-serif;letter-spacing:-.02em;color:#0F172A;white-space:nowrap}
+.opt-c .rt .to b{color:#135bec}
+.opt-c .ln{flex:1;align-self:center;height:0;border-top:calc(var(--u)*.3) dotted #9aa8bd;position:relative}
+.opt-c .ln::after{content:"";position:absolute;right:calc(var(--u)*-.2);top:calc(var(--u)*-.95);width:calc(var(--u)*1.3);height:calc(var(--u)*1.3);border:solid #135bec;border-width:calc(var(--u)*.35) calc(var(--u)*.35) 0 0;transform:rotate(45deg)}
+.opt-c .gp{font-size:calc(var(--u)*2.15);font-weight:700;color:#0F172A}
+.opt-c .ft{font-size:calc(var(--u)*1.5);line-height:1.35;color:#5B6B80;padding-top:calc(var(--u)*1.1);border-top:calc(var(--u)*.15) solid #dfe3ea}
+.opt-c .ft b{color:#0F172A;white-space:nowrap}
+.opt-c .sb{position:relative;width:29%;background:radial-gradient(circle at 0 0,#0000 var(--n),#0F172A calc(var(--n) + .5px)) top/100% 51% no-repeat,radial-gradient(circle at 0 100%,#0000 var(--n),#0F172A calc(var(--n) + .5px)) bottom/100% 51% no-repeat;color:#fff;border-left:calc(var(--u)*.3) dashed rgba(255,255,255,.4);border-radius:0 calc(var(--u)*2.2) calc(var(--u)*2.2) 0;padding:calc(var(--u)*2.6) calc(var(--u)*1.5);display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center}
+.opt-c .story .sb{width:100%;background:radial-gradient(circle at 0 0,#0000 var(--n),#0F172A calc(var(--n) + .5px)) left/51% 100% no-repeat,radial-gradient(circle at 100% 0,#0000 var(--n),#0F172A calc(var(--n) + .5px)) right/51% 100% no-repeat;flex-direction:row;text-align:left;border-left:0;border-top:calc(var(--u)*.3) dashed rgba(255,255,255,.4);border-radius:0 0 calc(var(--u)*2.2) calc(var(--u)*2.2);padding:calc(var(--u)*2.6) calc(var(--u)*3.2)}
+.opt-c .kk{font-size:calc(var(--u)*1.35);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#e3edff}
+.opt-c .ag{font:900 calc(var(--u)*10.5)/.95 'Montserrat',sans-serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:calc(var(--u)*.6)}
+.opt-c .yo{font-size:calc(var(--u)*1.9);font-weight:500;color:#dbe7ff}
+.opt-c .stp{width:calc(var(--u)*17);aspect-ratio:1;border-radius:50%;border:calc(var(--u)*.35) dashed rgba(255,255,255,.6);box-shadow:0 0 0 calc(var(--u)*.55) #0F172A,0 0 0 calc(var(--u)*.8) rgba(255,255,255,.35);background:radial-gradient(circle,#1e60e3 0%,#0e3a96 100%);display:grid;place-items:center;transform:rotate(-8deg);flex:none}
+.opt-c .stp{position:relative}.opt-c .stp svg{position:absolute;left:11%;top:11%;width:78%;height:78%;display:block}
+.opt-c .story-tag{margin-top:6cqw;color:#fff;text-align:center;font:800 5.4cqw/1.2 'Montserrat',sans-serif;letter-spacing:-.01em}
+.opt-c .story-tag span{display:block;margin-top:1.4cqw;font:600 3.6cqw/1.2 'Inter',sans-serif;color:#dbe7ff;letter-spacing:0}
+
+/* ---- message bubble ---- */
+.opt-c .msg{max-width:330px;font-family:-apple-system,'Inter',sans-serif}
+.opt-c .msg-out{margin:0 0 6px auto;width:fit-content;background:#0b84fe;color:#fff;font-size:14px;padding:7px 12px;border-radius:17px}
+.opt-c .msg-link{background:#e9e9eb;color:#000;border-radius:17px;overflow:hidden;margin-left:auto;width:290px;max-width:100%}
+.opt-c .msg-link .og{border-radius:0}
+.opt-c .msg-t{padding:8px 12px 0;font-size:13px;font-weight:600;line-height:1.3}
+.opt-c .msg-d{padding:2px 12px 9px;font-size:12px;color:#6d6d72}
+
+/* ---- phone mocks ---- */
+.opt-c .ph{position:relative;width:390px;max-width:100%;background:#f6f6f8;color:#0F172A;border-radius:28px;border:1px solid rgba(120,130,150,.45);padding:8px 14px 16px;overflow:hidden}
+.opt-c .card{border-radius:20px;background:linear-gradient(160deg,#1e60e3 0%,#0e3a96 100%);color:#fff;text-align:center;padding:20px}
+.opt-c .p-kk{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e3edff}
+.opt-c .p-row{display:flex;justify-content:center;align-items:flex-end;gap:12px;margin-top:8px}
+.opt-c .p-age{font:900 62px/.95 'Montserrat',sans-serif;letter-spacing:-.03em}
+.opt-c .p-yo{font-size:16px;font-weight:500;color:#dbe7ff;margin-top:4px}
+.opt-c .p-row svg{width:96px;height:85px;flex:none}
+.opt-c .p-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.opt-c .p-cmp div{border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.15);font-size:11.5px}
+.opt-c .p-cmp i{display:block;font-style:normal;font-size:13px;font-weight:600}
+.opt-c .p-cmp b{display:block;font:900 28px/1 'Montserrat',sans-serif;letter-spacing:-.02em;margin:4px 0}
+.opt-c .p-cmp .on{background:#fff;border-color:#fff;color:#135bec;font-weight:700}
+.opt-c .p-cmp .on i{color:#0F172A}
+.opt-c .p-st{margin-top:12px;font-size:14px;font-weight:600;color:#e3edff}
+.opt-c .p-hl{margin-top:8px;font:800 22px/1.15 'Montserrat',sans-serif;letter-spacing:-.02em}
+.opt-c .p-sub{margin-top:8px;font-size:14px;line-height:1.55;color:#dbe7ff}
+.opt-c .p-in{margin-top:12px;height:48px;border-radius:14px;background:#fff;color:#8a94a6;font-size:16px;text-align:left;padding:13px 16px}
+.opt-c .p-btn{margin-top:10px;min-height:48px;border-radius:14px;background:#fff;color:#135bec;font:800 16px/1.2 'Montserrat',sans-serif;padding:15px 12px;box-shadow:0 10px 24px -6px rgba(14,58,150,.5)}
+.opt-c .p-share{margin-top:6px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;color:#fff}
+.opt-c .p-share span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.5)}
+.opt-c .p-share.big{margin-top:10px;min-height:48px;border-radius:14px;border:1.5px solid rgba(255,255,255,.7);font:800 15px/1.2 'Montserrat',sans-serif}
+.opt-c .p-share.big span{text-decoration:none}
+.opt-c .ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.opt-c .p-fine{margin-top:8px;font-size:11px;line-height:1.5;color:#c7d6f5;text-align:left}
+.opt-c .p-mark{display:flex;align-items:center;gap:8px;margin:2px 0;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ffd98a}
+.opt-c .p-mark::before,.opt-c .p-mark::after{content:"";flex:1;border-top:1px dashed #ffd98a}
+.opt-c .p-ok{margin-top:10px;font-size:13px;font-weight:500;color:#dbe7ff}
+.opt-c .ph.dim{padding-bottom:372px}
+.opt-c .scrim{position:absolute;inset:0;background:rgba(15,23,42,.5)}
+.opt-c .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;color:#0F172A;border-radius:22px 22px 0 0;padding:8px 16px 18px;box-shadow:0 -12px 40px rgba(15,23,42,.3)}
+.opt-c .grab{width:38px;height:4px;border-radius:2px;background:#cfd5df;margin:0 auto 12px}
+.opt-c .sh-top{display:flex;gap:12px;align-items:center}
+.opt-c .sh-top .og{width:150px;flex:none;border-radius:8px}
+.opt-c .sh-tx b{display:block;font:800 16px/1.2 'Montserrat',sans-serif;letter-spacing:-.01em}
+.opt-c .sh-tx span{display:block;font-size:12.5px;color:#5B6B80;margin-top:3px}
+.opt-c .sh-list{list-style:none;margin-top:12px;border:1px solid #e3e7ee;border-radius:14px}
+.opt-c .sh-list li{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px;border-top:1px solid #e3e7ee}
+.opt-c .sh-list li:first-child{border-top:0;background:#135bec;color:#fff;border-radius:13px 13px 0 0}
+.opt-c .sh-list b{display:block;font-size:15px;font-weight:700}
+.opt-c .sh-list span{display:block;font-size:12px;opacity:.72}
+.opt-c .sh-fine{margin-top:10px;font-size:11.5px;line-height:1.45;color:#5B6B80}
+</style>
+<section class="opt-c">
+  <h3 class="c-h">C. The date is the artifact</h3>
+  <p class="c-lede">The Freedom Date as a ticket you keep: the month and year are the headline, the age rides on the stub, FRED is the stamp. The route row reuses the card&rsquo;s own cells (&ldquo;Do nothing.&rdquo; to &ldquo;On the FRED plan.&rdquo;).</p>
+
+  <div class="c-grid">
+    <div class="c-col">
+      <p class="c-cap">1a. Link preview image, 1200 x 630</p>
+      <div class="og"><div class="tk">
+        <div class="pp">
+          <div class="hd"><span>Freedom Date</span><b>FRED</b></div>
+          <div><span class="mo">July</span><span class="yr">2048</span></div>
+          <div class="rt"><div><i>Do nothing.</i><b>65+</b></div><span class="ln"></span><div class="to"><i>On the FRED plan.</i><b>52</b></div></div>
+          <p class="gp">13 years before the usual 65</p>
+          <p class="ft">Hypothetical illustration, not a prediction or guarantee. <b>fredvested.com</b></p>
+        </div>
+        <div class="sb">
+          <div><p class="kk">You could be free at</p><p class="ag">52</p><p class="yo">years old</p></div>
+          <div class="stp"><svg viewBox="95 132 660 586" aria-hidden="true"><use href="#fred-presenter"/></svg></div>
+        </div>
+      </div></div>
+      <p class="c-note">The disclosure is 18px at full size, inside the ticket so a crop cannot lose it. Month and year stack, so &ldquo;September&rdquo; fits the same slot.</p>
+    </div>
+
+    <div class="c-col">
+      <p class="c-cap">1b. How it unfurls in a message</p>
+      <div class="msg">
+        <p class="msg-out">ok I ran my numbers</p>
+        <div class="msg-link">
+          <div class="og"><div class="tk">
+            <div class="pp">
+              <div class="hd"><span>Freedom Date</span><b>FRED</b></div>
+              <div><span class="mo">July</span><span class="yr">2048</span></div>
+              <div class="rt"><div><i>Do nothing.</i><b>65+</b></div><span class="ln"></span><div class="to"><i>On the FRED plan.</i><b>52</b></div></div>
+              <p class="gp">13 years before the usual 65</p>
+              <p class="ft">Hypothetical illustration, not a prediction or guarantee. <b>fredvested.com</b></p>
+            </div>
+            <div class="sb">
+              <div><p class="kk">You could be free at</p><p class="ag">52</p><p class="yo">years old</p></div>
+              <div class="stp"><svg viewBox="95 132 660 586" aria-hidden="true"><use href="#fred-presenter"/></svg></div>
+            </div>
+          </div></div>
+          <p class="msg-t">My Freedom Date could be July 2048. What&rsquo;s yours?</p>
+          <p class="msg-d">fredvested.com</p>
+        </div>
+      </div>
+      <p class="c-note">og:title: &ldquo;My Freedom Date could be July 2048. What&rsquo;s yours?&rdquo; The year stays readable at bubble size; the route row and the fine print do not, which is why the title carries the hedge (&ldquo;could be&rdquo;) too.</p>
+    </div>
+
+    <div class="c-col c-narrow">
+      <p class="c-cap">2. Story image, 1080 x 1920</p>
+      <div class="story">
+        <div class="tk">
+          <div class="pp">
+            <div class="hd"><span>Freedom Date</span><b>FRED</b></div>
+            <div><span class="mo">July</span><span class="yr">2048</span></div>
+            <div class="rt"><div><i>Do nothing.</i><b>65+</b></div><span class="ln"></span><div class="to"><i>On the FRED plan.</i><b>52</b></div></div>
+            <p class="gp">13 years before the usual 65</p>
+            <p class="ft">Hypothetical illustration, not a prediction or guarantee. <b>fredvested.com</b></p>
+          </div>
+          <div class="sb">
+            <div><p class="kk">You could be free at</p><p class="ag">52</p><p class="yo">years old</p></div>
+            <div class="stp"><svg viewBox="95 132 660 586" aria-hidden="true"><use href="#fred-presenter"/></svg></div>
+          </div>
+        </div>
+        <p class="story-tag">What&rsquo;s your Freedom Date?<span>fredvested.com</span></p>
+      </div>
+      <p class="c-note">Same ticket turned upright, stub torn along the bottom. The top and bottom bands stay empty for the Stories interface and a link sticker.</p>
+    </div>
+
+    <div class="c-col">
+      <p class="c-cap">4. Variant: 65 and later (age 67, July 2063)</p>
+      <div class="og"><div class="tk">
+        <div class="pp">
+          <div class="hd"><span>Freedom Date</span><b>FRED</b></div>
+          <div><span class="mo">July</span><span class="yr">2063</span></div>
+          <div class="rt"><div><i>Do nothing.</i><b>No date</b></div><span class="ln"></span><div class="to"><i>On the FRED plan.</i><b>67</b></div></div>
+          <p class="gp">Hope isn&rsquo;t a plan. July 2063 is.</p>
+          <p class="ft">Hypothetical illustration, not a prediction or guarantee. <b>fredvested.com</b></p>
+        </div>
+        <div class="sb">
+          <div><p class="kk">You could be free at</p><p class="ag">67</p><p class="yo">years old</p></div>
+          <div class="stp"><svg viewBox="95 132 660 586" aria-hidden="true"><use href="#fred-presenter"/></svg></div>
+        </div>
+      </div></div>
+      <p class="c-note">This is the 65-and-later state. Nothing moves: the left cell says &ldquo;No date&rdquo; and the gap line becomes the card&rsquo;s own stakes line. The at-target state would use the same ticket with &ldquo;Today&rdquo; in the year slot and the suit FRED in the stamp; the two no-date states get no share control at all.</p>
+    </div>
+  </div>
+
+  <div class="c-grid">
+    <div class="c-col c-phone">
+      <p class="c-cap">3a. Before signup: a quiet link under the button</p>
+      <div class="ph">
+        <div class="card">
+          <p class="p-kk">You could be free at</p>
+          <div class="p-row"><div><p class="p-age">52</p><p class="p-yo">years old</p></div><svg viewBox="95 132 660 586" aria-hidden="true"><use href="#fred-presenter"/></svg></div>
+          <div class="p-cmp"><div><i>Do nothing.</i><b>65+</b>the usual retirement</div><div class="on"><i>On the FRED plan.</i><b>52</b>July 2048</div></div>
+          <p class="p-st">That gap is 13 years of your life.</p>
+          <p class="p-hl">FRED exists to close the gap.</p>
+          <p class="p-sub">Save your Freedom Date and we&rsquo;ll help you turn it from a number into a plan the day we open.</p>
+          <div class="p-in">you@email.com</div>
+          <div class="p-btn">I want FRED&rsquo;s help &rarr;</div>
+          <p class="p-mark">new, below the form</p>
+          <div class="p-share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m0 0L7.5 7.5M12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span>Share my Freedom Date</span></div>
+          <p class="p-fine">Count line, consent sentence, payment note and the assumptions block follow, unchanged.</p>
+        </div>
+      </div>
+      <p class="c-note">Everything from the kicker to the button is untouched, so the input and button stay where they are at 390 x 660. The link is text weight on purpose: the email is still the ask.</p>
+    </div>
+
+    <div class="c-col c-phone">
+      <p class="c-cap">3b. After signup: a real button, and our own sheet</p>
+      <div class="ph dim">
+        <div class="card">
+          <p class="p-kk">You could be free at</p>
+          <div class="p-row"><div><p class="p-age">52</p><p class="p-yo">years old</p></div><svg viewBox="95 132 660 586" aria-hidden="true"><use href="#fred-presenter"/></svg></div>
+          <div class="p-cmp"><div><i>Do nothing.</i><b>65+</b>the usual retirement</div><div class="on"><i>On the FRED plan.</i><b>52</b>July 2048</div></div>
+          <div class="p-btn">You&rsquo;re in! See how FRED works &rarr;</div>
+          <div class="p-share big"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m0 0L7.5 7.5M12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span>Share my Freedom Date</span></div>
+          <p class="p-ok">Success note stays here.</p>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="sh-top">
+            <div class="og"><div class="tk">
+              <div class="pp">
+                <div class="hd"><span>Freedom Date</span><b>FRED</b></div>
+                <div><span class="mo">July</span><span class="yr">2048</span></div>
+                <div class="rt"><div><i>Do nothing.</i><b>65+</b></div><span class="ln"></span><div class="to"><i>On the FRED plan.</i><b>52</b></div></div>
+                <p class="gp">13 years before the usual 65</p>
+                <p class="ft">Hypothetical illustration, not a prediction or guarantee. <b>fredvested.com</b></p>
+              </div>
+              <div class="sb">
+                <div><p class="kk">You could be free at</p><p class="ag">52</p><p class="yo">years old</p></div>
+                <div class="stp"><svg viewBox="95 132 660 586" aria-hidden="true"><use href="#fred-presenter"/></svg></div>
+              </div>
+            </div></div>
+            <div class="sh-tx"><b>Share your Freedom Date</b><span>July 2048, age 52</span></div>
+          </div>
+          <ul class="sh-list">
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m0 0L7.5 7.5M12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><div><b>Share link</b><span>Opens your phone&rsquo;s share menu</span></div></li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg><div><b>Save image</b><span>Story size, ready for Instagram or TikTok</span></div></li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3A4 4 0 0 0 13 5.3l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></svg><div><b>Copy link</b><span>Pastes with your ticket as the preview</span></div></li>
+          </ul>
+          <p class="sh-fine">The link carries your age and date only. No email, no income, no amounts.</p>
+        </div>
+      </div>
+      <p class="c-note">Our own sheet because Instagram&rsquo;s and TikTok&rsquo;s in-app browsers often lack the system share menu: where it is missing, &ldquo;Share link&rdquo; is hidden and &ldquo;Copy link&rdquo; leads. &ldquo;Save image&rdquo; opens the story image for a long-press save where downloads are blocked.</p>
+    </div>
+  </div>
+
+  <p class="c-why">This direction is for the visitor who wants something to post, not just a link to send: the ticket reads as an object with their date on it, works as a Story without a caption, and gives FRED a recognisable format people can collect and compare. Its main weakness is that the ticket asks more of a small preview than a single big age does: at message-bubble size only the year and the age survive, and the date is the less instantly understood of the two numbers, so a stranger may need the title line to know what &ldquo;July 2048&rdquo; means. It is also the most new surface to build and to put past counsel (a sheet, two image sizes, and &ldquo;13 years before the usual 65&rdquo; as new wording).</p>
+</section>

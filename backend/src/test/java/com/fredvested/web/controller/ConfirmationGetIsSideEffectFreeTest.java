@@ -16,6 +16,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -35,6 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // that fetching the emailed link with GET, as mail security scanners do, leaves the
 // single-use token intact, and only the POST behind it confirms.
 @WebMvcTest(WaitlistConfirmationController.class)
+// Double opt-in on explicitly (the default is single opt-in since 2026-11-03): the
+// confirmation link only exists in that flow.
+@TestPropertySource(properties = "waitlist.double-opt-in.enabled=true")
 @Import({LandingUrls.class, SignupService.class})
 class ConfirmationGetIsSideEffectFreeTest {
 
