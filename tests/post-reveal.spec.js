@@ -38,8 +38,8 @@ const COPY = {
   SUB_LATE: `Save your Freedom Date and we${RSQUO}ll show you what brings it closer the day we open.`, // Andrew's edit, 2026-11-01
   BUTTON_SAVE: 'Save my Freedom Date', // the no-date states only
   // The at-target sub line (2026-10-30 trim of the 2026-10-22 attorney-pending sentence).
-  AT_TARGET_BODY: 'Based on your inputs, you meet the target. Not an assessment of whether you can retire.',
-  HEADLINE_AT_TARGET: 'FRED exists to help it last.', // Andrew, 2026-11-16; one line at 320, 360 and 390
+  AT_TARGET_BODY: 'Based on your inputs, your projected date is now. Not an assessment of whether you can retire.', // Andrew, 2026-11-16
+  HEADLINE_AT_TARGET: 'FRED exists to help make it last.', // Andrew, 2026-11-16; two lines on every phone up to 390, one from 430
   EMAIL_LABEL: 'Email',
   DISCLAIMER: 'Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.',
 };
@@ -713,15 +713,16 @@ test.describe('the capture section', () => {
     // Stacked as the dated reveal is: comparison, stakes line, headline, sub, form.
     const order = await page.evaluate(() => ['compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email'].map((id) => document.getElementById(id).getBoundingClientRect().top));
     for (let i = 1; i < order.length; i++) expect(order[i - 1], `order at ${i}`).toBeLessThan(order[i]);
-    // The sentence was trimmed to hold to two lines in the slot on a 390 phone, as SUB does (the 2026-10-22
-    // sentence ran four); and the heading is one line there like the dated state's.
+    // The 2026-10-30 trim held the sentence to two lines on a 390 phone; Andrew's 2026-11-16 wording runs three
+    // there, and the heading two (33 characters in a slot of about 30), with the button's bottom still inside a
+    // 390x660 viewport (measured 566px).
     await page.setViewportSize(PHONE);
     const lines = await page.evaluate(() => {
       const n = (id) => { const e = document.getElementById(id); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); };
       return { support: n('capture-support'), heading: n('capture-heading') };
     });
-    expect(lines.support).toBeLessThanOrEqual(2);
-    expect(lines.heading).toBe(1);
+    expect(lines.support).toBeLessThanOrEqual(3);
+    expect(lines.heading).toBeLessThanOrEqual(2);
     // Out of the state and back: the age, the plan's own N and the dated heading return, then "Today", the years
     // to 65 and the at-target heading again.
     await page.fill('#retire-range', '1250');
@@ -747,9 +748,9 @@ test.describe('the capture section', () => {
     await expect(page.locator('#compare-right-age')).toHaveText('Today');
     await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET);
     await expect(page.locator('#capture-support')).toHaveText(COPY.AT_TARGET_BODY);
-    // One line on the narrowest phone too (measured 2026-11-16 at 320, 360 and 390).
+    // Two lines on the narrowest phone as well, never three (measured 2026-11-16 at 320, 360 and 390).
     await page.setViewportSize({ width: 320, height: 800 });
-    expect(await page.evaluate(() => { const e = document.getElementById('capture-heading'); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); })).toBe(1);
+    expect(await page.evaluate(() => { const e = document.getElementById('capture-heading'); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); })).toBeLessThanOrEqual(2);
   });
 
   test('at the target the $100k-$1m FRED stands right of the current age exactly as the presenter does: as tall as the column, feet on the caption line, inside the card at every width, still during the count-up, the row the same height as the dated one, and gone with the state', async ({ page }) => {

@@ -371,7 +371,7 @@
            and year under it, then the SAME stakes line and headline as the dated reveal (Andrew, 2026-10-30:
            "That gap is N years of your life." with N the years between the age entered and 65, from the same
            stakes() as the dated state) under its own heading since 2026-11-16 (COPY.HEADLINE_AT_TARGET, "FRED exists
-           to help it last."; the dated "close the gap" and "pull it closer" read wrong for a visitor who is there
+           to help make it last."; the dated "close the gap" and "pull it closer" read wrong for a visitor who is there
            today), with the at-target sentence (COPY.AT_TARGET_BODY, trimmed to two lines) in the sub line's slot,
            and the same button. The pig: the
            same svgo precision-0 recipe as the other two, Illustrator styles turned into fill attributes, ids
@@ -734,12 +734,15 @@
     // sentence ("Based on your inputs, you meet the portfolio target for the income you chose. This is a hypothetical
     // illustration, not an assessment of whether you can retire.") so it holds to two lines in the slot at 390px, as
     // SUB does; counsel's hedge clause is kept word for word and the hypothetical point is made by DISCLAIMER below.
-    AT_TARGET_BODY: "Based on your inputs, you meet the target. Not an assessment of whether you can retire.",
+    // 2026-11-16 (Andrew): "you meet the target" became "your projected date is now", pairing with the "Today" cell;
+    // measured three lines at 390 (two at 430), the button's bottom at 566px in a 390x660 viewport, still in view.
+    AT_TARGET_BODY: "Based on your inputs, your projected date is now. Not an assessment of whether you can retire.",
     // The at-target heading (Andrew, 2026-11-16): a visitor who meets the target today has nothing to close or pull
-    // closer, so neither dated heading fits; his sentence was "FRED exists to help your money last", cut to the slot
-    // (about 30 characters on every phone; "money", "longer" and "for life" all wrapped). Measured 2026-11-16: one
-    // line at 320, 360 and 390. Takes the heading slot in both at-target branches (under and over 64).
-    HEADLINE_AT_TARGET: "FRED exists to help it last.",
+    // closer, so neither dated heading fits; his sentence was "FRED exists to help your money last", first cut to
+    // "help it last" (one line everywhere), then his "help make it last". Measured 2026-11-16: the slot holds about
+    // 30 characters at every phone width (the size follows the card), this is 33 and needs about 10% more width than
+    // it has from 320 to 390, so it is two lines on every phone and one from 430. Both at-target branches.
+    HEADLINE_AT_TARGET: "FRED exists to help make it last.",
     EMAIL_LABEL: "Email",
     // The small block under the capture section: assumptions, target and the approved disclosure
     // sentence (2026-09-01), which is static in the markup (#result-disclaimer). {article} is
