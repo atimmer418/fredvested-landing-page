@@ -38,8 +38,14 @@ const COPY = {
   SUB_LATE: `Save your Freedom Date and we${RSQUO}ll show you what brings it closer the day we open.`, // Andrew's edit, 2026-11-01
   BUTTON_SAVE: 'Save my Freedom Date', // the no-date states only
   // The at-target sub line (2026-10-30 trim of the 2026-10-22 attorney-pending sentence).
-  AT_TARGET_BODY: 'Based on your inputs, your projected date is now. Not an assessment of whether you can retire.', // Andrew, 2026-11-16
-  HEADLINE_AT_TARGET: 'FRED exists to help make it last.', // Andrew, 2026-11-16; two lines on every phone up to 390, one from 430
+  // Andrew, 2026-11-16 / 2026-11-18: the two sentences, the hedge on its own line (rendered as two balanced blocks).
+  AT_TARGET_BODY: 'Based on your inputs, your projected date is now. Not an assessment of whether you can retire.',
+  AT_TARGET_LINE_1: 'Based on your inputs, your projected date is now.',
+  AT_TARGET_LINE_2: 'Not an assessment of whether you can retire.',
+  // Andrew, 2026-11-16 / 2026-11-18: phones read the short one, screens from sm (640) the long one; the text content
+  // carries the long one (the extra word is a hidden span), the rendered text is what the viewer sees.
+  HEADLINE_AT_TARGET: 'FRED exists to help it last.',
+  HEADLINE_AT_TARGET_WIDE: 'FRED exists to help make it last.',
   EMAIL_LABEL: 'Email',
   DISCLAIMER: 'Hypothetical illustration based on the assumptions shown, not a prediction or guarantee. Actual returns may vary.',
 };
@@ -704,25 +710,36 @@ test.describe('the capture section', () => {
     await expect(page.locator('#stakes-line')).toBeVisible();
     await expect(page.locator('#stakes-line')).toHaveText(stakes(35));
     await expect(page.locator('#capture-heading')).toBeVisible();
-    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET);
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET, { useInnerText: true }); // this block runs at PHONE; the wide one is checked at 640 below
     await expect(page.locator('#capture-support')).toBeVisible();
     await expect(page.locator('#capture-support')).toHaveText(COPY.AT_TARGET_BODY);
+    // The hedge sentence is its own line (Andrew, 2026-11-18): two blocks, each one sentence, the second below the first.
+    const blocks = page.locator('#capture-support > span');
+    await expect(blocks).toHaveCount(2);
+    await expect(blocks.nth(0)).toHaveText(COPY.AT_TARGET_LINE_1);
+    await expect(blocks.nth(1)).toHaveText(COPY.AT_TARGET_LINE_2);
+    const tops = await blocks.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+    expect(tops[1]).toBeGreaterThan(tops[0]);
     await expect(page.locator('#btn-label')).toHaveText(COPY.BUTTON);
     expect(await expectArrow(page)).toBe(COPY.BUTTON);
     await expect(page.locator('#capture-email')).toBeVisible();
     // Stacked as the dated reveal is: comparison, stakes line, headline, sub, form.
     const order = await page.evaluate(() => ['compare', 'stakes-line', 'capture-heading', 'capture-support', 'capture-email'].map((id) => document.getElementById(id).getBoundingClientRect().top));
     for (let i = 1; i < order.length; i++) expect(order[i - 1], `order at ${i}`).toBeLessThan(order[i]);
-    // The 2026-10-30 trim held the sentence to two lines on a 390 phone; Andrew's 2026-11-16 wording runs three
-    // there, and the heading two (33 characters in a slot of about 30), with the button's bottom still inside a
-    // 390x660 viewport (measured 566px).
+    // On a 390 phone the heading is the short one on one line, the first sentence balances onto two lines and the
+    // hedge is one line under it (three in all; the 2026-10-30 trim held two), the button's bottom inside 390x660
+    // (measured 541px, 2026-11-18).
     await page.setViewportSize(PHONE);
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET, { useInnerText: true });
     const lines = await page.evaluate(() => {
-      const n = (id) => { const e = document.getElementById(id); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); };
-      return { support: n('capture-support'), heading: n('capture-heading') };
+      const n = (e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight));
+      const [l1, l2] = document.querySelectorAll('#capture-support > span');
+      return { support: n(document.getElementById('capture-support')), line1: n(l1), line2: n(l2), heading: n(document.getElementById('capture-heading')) };
     });
     expect(lines.support).toBeLessThanOrEqual(3);
-    expect(lines.heading).toBeLessThanOrEqual(2);
+    expect(lines.line2).toBe(1);
+    expect(lines.heading).toBe(1);
+    expect((await page.locator('#join-waitlist-btn').boundingBox()).y + (await page.locator('#join-waitlist-btn').boundingBox()).height).toBeLessThanOrEqual(PHONE.height);
     // Out of the state and back: the age, the plan's own N and the dated heading return, then "Today", the years
     // to 65 and the at-target heading again.
     await page.fill('#retire-range', '1250');
@@ -733,7 +750,7 @@ test.describe('the capture section', () => {
     await expect(page.locator('#capture-support')).toHaveText(COPY.SUB);
     await page.fill('#retire-range', '1000');
     await expect(page.locator('#at-target-block')).toBeVisible();
-    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET);
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET, { useInnerText: true });
     await expect(page.locator('#compare-right-age')).toHaveText('Today');
     await expect(page.locator('#stakes-line')).toHaveText(stakes(35));
     await expect(page.locator('#capture-support')).toHaveText(COPY.AT_TARGET_BODY);
@@ -746,11 +763,15 @@ test.describe('the capture section', () => {
     await expect(page.locator('#at-target-age')).toHaveText('70');
     await expect(page.locator('#compare-left-age')).toHaveText(COPY.COMPARE_LEFT_NO_DATE);
     await expect(page.locator('#compare-right-age')).toHaveText('Today');
-    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET);
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET, { useInnerText: true });
     await expect(page.locator('#capture-support')).toHaveText(COPY.AT_TARGET_BODY);
-    // Two lines on the narrowest phone as well, never three (measured 2026-11-16 at 320, 360 and 390).
+    // One line on the narrowest phone too (measured 2026-11-18 at 320, 360 and 390), and the long heading from sm.
     await page.setViewportSize({ width: 320, height: 800 });
-    expect(await page.evaluate(() => { const e = document.getElementById('capture-heading'); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); })).toBeLessThanOrEqual(2);
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET, { useInnerText: true });
+    expect(await page.evaluate(() => { const e = document.getElementById('capture-heading'); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); })).toBe(1);
+    await page.setViewportSize({ width: 640, height: 800 });
+    await expect(page.locator('#capture-heading')).toHaveText(COPY.HEADLINE_AT_TARGET_WIDE, { useInnerText: true });
+    expect(await page.evaluate(() => { const e = document.getElementById('capture-heading'); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); })).toBe(1);
   });
 
   test('at the target the $100k-$1m FRED stands right of the current age exactly as the presenter does: as tall as the column, feet on the caption line, inside the card at every width, still during the count-up, the row the same height as the dated one, and gone with the state', async ({ page }) => {

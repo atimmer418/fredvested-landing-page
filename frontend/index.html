@@ -371,8 +371,9 @@
            and year under it, then the SAME stakes line and headline as the dated reveal (Andrew, 2026-10-30:
            "That gap is N years of your life." with N the years between the age entered and 65, from the same
            stakes() as the dated state) under its own heading since 2026-11-16 (COPY.HEADLINE_AT_TARGET, "FRED exists
-           to help make it last."; the dated "close the gap" and "pull it closer" read wrong for a visitor who is there
-           today), with the at-target sentence (COPY.AT_TARGET_BODY, trimmed to two lines) in the sub line's slot,
+           to help it last." on phones, HEADLINE_AT_TARGET_WIDE "FRED exists to help make it last." from sm; the
+           dated "close the gap" and "pull it closer" read wrong for a visitor who is there today), with the
+           at-target sentences (COPY.AT_TARGET_BODY, the hedge on its own line since 2026-11-18) in the sub line's slot,
            and the same button. The pig: the
            same svgo precision-0 recipe as the other two, Illustrator styles turned into fill attributes, ids
            stripped, viewBox cropped to the drawing (47 KB inlined; the 1.4 MB source is never requested). The
@@ -734,15 +735,22 @@
     // sentence ("Based on your inputs, you meet the portfolio target for the income you chose. This is a hypothetical
     // illustration, not an assessment of whether you can retire.") so it holds to two lines in the slot at 390px, as
     // SUB does; counsel's hedge clause is kept word for word and the hypothetical point is made by DISCLAIMER below.
-    // 2026-11-16 (Andrew): "you meet the target" became "your projected date is now", pairing with the "Today" cell;
-    // measured three lines at 390 (two at 430), the button's bottom at 566px in a 390x660 viewport, still in view.
-    AT_TARGET_BODY: "Based on your inputs, your projected date is now. Not an assessment of whether you can retire.",
+    // 2026-11-16 (Andrew): "you meet the target" became "your projected date is now", pairing with the "Today" cell.
+    // 2026-11-18 (Andrew): the hedge sentence starts its own line ("Not an" had been left at the end of the first
+    // sentence's line). The newline is the break; setLines() renders each sentence as its own balanced block, so
+    // the first sentence (49 characters, two lines in the 46ch slot up to 390) splits evenly instead of leaving
+    // "now." alone, and the hedge is one line from 375 (two at 320 and 360). Three lines at 390, two from 430;
+    // the button's bottom at about 566px in a 390x660 viewport, still in view.
+    AT_TARGET_BODY: "Based on your inputs, your projected date is now.\nNot an assessment of whether you can retire.",
     // The at-target heading (Andrew, 2026-11-16): a visitor who meets the target today has nothing to close or pull
-    // closer, so neither dated heading fits; his sentence was "FRED exists to help your money last", first cut to
-    // "help it last" (one line everywhere), then his "help make it last". Measured 2026-11-16: the slot holds about
-    // 30 characters at every phone width (the size follows the card), this is 33 and needs about 10% more width than
-    // it has from 320 to 390, so it is two lines on every phone and one from 430. Both at-target branches.
-    HEADLINE_AT_TARGET: "FRED exists to help make it last.",
+    // closer, so neither dated heading fits; his sentence was "FRED exists to help your money last". The slot holds
+    // about 30 characters at every phone width (the size follows the card up to 22px), so "help make it last" (33)
+    // is two lines on every phone through 430 and one from `sm` (640, 26px, a 544px slot). Andrew, 2026-11-18:
+    // phones get the shorter line, wider screens the longer one; setHeadingByWidth() renders the words the two
+    // share once and the extra word in a `hidden sm:inline` span, so each screen reads one sentence (screen
+    // readers skip the hidden span). Both at-target branches.
+    HEADLINE_AT_TARGET: "FRED exists to help it last.",
+    HEADLINE_AT_TARGET_WIDE: "FRED exists to help make it last.",
     EMAIL_LABEL: "Email",
     // The small block under the capture section: assumptions, target and the approved disclosure
     // sentence (2026-09-01), which is static in the markup (#result-disclaimer). {article} is
@@ -835,6 +843,37 @@
   const isoDate = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01";
   // Fills {placeholders} in a COPY sentence. Values are numbers or fixed words, never user text.
   const fill = (template, vars) => template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+
+  // Two wordings of one heading, phones and wider screens (Andrew, 2026-11-18, the at-target heading): the words
+  // the two share are rendered once as text and the words only the wide one has go in a `hidden sm:inline` span,
+  // so the sentence on screen is `narrow` under 640px and `wide` from it, with no JavaScript on resize, and a screen
+  // reader hears whichever is displayed. The strings must differ by one run (a shared prefix and a shared suffix).
+  function setHeadingByWidth(el, narrow, wide) {
+    let p = 0;
+    while (p < narrow.length && narrow[p] === wide[p]) p++;
+    let s = 0;
+    while (s < narrow.length - p && narrow[narrow.length - 1 - s] === wide[wide.length - 1 - s]) s++;
+    el.textContent = "";
+    el.append(wide.slice(0, p));
+    const extra = document.createElement("span");
+    extra.className = "hidden sm:inline";
+    extra.textContent = wide.slice(p, wide.length - s);
+    el.append(extra, wide.slice(wide.length - s));
+  }
+
+  // A sentence per line: each "\n"-separated part of `text` is its own balanced block, so a part that still has to
+  // wrap splits evenly rather than leaving one word on its last line. A space between the blocks keeps the element's
+  // text content a readable string (nothing is rendered for it).
+  function setLines(el, text) {
+    el.textContent = "";
+    text.split("\n").forEach((line, i) => {
+      if (i) el.append(" ");
+      const block = document.createElement("span");
+      block.className = "block text-balance";
+      block.textContent = line;
+      el.append(block);
+    });
+  }
 
   // `existing` is the money already invested: the projection's starting balance, growing at the
   // same selected rate as the contributions (backend FreedomCalculator.java mirrors this exactly).
@@ -1152,12 +1191,16 @@
     compareRightDate.textContent = formatMonthYear(res.atTarget ? new Date() : res.date); // the month and year of that age
     if (late) {
       stakesLine.textContent = fill(COPY.STAKES_LATE, { DATE: compareRightDate.textContent });
-      captureHeading.textContent = res.atTarget ? COPY.HEADLINE_AT_TARGET : COPY.HEADLINE_LATE;
-      captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB_LATE;
+      if (res.atTarget) setHeadingByWidth(captureHeading, COPY.HEADLINE_AT_TARGET, COPY.HEADLINE_AT_TARGET_WIDE);
+      else captureHeading.textContent = COPY.HEADLINE_LATE;
+      if (res.atTarget) setLines(captureSupport, COPY.AT_TARGET_BODY);
+      else captureSupport.textContent = COPY.SUB_LATE;
     } else {
       stakesLine.textContent = stakesText(st.years);
-      captureHeading.textContent = res.atTarget ? COPY.HEADLINE_AT_TARGET : fill(COPY.HEADLINE, { N: st.years });
-      captureSupport.textContent = res.atTarget ? COPY.AT_TARGET_BODY : COPY.SUB;
+      if (res.atTarget) setHeadingByWidth(captureHeading, COPY.HEADLINE_AT_TARGET, COPY.HEADLINE_AT_TARGET_WIDE);
+      else captureHeading.textContent = fill(COPY.HEADLINE, { N: st.years });
+      if (res.atTarget) setLines(captureSupport, COPY.AT_TARGET_BODY);
+      else captureSupport.textContent = COPY.SUB;
     }
     btnLabel.textContent = fill(COPY.BUTTON, { N: st.years });
     compareBlock.hidden = false;
@@ -1265,7 +1308,7 @@
       srEl.textContent =
         document.getElementById("at-target-eyebrow").textContent + " " + age + " " + COPY.YEARS_OLD + ". " +
         (mounted && !compareBlock.hidden ? compareSummary() + stakesLine.textContent + " " : "") +
-        COPY.AT_TARGET_BODY + " " +
+        COPY.AT_TARGET_BODY.replace("\n", " ") + " " +
         targetEl.textContent + " " +
         "Assumes " + articleFor(scAt.pct) + " " + scAt.pct + "% average annual return (" + scAt.name + " scenario) and 4% withdrawal rate. " +
         disclaimerEl.textContent; // the dated announcement ends the same way; since the 2026-10-30 trim the sentence itself no longer says "hypothetical"
